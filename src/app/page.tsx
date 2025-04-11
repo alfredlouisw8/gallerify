@@ -1,18 +1,10 @@
 import { ArrowRight, Camera, Globe, Layers, Zap } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
-import { auth } from '@/lib/auth/auth'
 
 export default async function Home() {
-  const session = await auth()
-
-  if (session) {
-    redirect('/dashboard')
-  }
-
   return (
     <div className="mx-auto flex min-h-screen flex-col">
       <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
