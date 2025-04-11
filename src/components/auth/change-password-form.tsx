@@ -1,33 +1,25 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+
+import { changePassword } from '@/actions/users/changePassword'
+import { ChangePasswordSchema } from '@/actions/users/changePassword/schema'
 import { Button } from '@/components/ui/button'
+import { CardHeader } from '@/components/ui/card'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { signIn, signOut } from 'next-auth/react'
 import { toast } from '@/components/ui/use-toast'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { redirect, useRouter } from 'next/navigation'
-import { signInSchema } from '@/lib/auth/auth.config'
-import { ChangePasswordSchema } from '@/actions/users/changePassword/schema'
 import { useAction } from '@/hooks/useAction'
-import { changePassword } from '@/actions/users/changePassword'
 
 export default function ChangePasswordForm() {
   const router = useRouter()
@@ -78,7 +70,7 @@ export default function ChangePasswordForm() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4 max-w-[500px]"
+          className="max-w-[500px] space-y-4"
         >
           <FormField
             control={form.control}
@@ -119,11 +111,7 @@ export default function ChangePasswordForm() {
               </FormItem>
             )}
           />
-          <Button
-            loading={form.formState.isSubmitting}
-            type="submit"
-            className="w-full"
-          >
+          <Button type="submit" className="w-full">
             Submit
           </Button>
         </form>

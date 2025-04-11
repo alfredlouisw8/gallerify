@@ -102,11 +102,7 @@ export default function LoginForm() {
                   </FormItem>
                 )}
               />
-              <Button
-                loading={form.formState.isSubmitting}
-                type="submit"
-                className="w-full"
-              >
+              <Button type="submit" className="w-full">
                 Login
               </Button>
             </form>
