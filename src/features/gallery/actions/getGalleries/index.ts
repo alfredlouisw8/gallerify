@@ -8,6 +8,9 @@ export default async function getGalleries() {
     where: {
       userId: session?.user.id,
     },
+    include: {
+      GalleryCategory: true, // Use the correct relation name from your schema
+    },
   })
 
   return response

@@ -35,6 +35,13 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         },
       })
 
+      const galleryCategory = await prisma.galleryCategory.create({
+        data: {
+          galleryId: gallery.id,
+          name: 'Category 1',
+        },
+      })
+
       return gallery
     })
   } catch (error: any) {

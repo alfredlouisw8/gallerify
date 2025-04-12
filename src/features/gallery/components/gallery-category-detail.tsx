@@ -8,7 +8,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Gallery } from '@prisma/client'
+import { Gallery, GalleryCategory, GalleryCategoryImage } from '@prisma/client'
 import {
   ArrowRightFromLineIcon,
   DownloadIcon,
@@ -29,17 +29,19 @@ import DeleteGalleryDialog from '@/features/gallery/components/delete-dialog-mod
 
 type GalleryDetailProps = {
   galleryData: Gallery
+  collectionId: string
 }
 
-export default function GalleryDetail({ galleryData }: GalleryDetailProps) {
-  const initialImages = [
-    { id: 1, name: 'Alfred & Natalie', image: '/gallery/sample-photo-1.png' },
-    { id: 2, name: 'Vincent & Natalie', image: '/gallery/sample-photo-36.jpg' },
-    { id: 3, name: 'Billy & Natalie', image: '/gallery/sample-photo-37.jpg' },
-  ]
+export default function GalleryCategoryDetail({
+  galleryData,
+  collectionId,
+}: GalleryDetailProps) {
+  const collection = galleryData.GalleryCategory.find(
+    (cat: GalleryCategory) => cat.id === collectionId
+  )
 
-  const [images, setImages] = useState(initialImages)
-  const [activeId, setActiveId] = useState<number | null>(null)
+  const [images, setImages] = useState(collection.GalleryCategoryImage)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id)
@@ -49,7 +51,7 @@ export default function GalleryDetail({ galleryData }: GalleryDetailProps) {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    setImages((items) => {
+    setImages((items: GalleryCategoryImage[]) => {
       const oldIndex = items.findIndex((item) => item.id === active.id)
       const newIndex = items.findIndex((item) => item.id === over.id)
       return arrayMove(items, oldIndex, newIndex)
@@ -76,7 +78,7 @@ export default function GalleryDetail({ galleryData }: GalleryDetailProps) {
           </div>
         ) : (
           <SortableContext
-            items={images.map((img) => img.id)}
+            items={images.map((img: GalleryCategoryImage) => img.id)}
             strategy={rectSortingStrategy}
           >
             <div
@@ -84,7 +86,7 @@ export default function GalleryDetail({ galleryData }: GalleryDetailProps) {
 gap-4
 md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
             >
-              {images.map((item) => (
+              {images.map((item: GalleryCategoryImage) => (
                 <DraggableImage
                   key={item.id}
                   item={item}
@@ -100,7 +102,12 @@ md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
       <DragOverlay>
         {activeId ? (
           <Image
-            src={images.find((img) => img.id === activeId)?.image || ''}
+            src={
+              JSON.parse(
+                images.find((img: GalleryCategoryImage) => img.id === activeId)
+                  ?.imageUrl
+              ).url || ''
+            }
             alt="Dragged Image"
             width={150}
             height={150}
@@ -118,7 +125,7 @@ function DraggableImage({
   item,
   isBeingDragged,
 }: {
-  item: any
+  item: GalleryCategoryImage
   isBeingDragged: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -140,8 +147,8 @@ function DraggableImage({
       className="group relative h-52 cursor-grab bg-gray-50 p-2"
     >
       <Image
-        src={item.image}
-        alt={item.name}
+        src={JSON.parse(item.imageUrl).url}
+        alt="1"
         width={150}
         height={150}
         className={`size-full rounded-lg object-contain ${

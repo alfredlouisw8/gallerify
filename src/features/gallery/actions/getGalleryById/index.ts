@@ -5,6 +5,13 @@ export default async function getGalleryById(galleryId: string) {
     where: {
       id: galleryId,
     },
+    include: {
+      GalleryCategory: {
+        include: {
+          GalleryCategoryImage: true, // Include related GalleryCategoryImage
+        },
+      },
+    },
   })
 
   return response
