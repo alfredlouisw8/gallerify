@@ -15,7 +15,7 @@ import React from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import GalleryCategoryAddForm from '@/features/gallery/components/gallery-category-add-form'
+import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 
 type GallerySidebarProps = {
   galleryData: Gallery
@@ -69,10 +69,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
           <div className="flex flex-col">
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-sm text-gray-400">Category</span>
-              <GalleryCategoryAddForm
-                galleryId={galleryData.id}
-                onSuccessAction={() => console.log('test')}
-              />
+              <GalleryCategoryAddForm galleryId={galleryData.id} />
             </div>
             <div className="flex flex-col">
               <div className="">

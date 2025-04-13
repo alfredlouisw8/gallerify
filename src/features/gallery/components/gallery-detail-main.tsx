@@ -1,12 +1,13 @@
 'use client'
 
-import { Gallery } from '@prisma/client'
 import React from 'react'
 
-import GalleryCategoryDetail from '@/features/gallery/components/gallery-category-detail'
+import GalleryCategoryDetail from '@/features/galleryCategory/components/gallery-category-detail'
+
+import { GalleryWithCategory } from '../actions/getGalleryById'
 
 type GalleryMainProps = {
-  galleryData: Gallery
+  galleryData: GalleryWithCategory
 }
 
 export default function GalleryDetailMain({ galleryData }: GalleryMainProps) {

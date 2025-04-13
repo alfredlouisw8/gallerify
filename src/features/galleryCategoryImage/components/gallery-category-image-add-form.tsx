@@ -1,7 +1,7 @@
 'use client'
 
 import { PlusCircleIcon } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { MultiImageUpload } from '@/components/forms/multi-image-upload'
 import { Button } from '@/components/ui/button'
@@ -14,22 +14,32 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
-import useGalleryCategoryImageAddForm from '@/features/gallery/hooks/use-gallery-category-image-add-form'
+import useGalleryCategoryImageAddForm from '@/features/galleryCategoryImage/hooks/use-gallery-category-image-add-form'
 
 type GalleryCategoryImageAddFormProps = {
   collectionId: string
+  mutateData: () => void
 }
 
 export default function GalleryCategoryImageAddForm({
   collectionId,
+  mutateData,
 }: GalleryCategoryImageAddFormProps) {
+  const [open, setOpen] = useState(false)
+
+  const onSuccessCallback = () => {
+    mutateData()
+    setOpen(false)
+  }
+
   const { form, handleSubmit } = useGalleryCategoryImageAddForm({
     collectionId,
+    onSuccessCallback,
   })
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger onClick={() => setOpen(true)} asChild>
         <Button variant="ghost">
           <PlusCircleIcon className="mr-2 size-3" />
           Add Image

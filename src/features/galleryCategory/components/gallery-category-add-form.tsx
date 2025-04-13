@@ -1,5 +1,7 @@
+'use client'
+
 import { PlusCircleIcon } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { TextFormField } from '@/components/forms/text-form-field'
 import { Button } from '@/components/ui/button'
@@ -11,25 +13,29 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
-import useGalleryCategoryAddForm from '@/features/gallery/hooks/use-gallery-category-add-form'
+import useGalleryCategoryAddForm from '@/features/galleryCategory/hooks/use-gallery-category-add-form'
 
 type GalleryCategoryAddFormProps = {
   galleryId: string
-  onSuccessAction: () => void
 }
 
 export default function GalleryCategoryAddForm({
   galleryId,
-  onSuccessAction,
 }: GalleryCategoryAddFormProps) {
+  const [open, setOpen] = useState(false)
+
+  const handleClose = () => {
+    setOpen(false)
+  }
+
   const { form, handleSubmit } = useGalleryCategoryAddForm({
     galleryId,
-    onSuccessAction,
+    handleClose,
   })
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger onClick={() => setOpen(true)} asChild>
         <Button variant="ghost">
           <PlusCircleIcon className="mr-2 size-3 text-gray-400" />
           <span className="text-xs text-gray-400">Add Category</span>
