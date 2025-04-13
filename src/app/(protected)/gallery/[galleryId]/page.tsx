@@ -1,14 +1,17 @@
-'use client'
-
 import { PlusCircleIcon } from 'lucide-react'
 import React from 'react'
 
-import { useGallery } from '@/app/context/gallery-context'
 import { Button } from '@/components/ui/button'
+import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GalleryDetailMain from '@/features/gallery/components/gallery-detail-main'
 
-export default function GalleryPage() {
-  const { gallery } = useGallery()
+export default async function GalleryPage({
+  params,
+}: {
+  params: Promise<{ galleryId: string }>
+}) {
+  const { galleryId } = await params
+  const gallery = await getGalleryById(galleryId)
 
   if (!gallery) {
     return <div>Loading...</div>

@@ -1,8 +1,6 @@
-'use client'
-
 import React from 'react'
 
-import { useGallery } from '@/app/context/gallery-context'
+import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GalleryUpdateForm from '@/features/gallery/components/gallery-update-form'
 
 export default async function GalleryUpdatePage({
@@ -10,7 +8,9 @@ export default async function GalleryUpdatePage({
 }: {
   params: Promise<{ galleryId: string }>
 }) {
-  const { gallery } = useGallery()
+  const { galleryId } = await params
+
+  const gallery = await getGalleryById(galleryId)
 
   return (
     <main className="flex max-w-lg flex-1 flex-col gap-4 overflow-auto p-4 lg:gap-6 lg:p-6">

@@ -5,8 +5,6 @@ import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GallerySidebar from '@/features/gallery/components/sidebar/gallery-sidebar'
 import { auth } from '@/lib/auth/auth'
 
-import GalleryProvider from './provider'
-
 export default async function GalleryLayout({
   children,
   params,
@@ -15,6 +13,7 @@ export default async function GalleryLayout({
   params: Promise<{ galleryId: string }>
 }) {
   const session = await auth()
+
   const { galleryId } = await params
   const gallery = await getGalleryById(galleryId)
 
@@ -27,12 +26,10 @@ export default async function GalleryLayout({
   }
 
   return (
-    <GalleryProvider galleryData={gallery}>
-      <div className="grid min-h-screen w-full md:grid-cols-[250px_1fr] lg:grid-cols-[330px_1fr]">
-        <GallerySidebar galleryData={gallery} />
+    <div className="grid min-h-screen w-full md:grid-cols-[250px_1fr] lg:grid-cols-[330px_1fr]">
+      <GallerySidebar galleryData={gallery} />
 
-        <div className="flex flex-col overflow-hidden">{children}</div>
-      </div>
-    </GalleryProvider>
+      <div className="flex flex-col overflow-hidden">{children}</div>
+    </div>
   )
 }

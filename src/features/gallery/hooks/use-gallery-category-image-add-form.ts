@@ -9,12 +9,10 @@ import { uploadToCloudinary } from '@/utils/cloudinary'
 
 type UseGalleryCategoryImageAddFormProps = {
   collectionId: string
-  onSuccessAction: () => void
 }
 
 export default function useGalleryCategoryImageAddForm({
   collectionId,
-  onSuccessAction,
 }: UseGalleryCategoryImageAddFormProps) {
   const formSchema = GalleryCategoryImageSchema
 
@@ -53,15 +51,12 @@ export default function useGalleryCategoryImageAddForm({
         return
       }
 
-      // 💾 Save each image URL to DB
       await createGalleryCategoryImages({
         galleryCategoryId: collectionId,
         images: uploadedUrls.map((url: string) => ({
           url,
         })),
       })
-
-      onSuccessAction()
 
       toast({
         title: 'Images uploaded and saved!',

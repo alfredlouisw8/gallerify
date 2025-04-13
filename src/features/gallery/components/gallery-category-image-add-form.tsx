@@ -1,7 +1,9 @@
+'use client'
+
 import { PlusCircleIcon } from 'lucide-react'
 import React from 'react'
 
-import { MultipleFileDropzoneFormField } from '@/components/forms/mutilple-file-dropzone-form-field'
+import { MultiImageUpload } from '@/components/forms/multi-image-upload'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,16 +18,13 @@ import useGalleryCategoryImageAddForm from '@/features/gallery/hooks/use-gallery
 
 type GalleryCategoryImageAddFormProps = {
   collectionId: string
-  onSuccessAction: () => void
 }
 
 export default function GalleryCategoryImageAddForm({
   collectionId,
-  onSuccessAction,
 }: GalleryCategoryImageAddFormProps) {
   const { form, handleSubmit } = useGalleryCategoryImageAddForm({
     collectionId,
-    onSuccessAction,
   })
 
   return (
@@ -47,10 +46,11 @@ export default function GalleryCategoryImageAddForm({
               onSubmit={(event) => void handleSubmit(event)}
               className="space-y-8"
             >
-              <MultipleFileDropzoneFormField
+              <MultiImageUpload
                 name="imageUrl"
                 accept="image/*"
                 required
+                imagePreview
               />
 
               <Button type="submit" disabled={form.formState.isSubmitting}>

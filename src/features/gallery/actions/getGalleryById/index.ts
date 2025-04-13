@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client'
+
 import prisma from '@/lib/prisma'
 
 export default async function getGalleryById(galleryId: string) {
@@ -16,3 +18,13 @@ export default async function getGalleryById(galleryId: string) {
 
   return response
 }
+
+export type GalleryWithCategory = Prisma.GalleryGetPayload<{
+  include: {
+    GalleryCategory: {
+      include: {
+        GalleryCategoryImage: true //
+      }
+    }
+  }
+}>

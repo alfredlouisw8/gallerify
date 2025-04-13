@@ -8,7 +8,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Gallery, GalleryCategory, GalleryCategoryImage } from '@prisma/client'
+import { GalleryCategory, GalleryCategoryImage } from '@prisma/client'
 import {
   ArrowRightFromLineIcon,
   DownloadIcon,
@@ -25,10 +25,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
 import DeleteGalleryDialog from '@/features/gallery/components/delete-dialog-modal'
 
 type GalleryDetailProps = {
-  galleryData: Gallery
+  galleryData: GalleryWithCategory
   collectionId: string
 }
 
@@ -40,7 +41,7 @@ export default function GalleryCategoryDetail({
     (cat: GalleryCategory) => cat.id === collectionId
   )
 
-  const [images, setImages] = useState(collection.GalleryCategoryImage)
+  const [images, setImages] = useState(collection?.GalleryCategoryImage)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const handleDragStart = (event: any) => {
@@ -51,7 +52,8 @@ export default function GalleryCategoryDetail({
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    setImages((items: GalleryCategoryImage[]) => {
+    setImages((items) => {
+      if (!items) return undefined // Handle the case where items is undefined
       const oldIndex = items.findIndex((item) => item.id === active.id)
       const newIndex = items.findIndex((item) => item.id === over.id)
       return arrayMove(items, oldIndex, newIndex)
@@ -70,7 +72,7 @@ export default function GalleryCategoryDetail({
       onDragEnd={handleDragEnd}
     >
       <div className="grid p-4">
-        {images.length === 0 ? (
+        {images?.length === 0 ? (
           <div className="flex h-full items-center justify-center border-2 border-dotted p-6 hover:cursor-pointer">
             <div className="text-sm text-gray-600">
               Drag and drop or select a file
@@ -78,7 +80,7 @@ export default function GalleryCategoryDetail({
           </div>
         ) : (
           <SortableContext
-            items={images.map((img: GalleryCategoryImage) => img.id)}
+            items={(images ?? []).map((img: GalleryCategoryImage) => img.id)}
             strategy={rectSortingStrategy}
           >
             <div
@@ -86,7 +88,7 @@ export default function GalleryCategoryDetail({
 gap-4
 md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
             >
-              {images.map((item: GalleryCategoryImage) => (
+              {images?.map((item: GalleryCategoryImage) => (
                 <DraggableImage
                   key={item.id}
                   item={item}
@@ -103,10 +105,14 @@ md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
         {activeId ? (
           <Image
             src={
-              JSON.parse(
-                images.find((img: GalleryCategoryImage) => img.id === activeId)
-                  ?.imageUrl
-              ).url || ''
+              images?.find((img: GalleryCategoryImage) => img.id === activeId)
+                ?.imageUrl
+                ? JSON.parse(
+                    images.find(
+                      (img: GalleryCategoryImage) => img.id === activeId
+                    )?.imageUrl as string
+                  ).url
+                : ''
             }
             alt="Dragged Image"
             width={150}
