@@ -55,7 +55,9 @@
     "swr": "^2.3.3",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "locomotive-scroll": "^5.0.0-beta.8",
+    "motion": "^12.6.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
