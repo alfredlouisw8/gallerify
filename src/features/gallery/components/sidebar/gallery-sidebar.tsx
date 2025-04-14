@@ -1,6 +1,6 @@
 'use client'
 
-import { Gallery, GalleryCategory } from '@prisma/client'
+import { GalleryCategory } from '@prisma/client'
 import {
   EllipsisVerticalIcon,
   ImageIcon,
@@ -15,10 +15,11 @@ import React from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 
 type GallerySidebarProps = {
-  galleryData: Gallery
+  galleryData: GalleryWithCategory
 }
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   const router = useRouter()
