@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/use-toast'
 import { createGallery } from '@/features/gallery/actions/createGallery'
 import { GallerySchema } from '@/features/gallery/actions/schema'
 import { useAction } from '@/hooks/useAction'
-import { uploadToCloudinary } from '@/utils/cloudinary'
+import { onImagesUpload } from '@/utils/functions'
 
 import { updateGallery } from '../actions/updateGallery'
 
@@ -66,19 +66,6 @@ export default function useGalleryForm({
       galleryId: galleryData?.id || '',
     },
   })
-
-  // Handle multiple image uploads
-  const onImagesUpload = async (files: File[]) => {
-    try {
-      const formData = new FormData()
-      files.forEach((file) => formData.append('images', file))
-
-      // Call server action
-      return await uploadToCloudinary(formData)
-    } catch (error) {
-      console.error('Cloudinary Upload Error:', error)
-    }
-  }
 
   const handleSubmit = form.handleSubmit(async (data: Inputs) => {
     const images = data.bannerImage || []

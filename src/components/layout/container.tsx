@@ -21,14 +21,15 @@ export default function Container({
   session,
 }: ContainerProps) {
   const pathName = usePathname()
-  const isGalleryPage = /^\/gallery\/[\w-]+$/.test(pathName) // Matches "/gallery/{galleryId}"
+  const isGalleryPage = /^\/gallery\/[\w-]+(\/.*)?$/.test(pathName) // Matches "/gallery/{galleryId}" and "/gallery/{galleryId}/..."
+  const showSidebar = !isGalleryPage || pathName === '/gallery/create'
   return (
     <div
       className={cn({
         'flex min-h-svh w-full': true,
       })}
     >
-      {!isGalleryPage && sideBar && <AppSidebar />}
+      {showSidebar && <AppSidebar />}
       <div className="flex h-full min-w-0 grow flex-col">
         <TopNavigationBar
           header={header}
@@ -37,7 +38,8 @@ export default function Container({
         ></TopNavigationBar>
         <main
           className={cn({
-            'gap-4 p-4 lg:gap-6 lg:p-6': true,
+            'gap-4 lg:gap-6': true,
+            'p-4 lg:p-4': showSidebar,
           })}
         >
           <Suspense>{children}</Suspense>

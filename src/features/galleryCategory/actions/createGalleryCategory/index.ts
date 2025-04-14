@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth/auth'
 import { createSafeAction } from '@/lib/create-safe-action'
 import prisma from '@/lib/prisma'
 
-import { GallerySchema } from '../schema'
+import { GalleryCategorySchema } from '../schema'
 import { InputType, ReturnType } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
@@ -20,39 +20,31 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   let result
 
-  const { title, bannerImage, date, isPublished, slug } = data
+  const { galleryId, name } = data
 
   try {
     result = await prisma.$transaction(async (prisma) => {
-      const gallery = await prisma.gallery.create({
-        data: {
-          title,
-          bannerImage: bannerImage as string[],
-          userId: session.user.id,
-          date: new Date(date),
-          isPublished,
-          slug,
-        },
-      })
-
       const galleryCategory = await prisma.galleryCategory.create({
         data: {
-          galleryId: gallery.id,
-          name: 'Category 1',
+          galleryId: galleryId,
+          name: name,
         },
       })
 
-      return gallery
+      return galleryCategory
     })
   } catch (error: any) {
     console.error(error.message)
     return {
-      error: 'Failed to create gallery',
+      error: 'Failed to create gallery category',
     }
   }
 
-  revalidatePath(`/gallery`)
+  revalidatePath(`/gallery/${galleryId}/collection/${result.id}`)
   return { data: result }
 }
 
-export const createGallery = createSafeAction(GallerySchema, handler)
+export const createGalleryCategory = createSafeAction(
+  GalleryCategorySchema,
+  handler
+)
