@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/use-toast'
 import { createGallery } from '@/features/gallery/actions/createGallery'
 import { GallerySchema } from '@/features/gallery/actions/schema'
 import { useAction } from '@/hooks/useAction'
-import { uploadToCloudinary } from '@/utils/cloudinary'
+import { onImagesUpload } from '@/utils/functions'
 
 import { updateGallery } from '../actions/updateGallery'
 
@@ -67,23 +67,20 @@ export default function useGalleryForm({
     },
   })
 
-  // Handle multiple image uploads
-  const onImagesUpload = async (files: File[]) => {
-    try {
-      const formData = new FormData()
-      files.forEach((file) => formData.append('images', file))
-
-      // Call server action
-      return await uploadToCloudinary(formData)
-    } catch (error) {
-      console.error('Cloudinary Upload Error:', error)
-    }
-  }
-
   const handleSubmit = form.handleSubmit(async (data: Inputs) => {
-    let uploadedUrls
-    if (data.bannerImage.length > 0 && data.bannerImage[0] instanceof File) {
-      uploadedUrls = await onImagesUpload(data.bannerImage as File[])
+    const images = data.bannerImage || []
+
+    // Separate existing URLs and new files
+    const existingUrls = images.filter(
+      (img) => typeof img === 'string'
+    ) as string[]
+    const newFiles = images.filter((img) => img instanceof File) as File[]
+
+    let uploadedUrls: string[] | undefined = []
+
+    // Upload new files if any
+    if (newFiles.length > 0) {
+      uploadedUrls = await onImagesUpload(newFiles)
 
       if (!uploadedUrls) {
         toast({
@@ -94,12 +91,11 @@ export default function useGalleryForm({
       }
     }
 
+    // Merge old and new URLs
     const updatedData = {
       ...data,
-      bannerImage: uploadedUrls || (data.bannerImage as string[]),
+      bannerImage: [...existingUrls, ...uploadedUrls],
     }
-
-    console.log('qwe', uploadedUrls, data, updatedData)
 
     await execute(updatedData)
 

@@ -17,11 +17,5 @@ export default function GalleryUpdateForm({
     galleryData,
   })
 
-  return (
-    <GalleryForm
-      form={form}
-      handleSubmit={handleSubmit}
-      galleryData={galleryData}
-    />
-  )
+  return <GalleryForm form={form} handleSubmit={handleSubmit} />
 }

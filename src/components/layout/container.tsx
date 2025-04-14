@@ -21,7 +21,7 @@ export default function Container({
   session,
 }: ContainerProps) {
   const pathName = usePathname()
-  const isGalleryPage = /^\/gallery\/[\w-]+$/.test(pathName) // Matches "/gallery/{galleryId}"
+  const isGalleryPage = /^\/gallery\/[\w-]+(\/.*)?$/.test(pathName) // Matches "/gallery/{galleryId}" and "/gallery/{galleryId}/..."
   const showSidebar = !isGalleryPage || pathName === '/gallery/create'
   return (
     <div
