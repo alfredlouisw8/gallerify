@@ -98,7 +98,7 @@ export default function GalleryCategoryDetail({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid p-4">
+        <div className="grid">
           {images?.length === 0 ? (
             <div className="flex h-full items-center justify-center border-2 border-dotted p-6 hover:cursor-pointer">
               <div className="text-sm text-gray-600">
@@ -207,7 +207,7 @@ function DraggableImage({
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full justify-start"
+                className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()} // Prevent drag
               >
                 <DownloadIcon className="ml-6 mr-4 size-4 " />
@@ -216,7 +216,7 @@ function DraggableImage({
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full justify-start"
+                className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()} // Prevent drag
               >
                 <ArrowRightFromLineIcon className="ml-6 mr-4 size-4 " />
@@ -225,7 +225,7 @@ function DraggableImage({
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full justify-start"
+                className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()} // Prevent drag
               >
                 <ImageIcon className="ml-6 mr-4 size-4 " />
@@ -236,7 +236,7 @@ function DraggableImage({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-full justify-start"
+                    className="w-full justify-start py-6"
                     onPointerDown={(e) => e.stopPropagation()} // Prevent drag
                   >
                     <TrashIcon className="ml-6 mr-4 size-4" />
