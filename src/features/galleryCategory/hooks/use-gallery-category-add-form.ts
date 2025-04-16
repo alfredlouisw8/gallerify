@@ -1,28 +1,45 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { GalleryCategory } from '@prisma/client'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { toast } from '@/components/ui/use-toast'
 import { createGalleryCategory } from '@/features/galleryCategory/actions/createGalleryCategory'
+import { updateGalleryCategory } from '@/features/galleryCategory/actions/updateGalleryCategory'
 import { useAction } from '@/hooks/useAction'
 
 import { GalleryCategorySchema } from '../actions/schema'
 
 type UseGalleryCategoryImageAddFormProps = {
+  type: 'create' | 'update'
   galleryId: string
+  galleryCategoryData?: GalleryCategory
   handleClose: () => void
 }
 
 export default function useGalleryCategoryAddForm({
+  type,
   galleryId,
+  galleryCategoryData,
   handleClose,
 }: UseGalleryCategoryImageAddFormProps) {
   const formSchema = GalleryCategorySchema
 
-  const { execute, fieldErrors } = useAction(createGalleryCategory, {
+  const actions = {
+    create: {
+      action: createGalleryCategory,
+      successMessage: 'Category created successfully',
+    },
+    update: {
+      action: updateGalleryCategory,
+      successMessage: 'Category update successfully',
+    },
+  }
+
+  const { execute, fieldErrors } = useAction(actions[type].action, {
     onSuccess: () => {
       toast({
-        title: 'New Category added!',
+        title: actions[type].successMessage,
       })
       handleClose()
     },
@@ -31,6 +48,7 @@ export default function useGalleryCategoryAddForm({
         title: error,
         variant: 'destructive',
       })
+      handleClose()
     },
   })
 
@@ -40,6 +58,8 @@ export default function useGalleryCategoryAddForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       galleryId: galleryId,
+      galleryCategoryId: galleryCategoryData?.id ?? '',
+      name: galleryCategoryData?.name ?? '',
     },
   })
 

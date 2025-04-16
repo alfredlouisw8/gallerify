@@ -1,5 +1,4 @@
-'use client'
-
+import { GalleryCategory } from '@prisma/client'
 import { PencilIcon } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -15,13 +14,15 @@ import {
 import { Form } from '@/components/ui/form'
 import useGalleryCategoryAddForm from '@/features/galleryCategory/hooks/use-gallery-category-add-form'
 
-type GalleryCategoryAddFormProps = {
+type GalleryCategoryUpdateFormProps = {
   galleryId: string
+  galleryCategoryData: GalleryCategory
 }
 
-export default function GalleryCategoryAddForm({
+export default function GalleryCategoryUpdateForm({
   galleryId,
-}: GalleryCategoryAddFormProps) {
+  galleryCategoryData,
+}: GalleryCategoryUpdateFormProps) {
   const [open, setOpen] = useState(false)
 
   const handleClose = () => {
@@ -29,22 +30,23 @@ export default function GalleryCategoryAddForm({
   }
 
   const { form, handleSubmit } = useGalleryCategoryAddForm({
-    type: 'create',
+    type: 'update',
     galleryId,
+    galleryCategoryData,
     handleClose,
   })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger onClick={() => setOpen(true)} asChild>
-        <Button variant="ghost">
-          <PencilIcon className="mr-2 size-3 text-gray-400" />
-          <span className="text-xs text-gray-400">Add Category</span>
+        <Button variant="ghost" className="w-full justify-start py-6">
+          <PencilIcon className="ml-2 mr-4 size-4 " />
+          Rename
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>Rename Category</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Form {...form}>

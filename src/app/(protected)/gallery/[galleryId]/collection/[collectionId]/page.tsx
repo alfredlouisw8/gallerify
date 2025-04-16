@@ -1,5 +1,6 @@
 import React from 'react'
 
+import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GalleryCategoryDetail from '@/features/galleryCategory/components/gallery-category-detail'
 
 type CollectionPageProps = {
@@ -7,11 +8,15 @@ type CollectionPageProps = {
 }
 
 export default async function CollectionPage({ params }: CollectionPageProps) {
-  const { collectionId } = await params
+  const { galleryId, collectionId } = await params
+  const gallery = await getGalleryById(galleryId)
 
   return (
     <main className="flex flex-1 flex-col gap-4 overflow-auto p-4 lg:gap-6 lg:p-6">
-      <GalleryCategoryDetail collectionId={collectionId} />
+      <GalleryCategoryDetail
+        galleryData={gallery}
+        collectionId={collectionId}
+      />
     </main>
   )
 }

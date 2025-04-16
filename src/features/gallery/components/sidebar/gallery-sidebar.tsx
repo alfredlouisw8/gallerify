@@ -1,22 +1,14 @@
 'use client'
 
-import { GalleryCategory } from '@prisma/client'
-import {
-  EllipsisVerticalIcon,
-  ImageIcon,
-  ListIcon,
-  MenuIcon,
-  SettingsIcon,
-} from 'lucide-react'
+import { ImageIcon, ListIcon, SettingsIcon } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
+import GalleryCategoryList from '@/features/galleryCategory/components/gallery-category-list'
 
 type GallerySidebarProps = {
   galleryData: GalleryWithCategory
@@ -73,27 +65,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
               <GalleryCategoryAddForm galleryId={galleryData.id} />
             </div>
             <div className="flex flex-col">
-              <div className="">
-                {categories.map((category: GalleryCategory) => (
-                  <Link
-                    href={`/gallery/${galleryData.id}/collection/${category.id}`}
-                    key={category.id}
-                  >
-                    <div
-                      key={category.id}
-                      className="flex cursor-pointer items-center justify-between px-6 py-2 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <MenuIcon className="size-4" />
-                        <span className="text-sm">{category.name} (0)</span>
-                      </div>
-                      <Button variant="ghost" size="icon">
-                        <EllipsisVerticalIcon className="mr-2 size-3" />
-                      </Button>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              <GalleryCategoryList galleryData={galleryData} />
             </div>
           </div>
         </TabsContent>

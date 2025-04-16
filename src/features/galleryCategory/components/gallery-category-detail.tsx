@@ -10,7 +10,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { GalleryCategoryImage } from '@prisma/client'
 import {
-  ArrowRightFromLineIcon,
   DownloadIcon,
   EllipsisVerticalIcon,
   ImageIcon,
@@ -26,19 +25,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
 import DeleteGalleryDialog from '@/features/gallery/components/delete-dialog-modal'
 import GalleryCategoryImageAddForm from '@/features/galleryCategoryImage/components/gallery-category-image-add-form'
+import GalleryCategoryImageMoveForm from '@/features/galleryCategoryImage/components/gallery-category-image-move-form'
 
 import { GalleryCategoryWithImages } from '../actions/getCategoryById'
 import { fetchCategoryDetail } from '../fetcher'
 
 type GalleryDetailProps = {
-  // galleryData: GalleryWithCategory
+  galleryData: GalleryWithCategory
   collectionId: string
 }
 
 export default function GalleryCategoryDetail({
-  // galleryData,
+  galleryData,
   collectionId,
 }: GalleryDetailProps) {
   const {
@@ -98,7 +99,7 @@ export default function GalleryCategoryDetail({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid p-4">
+        <div className="grid">
           {images?.length === 0 ? (
             <div className="flex h-full items-center justify-center border-2 border-dotted p-6 hover:cursor-pointer">
               <div className="text-sm text-gray-600">
@@ -119,6 +120,8 @@ md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
                   <DraggableImage
                     key={item.id}
                     item={item}
+                    mutate={mutate}
+                    galleryData={galleryData}
                     isBeingDragged={activeId === item.id}
                   />
                 ))}
@@ -158,10 +161,15 @@ md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
 function DraggableImage({
   item,
   isBeingDragged,
+  mutate,
+  galleryData,
 }: {
   item: GalleryCategoryImage
   isBeingDragged: boolean
+  mutate: () => void
+  galleryData: GalleryWithCategory
 }) {
+  const [dialogOpen, setDialogOpen] = useState(false)
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: item.id,
@@ -177,7 +185,7 @@ function DraggableImage({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(dialogOpen ? {} : listeners)} // ✅ disable drag when dialog open
       className="group relative h-52 cursor-grab bg-gray-50 p-2"
     >
       <Image
@@ -193,39 +201,33 @@ function DraggableImage({
       <div className="absolute right-1 top-1 z-10 rounded p-2 opacity-0 transition group-hover:opacity-100">
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="z-20 size-7"
-              onPointerDown={(e) => e.stopPropagation()} // Prevent drag on click
-            >
-              <EllipsisVerticalIcon className="size-4" />
-            </Button>
+            <div onPointerDown={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="z-20 size-7">
+                <EllipsisVerticalIcon className="size-4" />
+              </Button>
+            </div>
           </PopoverTrigger>
           <PopoverContent className="w-52 p-0" align={'start'}>
             <div className="grid">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full justify-start"
+                className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()} // Prevent drag
               >
                 <DownloadIcon className="ml-6 mr-4 size-4 " />
                 Download
               </Button>
+              <GalleryCategoryImageMoveForm
+                categoryImageId={item.id}
+                mutateData={mutate}
+                galleryData={galleryData}
+                setDialogOpen={setDialogOpen}
+              />
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-full justify-start"
-                onPointerDown={(e) => e.stopPropagation()} // Prevent drag
-              >
-                <ArrowRightFromLineIcon className="ml-6 mr-4 size-4 " />
-                Move
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-full justify-start"
+                className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()} // Prevent drag
               >
                 <ImageIcon className="ml-6 mr-4 size-4 " />
@@ -236,7 +238,7 @@ function DraggableImage({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-full justify-start"
+                    className="w-full justify-start py-6"
                     onPointerDown={(e) => e.stopPropagation()} // Prevent drag
                   >
                     <TrashIcon className="ml-6 mr-4 size-4" />
