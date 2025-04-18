@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { Session } from 'next-auth'
 import React, { ComponentPropsWithoutRef } from 'react'
 
-import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import LogoutButton from '@/features/users/components/logout-button'
 
 export interface TopNavigationBarProps
   extends ComponentPropsWithoutRef<'header'> {

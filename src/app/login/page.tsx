@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import LoginForm from '@/components/auth/login-form'
+import LoginForm from '@/features/users/components/login-form'
 import { auth } from '@/lib/auth/auth'
 
 export default async function Home() {
