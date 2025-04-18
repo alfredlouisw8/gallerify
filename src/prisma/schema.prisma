@@ -16,10 +16,9 @@ datasource db {
 model User {
   id            String          @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
-  email         String?
-  username      String          @unique
+  email         String          @unique
   emailVerified DateTime?
-  password      String
+  password      String?
   image         String?
   accounts      Account[]
   sessions      Session[]
@@ -101,14 +100,15 @@ model GalleryCategory {
 }
 
 model UserMetadata {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  bannerImage String
-  whatsapp    String
-  instagram   String
-  aboutImage  String
-  aboutText   String
-  logo        String
-  userId      String @unique @db.ObjectId // Ensure 1:1 relationship
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  username    String  @unique
+  bannerImage String?
+  whatsapp    String?
+  instagram   String?
+  aboutImage  String?
+  aboutText   String?
+  logo        String?
+  userId      String  @unique @db.ObjectId // Ensure 1:1 relationship
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Account Account?

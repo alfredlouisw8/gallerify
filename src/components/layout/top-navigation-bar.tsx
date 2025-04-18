@@ -1,6 +1,9 @@
+'use client'
+
 import { CircleUserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Session } from 'next-auth'
+import { signOut } from 'next-auth/react'
 import React, { ComponentPropsWithoutRef } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -12,7 +15,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import LogoutButton from '@/features/users/components/logout-button'
 
 export interface TopNavigationBarProps
   extends ComponentPropsWithoutRef<'header'> {
@@ -23,7 +25,6 @@ export interface TopNavigationBarProps
 // eslint-disable @next/next/no-img-element
 export default function TopNavigationBar({
   header,
-  session,
   sideBar,
 }: TopNavigationBarProps) {
   return (
@@ -43,17 +44,20 @@ export default function TopNavigationBar({
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
               <CircleUserIcon className="size-5" />
-              <span className="sr-only">ナビゲーションのトグル</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Link href={`/users/${session.user.id}/change-password`}>
-                Ganti Password
-              </Link>
+            <DropdownMenuItem asChild style={{ cursor: 'pointer' }}>
+              <Link href={`/dashboard/profile`}>Profile</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <LogoutButton />
+            <DropdownMenuItem
+              style={{ cursor: 'pointer' }}
+              onSelect={(e) => {
+                e.preventDefault() // prevent it from staying open
+                signOut({ callbackUrl: '/' })
+              }}
+            >
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

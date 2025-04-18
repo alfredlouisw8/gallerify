@@ -33,7 +33,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   try {
     result = await prisma.$transaction(async (prisma) => {
       const existingUsername = await prisma.userMetadata.findUnique({
-        where: { username: data.username },
+        where: { username: data.username, NOT: { userId: session.user.id } },
       })
 
       if (existingUsername) {
@@ -43,15 +43,15 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return await prisma.userMetadata.update({
         data: {
           username,
-          aboutImage,
+          aboutImage: aboutImage as string,
           aboutText,
-          bannerImage,
+          bannerImage: bannerImage as string,
           instagram,
-          logo,
+          logo: logo as string,
           whatsapp,
         },
         where: {
-          id: session.user.id,
+          userId: session.user.id,
         },
       })
     })
