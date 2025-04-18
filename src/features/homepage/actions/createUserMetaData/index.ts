@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth/auth'
 import { createSafeAction } from '@/lib/create-safe-action'
 import prisma from '@/lib/prisma'
 
-import { GalleryCategorySchema } from '../schema'
+import { UserMetadataSchema } from '../schema'
 import { InputType, ReturnType } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
@@ -20,29 +20,31 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   let result
 
-  const { galleryId, name } = data
+  const { userId } = data
 
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      return { error: 'User not found' }
+    }
+
     result = await prisma.$transaction(async (prisma) => {
-      return await prisma.galleryCategory.create({
-        data: {
-          galleryId: galleryId,
-          name: name,
-        },
+      return await prisma.userMetadata.create({
+        data: { ...data },
       })
     })
+
+    revalidatePath(`/homepage`)
+    return { data: result }
   } catch (error: any) {
     console.error(error.message)
     return {
-      error: 'Failed to create gallery category',
+      error: 'Failed to create gallery category image',
     }
   }
-
-  revalidatePath(`/gallery/${galleryId}/collection/${result.id}`)
-  return { data: result }
 }
 
-export const createGalleryCategory = createSafeAction(
-  GalleryCategorySchema,
-  handler
-)
+export const createUserMetadata = createSafeAction(UserMetadataSchema, handler)

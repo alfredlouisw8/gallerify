@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import React from 'react'
 
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
-import GallerySidebar from '@/features/gallery/components/sidebar/gallery-sidebar'
+import GallerySidebar from '@/features/gallery/components/layout/gallery-sidebar'
+import GalleryTopNavigationBar from '@/features/gallery/components/layout/gallery-top-navigationbar'
 import { auth } from '@/lib/auth/auth'
 
 export default async function GalleryLayout({
@@ -26,10 +27,20 @@ export default async function GalleryLayout({
   }
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[250px_1fr] lg:grid-cols-[330px_1fr]">
-      <GallerySidebar galleryData={gallery} />
+    <div className="flex min-h-screen flex-col">
+      {/* Top Navigation Bar */}
+      <GalleryTopNavigationBar galleryData={gallery} session={session} />
 
-      <div className="flex flex-col overflow-hidden">{children}</div>
+      {/* Main content below nav: sidebar + children */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-[250px] overflow-y-auto border-r lg:w-[330px]">
+          <GallerySidebar galleryData={gallery} />
+        </div>
+
+        {/* Main children content */}
+        <div className="flex-1 overflow-auto">{children}</div>
+      </div>
     </div>
   )
 }

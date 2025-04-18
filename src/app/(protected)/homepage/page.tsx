@@ -1,13 +1,11 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import Container from '@/components/layout/container'
-import { Button } from '@/components/ui/button'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import GalleryList from '@/features/gallery/components/gallery-list'
+import HomepageForm from '@/features/homepage/components/homepage-form'
 import { auth } from '@/lib/auth/auth'
 
-export default async function GalleryPage() {
+export default async function HomePage() {
   const session = await auth()
 
   if (!session) {
@@ -18,12 +16,11 @@ export default async function GalleryPage() {
       <Container sideBar={true} session={session}>
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between gap-5">
-            <h1 className="text-2xl font-bold">Gallery</h1>
-            <Button>
-              <Link href="/gallery/create">Create</Link>
-            </Button>
+            <h1 className="text-2xl font-bold">Homepage</h1>
           </div>
-          <GalleryList />
+          <div className="grid grid-cols-3">
+            <HomepageForm />
+          </div>
         </div>
       </Container>
     </SidebarProvider>

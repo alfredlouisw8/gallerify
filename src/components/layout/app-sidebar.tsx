@@ -1,4 +1,4 @@
-import { FileIcon, Package2, Users } from 'lucide-react'
+import { FileIcon, HouseIcon, ImageIcon, Users } from 'lucide-react'
 import React from 'react'
 
 import { NavMain } from '@/components/layout/nav-main'
@@ -27,6 +27,11 @@ const getItems = () => [
         url: '/gallery',
         icon: FileIcon,
       },
+      {
+        title: 'Homepage',
+        url: '/homepage',
+        icon: HouseIcon,
+      },
     ],
   },
 ]
@@ -41,10 +46,10 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Package2 className="size-6" />
+                  <ImageIcon className="size-6" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Pixie</span>
+                  <span className="font-semibold">Gallerify</span>
                 </div>
               </a>
             </SidebarMenuButton>

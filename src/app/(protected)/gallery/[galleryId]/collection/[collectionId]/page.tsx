@@ -11,6 +11,10 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   const { galleryId, collectionId } = await params
   const gallery = await getGalleryById(galleryId)
 
+  if (!gallery) {
+    return <div>Loading...</div>
+  }
+
   return (
     <main className="flex flex-1 flex-col gap-4 overflow-auto p-4 lg:gap-6 lg:p-6">
       <GalleryCategoryDetail
