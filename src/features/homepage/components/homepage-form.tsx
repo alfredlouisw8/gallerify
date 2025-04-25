@@ -1,47 +1,51 @@
 'use client'
 
+import { UserMetadata } from '@prisma/client'
 import React from 'react'
 
-import { CheckboxFormField } from '@/components/forms/checkbox-form-field'
-import { MultiImageUpload } from '@/components/forms/multi-image-upload'
+import { SingleFileFormField } from '@/components/forms/single-file-form-field'
 import { TextAreaFormField } from '@/components/forms/text-area-form-field'
 import { TextFormField } from '@/components/forms/text-form-field'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
-import useGalleryForm from '@/features/gallery/hooks/use-gallery-form'
+import UseHomepageForm from '@/features/homepage/hooks/use-homepage-form'
 
-export default function HomepageForm() {
-  const { form, handleSubmit } = useGalleryForm({
-    type: 'create',
-  })
+type ProfileFormProps = {
+  profileData: UserMetadata
+}
+
+export default function HomepageForm({ profileData }: ProfileFormProps) {
+  const { form, handleSubmit } = UseHomepageForm({ profileData })
   return (
     <Form {...form}>
       <form
         onSubmit={(event) => void handleSubmit(event)}
         className="space-y-8"
       >
-        <TextFormField name="title" label="Homepage URL" />
-        <MultiImageUpload
-          name="bannerImage"
-          label="Website Image"
-          accept="image/*"
-          required
-          imagePreview
-        />
-        <MultiImageUpload
-          name="bannerImage"
-          label="Icon / Logo"
-          accept="image/*"
-          imagePreview
-        />
-        <TextFormField name="slug" label="Whatsapp" />
-        <TextFormField name="slug" label="Instagram" />
-        <TextAreaFormField name="slug" label="About Me" />
+        <TextFormField name="username" label="Username" required />
 
-        <CheckboxFormField name="isPublished" label="Published" />
+        <SingleFileFormField name="logo" label="Logo" previewImage />
+
+        <SingleFileFormField
+          name="bannerImage"
+          label="Banner Image"
+          previewImage
+        />
+
+        <TextAreaFormField name="aboutText" label="About Text" />
+
+        <SingleFileFormField
+          name="aboutImage"
+          label="About Image"
+          previewImage
+        />
+
+        <TextFormField name="whatsapp" label="Whatsapp" />
+
+        <TextFormField name="instagram" label="Instagram" />
 
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          Update
+          Submit
         </Button>
       </form>
     </Form>
