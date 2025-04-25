@@ -21,13 +21,17 @@ export default async function GalleryList() {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4">
-      {galleries.map((item) => (
-        <div
-          key={item.id}
-          className="col-span-6 flex h-full flex-col gap-2 lg:col-span-4 xl:col-span-3 2xl:col-span-2"
-        >
-          <div className="group relative h-52 w-full cursor-pointer">
+    <div className="grid">
+      <div
+        className="xs:grid-cols-[repeat(auto-fill,_minmax(75px,1fr))] grid grid-cols-2
+gap-4
+gap-6 md:grid-cols-[repeat(auto-fill,_minmax(300px,1fr))]"
+      >
+        {galleries.map((item) => (
+          <div
+            className="group relative h-52 w-full cursor-pointer"
+            key={item.id}
+          >
             <Link
               href={`/gallery/${item.id}/collection/${item.GalleryCategory[0].id}`}
             >
@@ -80,24 +84,24 @@ export default async function GalleryList() {
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
-          {/*text*/}
-          <div className="flex items-start justify-between">
-            <div className="mt-auto flex flex-col">
-              <span className="text-m font-bold">{item.title}</span>
-              <span className="text-xs text-gray-500">
-                {format(item.date, 'PP')}
-              </span>
-            </div>
+            {/*text*/}
+            <div className="mt-3 flex items-start justify-between">
+              <div className="mt-auto flex flex-col">
+                <span className="text-m font-bold">{item.title}</span>
+                <span className="text-xs text-gray-500">
+                  {format(item.date, 'PP')}
+                </span>
+              </div>
 
-            {item.isPublished ? (
-              <Badge variant="default">Published</Badge>
-            ) : (
-              <Badge variant="destructive">Draft</Badge>
-            )}
+              {item.isPublished ? (
+                <Badge variant="default">Published</Badge>
+              ) : (
+                <Badge variant="destructive">Draft</Badge>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

@@ -8,16 +8,14 @@ import { TextAreaFormField } from '@/components/forms/text-area-form-field'
 import { TextFormField } from '@/components/forms/text-form-field'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
-
-import useProfileForm from '../hooks/use-profile-form'
+import UseHomepageForm from '@/features/homepage/hooks/use-homepage-form'
 
 type ProfileFormProps = {
   profileData: UserMetadata
 }
 
-export default function ProfileForm({ profileData }: ProfileFormProps) {
-  const { form, handleSubmit } = useProfileForm({ profileData })
-
+export default function HomepageForm({ profileData }: ProfileFormProps) {
+  const { form, handleSubmit } = UseHomepageForm({ profileData })
   return (
     <Form {...form}>
       <form

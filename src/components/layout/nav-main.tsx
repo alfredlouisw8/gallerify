@@ -85,10 +85,10 @@ export function NavMain({
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild className="py-7">
                 <a href={item.url}>
                   {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  <span className="ml-2">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -47,15 +47,7 @@ export default function useGalleryCategoryImageAddForm({
   const handleSubmit = form.handleSubmit(async (data) => {
     const images = data.imageUrl || []
 
-    console.log('images', images)
-
-    // Separate existing URLs and new files
-    const existingUrls = images.filter(
-      (img) => typeof img === 'string'
-    ) as string[]
     const newFiles = images.filter((img) => img instanceof File) as File[]
-
-    console.log('newFiles', newFiles)
 
     let uploadedUrls: string[] | undefined = []
 
@@ -72,12 +64,9 @@ export default function useGalleryCategoryImageAddForm({
       }
     }
 
-    console.log('uploadedUrls', uploadedUrls)
-
-    // Merge old and new URLs
     const updatedData = {
       ...data,
-      imageUrl: [...existingUrls, ...uploadedUrls],
+      imageUrl: uploadedUrls,
     }
 
     await execute(updatedData)

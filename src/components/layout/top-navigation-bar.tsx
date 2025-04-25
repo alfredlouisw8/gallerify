@@ -1,7 +1,6 @@
 'use client'
 
-import { CircleUserIcon } from 'lucide-react'
-import Link from 'next/link'
+import { CircleUserIcon, EyeIcon } from 'lucide-react'
 import { Session } from 'next-auth'
 import { signOut } from 'next-auth/react'
 import React, { ComponentPropsWithoutRef } from 'react'
@@ -39,7 +38,11 @@ export default function TopNavigationBar({
         <div>{header}</div>
       </div>
 
-      <div>
+      <div className="flex gap-4">
+        <Button variant="ghost">
+          <EyeIcon className="mr-2 size-4" />
+          Preview
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
@@ -47,9 +50,6 @@ export default function TopNavigationBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild style={{ cursor: 'pointer' }}>
-              <Link href={`/dashboard/profile`}>Profile</Link>
-            </DropdownMenuItem>
             <DropdownMenuItem
               style={{ cursor: 'pointer' }}
               onSelect={(e) => {

@@ -87,7 +87,7 @@ export default function GalleryCategoryDetail({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-5">
-        <h1 className="text-2xl">{categoryData?.name}</h1>
+        <h1 className="text-xl">{categoryData?.name}</h1>
         <GalleryCategoryImageAddForm
           collectionId={collectionId}
           mutateData={mutate}
