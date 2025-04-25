@@ -16,7 +16,7 @@ async function generateUniqueUsername(name: string) {
   let username = base
   let counter = 1
 
-  while (await prisma.userMetadata.findUnique({ where: { username } })) {
+  while (await prisma.user.findUnique({ where: { username } })) {
     username = `${base}-${counter++}`
   }
 
@@ -29,21 +29,20 @@ export function CustomPrismaAdapter(): Adapter {
   return {
     ...adapter,
     async createUser(data) {
-      // Omit `id` field to let MongoDB generate ObjectId
       const { id: _, ...rest } = data
+
+      const username = await generateUniqueUsername(data.name ?? 'user')
 
       const user = await prisma.user.create({
         data: {
           ...rest,
+          username, // assign username into User
         },
       })
 
-      const username = await generateUniqueUsername(data.name ?? 'user')
-
       await prisma.userMetadata.create({
         data: {
-          userId: user.id,
-          username,
+          userId: user.id, // no need username here anymore
         },
       })
 
