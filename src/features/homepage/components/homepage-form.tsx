@@ -1,6 +1,5 @@
 'use client'
 
-import { UserMetadata } from '@prisma/client'
 import React from 'react'
 
 import { SingleFileFormField } from '@/components/forms/single-file-form-field'
@@ -10,8 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import UseHomepageForm from '@/features/homepage/hooks/use-homepage-form'
 
+import { ProfileData } from '../types'
+
 type ProfileFormProps = {
-  profileData: UserMetadata
+  profileData: ProfileData
 }
 
 export default function HomepageForm({ profileData }: ProfileFormProps) {
@@ -24,11 +25,17 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
       >
         <TextFormField name="username" label="Username" required />
 
-        <SingleFileFormField name="logo" label="Logo" previewImage />
+        <SingleFileFormField
+          name="logo"
+          label="Logo"
+          accept="image/*"
+          previewImage
+        />
 
         <SingleFileFormField
           name="bannerImage"
           label="Banner Image"
+          accept="image/*"
           previewImage
         />
 
@@ -37,6 +44,7 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
         <SingleFileFormField
           name="aboutImage"
           label="About Image"
+          accept="image/*"
           previewImage
         />
 

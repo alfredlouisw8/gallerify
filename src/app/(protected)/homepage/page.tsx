@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import Container from '@/components/layout/container'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import getProfile from '@/features/homepage/actions/getProfile'
 import HomepageForm from '@/features/homepage/components/homepage-form'
 import { auth } from '@/lib/auth/auth'
 
@@ -11,6 +12,9 @@ export default async function HomePage() {
   if (!session) {
     redirect('/')
   }
+
+  const profileData = await getProfile()
+
   return (
     <SidebarProvider>
       <Container sideBar={true} session={session}>
@@ -19,7 +23,7 @@ export default async function HomePage() {
             <h1 className="text-2xl font-bold">Homepage</h1>
           </div>
           <div className="grid grid-cols-3">
-            <HomepageForm />
+            <HomepageForm profileData={profileData} />
           </div>
         </div>
       </Container>

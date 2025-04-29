@@ -55,6 +55,15 @@ export function SingleFileFormField<
   const ctx = useFormContext<TFieldValues>()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  // Clean up object URL on component unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
   return (
     <FormField
       name={name}
@@ -63,13 +72,15 @@ export function SingleFileFormField<
         useEffect(() => {
           const value = field.value
 
-          console.log('value', value)
-
           if (!previewImage) return
 
           // If value is a string (existing URL)
           if (typeof value === 'string') {
             setPreviewUrl(getCloudinaryUrl(value))
+            return
+          } else {
+            const objectUrl = URL.createObjectURL(value)
+            setPreviewUrl(objectUrl)
             return
           }
 
