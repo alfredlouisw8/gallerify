@@ -13,5 +13,12 @@ export default async function getProfile() {
     where: {
       userId: session.user.id,
     },
+    include: {
+      user: {
+        select: {
+          username: true,
+        },
+      },
+    },
   })
 }

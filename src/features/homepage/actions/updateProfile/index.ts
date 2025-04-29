@@ -32,17 +32,32 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   try {
     result = await prisma.$transaction(async (prisma) => {
-      const existingUsername = await prisma.userMetadata.findUnique({
-        where: { username: data.username, NOT: { userId: session.user.id } },
+      const existingUsername = await prisma.user.findUnique({
+        where: {
+          username: data.username,
+          NOT: {
+            id: session.user.id,
+          },
+        },
       })
 
       if (existingUsername) {
         throw new Error('Username already exists')
       }
 
-      return await prisma.userMetadata.update({
+      // Update username in User model
+      await prisma.user.update({
+        where: {
+          id: session.user.id,
+        },
         data: {
           username,
+        },
+      })
+
+      // Update other metadata in UserMetadata model
+      return await prisma.userMetadata.update({
+        data: {
           aboutImage: aboutImage as string,
           aboutText,
           bannerImage: bannerImage as string,

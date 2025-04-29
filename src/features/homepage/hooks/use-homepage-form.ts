@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { UserMetadata } from '@prisma/client'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -9,9 +8,10 @@ import { onImagesUpload } from '@/utils/functions'
 
 import { UpdateProfileSchema } from '../actions/schema'
 import { updateProfile } from '../actions/updateProfile'
+import { ProfileData } from '../types'
 
 type ProfileFormProps = {
-  profileData: UserMetadata
+  profileData: ProfileData
 }
 
 export default function UseHomepageForm({ profileData }: ProfileFormProps) {
@@ -36,7 +36,15 @@ export default function UseHomepageForm({ profileData }: ProfileFormProps) {
 
   const form = useForm<Inputs>({
     resolver: zodResolver(formSchema),
-    defaultValues: {},
+    defaultValues: {
+      username: profileData.user.username,
+      aboutImage: profileData.aboutImage || undefined,
+      aboutText: profileData.aboutText,
+      bannerImage: profileData.bannerImage || undefined,
+      instagram: profileData.instagram,
+      logo: profileData.logo || undefined,
+      whatsapp: profileData.whatsapp,
+    },
   })
 
   const handleSubmit = form.handleSubmit(async (data: Inputs) => {
