@@ -17,10 +17,7 @@ export default async function getGalleryById(
     .select(
       `
       *,
-      gallery_categories (
-        *,
-        gallery_category_images (*)
-      )
+      gallery_categories (*)
     `
     )
     .eq('id', galleryId)
@@ -30,18 +27,35 @@ export default async function getGalleryById(
   if (!row) return null
 
   type RowWithRelations = GalleryRow & {
-    gallery_categories: (GalleryCategoryRow & {
-      gallery_category_images: GalleryCategoryImageRow[]
-    })[]
+    gallery_categories: GalleryCategoryRow[]
   }
 
   const typedRow = row as RowWithRelations
+  const categories = typedRow.gallery_categories ?? []
+  const categoryIds = categories.map((c) => c.id)
+
+  const imagesByCategory: Record<string, GalleryCategoryImageRow[]> = {}
+  if (categoryIds.length > 0) {
+    const { data: imageRows, error: imagesError } = await supabase
+      .from('gallery_category_images')
+      .select('*')
+      .in('category_id', categoryIds)
+
+    if (imagesError) throw new Error(imagesError.message)
+
+    for (const img of imageRows ?? []) {
+      const r = img as GalleryCategoryImageRow
+      const cid = r.category_id
+      if (!imagesByCategory[cid]) imagesByCategory[cid] = []
+      imagesByCategory[cid].push(r)
+    }
+  }
 
   return {
     ...mapGallery(typedRow),
-    GalleryCategory: (typedRow.gallery_categories ?? []).map((cat) => ({
+    GalleryCategory: categories.map((cat) => ({
       ...mapGalleryCategory(cat),
-      GalleryCategoryImage: (cat.gallery_category_images ?? []).map(
+      GalleryCategoryImage: (imagesByCategory[cat.id] ?? []).map(
         mapGalleryCategoryImage
       ),
     })),

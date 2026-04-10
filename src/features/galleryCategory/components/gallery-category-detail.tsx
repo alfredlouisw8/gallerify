@@ -8,7 +8,6 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GalleryCategoryImage } from '@prisma/client'
 import {
   DownloadIcon,
   EllipsisVerticalIcon,
@@ -25,12 +24,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
 import DeleteGalleryDialog from '@/features/gallery/components/delete-dialog-modal'
 import GalleryCategoryImageAddForm from '@/features/galleryCategoryImage/components/gallery-category-image-add-form'
 import GalleryCategoryImageMoveForm from '@/features/galleryCategoryImage/components/gallery-category-image-move-form'
-
-import { GalleryCategoryWithImages } from '../actions/getCategoryById'
+import { getStorageUrl } from '@/lib/utils'
+import {
+  GalleryCategoryImage,
+  GalleryCategoryWithImages,
+  GalleryWithCategory,
+} from '@/types'
 import { fetchCategoryDetail } from '../fetcher'
 
 type GalleryDetailProps = {
@@ -54,6 +56,10 @@ export default function GalleryCategoryDetail({
 
   const [images, setImages] = useState<GalleryCategoryImage[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  const activeImage = activeId
+    ? images?.find((img) => img.id === activeId)
+    : undefined
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id)
@@ -132,23 +138,15 @@ md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]  "
 
         {/* Dragged Image Preview (While Moving) */}
         <DragOverlay>
-          {activeId ? (
+          {activeId && activeImage?.imageUrl ? (
             <Image
-              src={
-                images?.find((img: GalleryCategoryImage) => img.id === activeId)
-                  ?.imageUrl
-                  ? JSON.parse(
-                      images.find(
-                        (img: GalleryCategoryImage) => img.id === activeId
-                      )?.imageUrl as string
-                    ).url
-                  : ''
-              }
+              src={getStorageUrl(activeImage.imageUrl)}
               alt="Dragged Image"
               width={150}
               height={150}
               className="size-full object-contain opacity-100"
               priority
+              sizes="150px"
             />
           ) : null}
         </DragOverlay>
@@ -189,13 +187,14 @@ function DraggableImage({
       className="group relative h-52 cursor-grab bg-gray-50 p-2"
     >
       <Image
-        src={JSON.parse(item.imageUrl).url}
-        alt="1"
+        src={getStorageUrl(item.imageUrl)}
+        alt=""
         width={150}
         height={150}
         className={`size-full rounded-lg object-contain ${
           isBeingDragged ? 'opacity-20' : ''
         }`}
+        sizes="(max-width: 768px) 50vw, 150px"
         priority
       />
       <div className="absolute right-1 top-1 z-10 rounded p-2 opacity-0 transition group-hover:opacity-100">

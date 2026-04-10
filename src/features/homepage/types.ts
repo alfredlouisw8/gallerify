@@ -1,7 +1,4 @@
-import { UserMetadata } from '@prisma/client'
+import { UserMetadata } from '@/types'
 
-export type ProfileData = UserMetadata & {
-  user: {
-    username: string
-  }
-}
+/** Profile payload for the homepage form (from `getProfile` / `user_metadata`). */
+export type ProfileData = UserMetadata

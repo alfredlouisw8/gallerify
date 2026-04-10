@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import supabase from '@/lib/supabase'
 import { mapGallery } from '@/types'
-import { deleteFromStorage, getStoragePath } from '@/utils/storage'
+import { deleteFromStorage } from '@/utils/storage-actions'
+import { getStoragePath } from '@/utils/storage'
 
 export default async function deleteGallery(galleryId: string) {
   // Fetch gallery first to get banner images for storage cleanup

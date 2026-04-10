@@ -14,7 +14,19 @@ export default async function HomePage() {
     redirect('/')
   }
 
-  const profileData = await getProfile()
+  const profile = await getProfile()
+
+  if (!profile || 'error' in profile) {
+    return (
+      <SidebarProvider>
+        <Container sideBar={true}>
+          <p className="text-muted-foreground">
+            No profile found for this account.
+          </p>
+        </Container>
+      </SidebarProvider>
+    )
+  }
 
   return (
     <SidebarProvider>
@@ -24,7 +36,7 @@ export default async function HomePage() {
             <h1 className="text-2xl font-bold">Homepage</h1>
           </div>
           <div className="grid grid-cols-3">
-            <HomepageForm profileData={profileData} />
+            <HomepageForm profileData={profile} />
           </div>
         </div>
       </Container>

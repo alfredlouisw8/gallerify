@@ -70,21 +70,25 @@ export function SingleFileFormField<
       control={ctx.control}
       render={({ field, formState, fieldState }) => {
         useEffect(() => {
-          const value = field.value
-
           if (!previewImage) return
 
-          // If value is a string (existing URL)
-          if (typeof value === 'string') {
-            setPreviewUrl(getStorageUrl(value))
-            return
-          } else {
-            const objectUrl = URL.createObjectURL(value)
-            setPreviewUrl(objectUrl)
+          const value = field.value
+
+          if (value == null || value === '') {
+            setPreviewUrl(null)
             return
           }
 
-          // Reset if no valid value
+          if (typeof value === 'string') {
+            setPreviewUrl(getStorageUrl(value))
+            return
+          }
+
+          if (value instanceof Blob) {
+            setPreviewUrl(URL.createObjectURL(value))
+            return
+          }
+
           setPreviewUrl(null)
         }, [field.value, previewImage])
 

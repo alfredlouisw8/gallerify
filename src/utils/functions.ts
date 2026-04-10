@@ -1,4 +1,4 @@
-import { uploadToStorage } from './storage'
+import { uploadToStorage } from './storage-actions'
 
 /**
  * Upload files to Supabase Storage.

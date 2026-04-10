@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
+import { getStorageUrl } from '@/lib/utils'
+
 import RequiredLabel from './required-label'
 import { Button } from '../ui/button'
 
@@ -127,7 +129,7 @@ export function MultiImageUpload<
                   {files.map((file, i) => {
                     const imageUrl =
                       typeof file === 'string'
-                        ? JSON.parse(file).url
+                        ? getStorageUrl(file)
                         : URL.createObjectURL(file)
 
                     return (

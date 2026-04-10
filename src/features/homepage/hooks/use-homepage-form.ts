@@ -37,13 +37,13 @@ export default function UseHomepageForm({ profileData }: ProfileFormProps) {
   const form = useForm<Inputs>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: profileData.user.username,
+      username: profileData.username ?? '',
       aboutImage: profileData.aboutImage || undefined,
-      aboutText: profileData.aboutText,
+      aboutText: profileData.aboutText ?? '',
       bannerImage: profileData.bannerImage || undefined,
-      instagram: profileData.instagram,
+      instagram: profileData.instagram ?? null,
       logo: profileData.logo || undefined,
-      whatsapp: profileData.whatsapp,
+      whatsapp: profileData.whatsapp ?? null,
     },
   })
 

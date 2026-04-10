@@ -11,11 +11,14 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function getStorageUrl(file: string): string {
   try {
-    return JSON.parse(file).url as string
+    const parsed = JSON.parse(file) as { url?: string }
+    if (typeof parsed?.url === 'string' && parsed.url.length > 0) {
+      return parsed.url
+    }
   } catch {
-    // Fallback: if it's already a plain URL return as-is
-    return file
+    // Not JSON — often already a plain https URL
   }
+  return file
 }
 
 /**
