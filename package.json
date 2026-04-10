@@ -9,7 +9,7 @@
     "lint": "next lint",
     "fix": "next lint --fix",
     "prettier": "prettier --write './**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json}'",
-    "format": "yarn fix ; yarn prettier"
+    "format": "npm run fix && npm run prettier"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
