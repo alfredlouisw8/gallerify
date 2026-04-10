@@ -4,8 +4,9 @@ import { revalidatePath } from 'next/cache'
 
 import { auth } from '@/lib/auth/auth'
 import { createSafeAction } from '@/lib/create-safe-action'
-import prisma from '@/lib/prisma'
-import { deleteFromCloudinary } from '@/utils/cloudinary'
+import supabase from '@/lib/supabase'
+import { mapGallery } from '@/types'
+import { deleteFromStorage, getStoragePath } from '@/utils/storage'
 
 import getGalleryById from '../getGalleryById'
 import { GallerySchema } from '../schema'
@@ -15,61 +16,48 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await auth()
 
   if (!session?.user) {
-    return {
-      error: 'Unauthorized',
-    }
+    return { error: 'Unauthorized' }
   }
-
-  let result
 
   const { title, bannerImage, date, isPublished, slug, galleryId } = data
 
   try {
-    result = await prisma.$transaction(async (prisma) => {
-      if (!galleryId) {
-        throw new Error('Gallery not found')
-      }
+    if (!galleryId) throw new Error('Gallery not found')
 
-      const existingGallery = await getGalleryById(galleryId)
+    const existingGallery = await getGalleryById(galleryId)
+    if (!existingGallery) throw new Error('Gallery not found')
 
-      if (!existingGallery) {
-        throw new Error('Gallery not found')
-      }
+    // Delete removed images from Supabase Storage
+    const removedImages = existingGallery.bannerImage.filter(
+      (img) => !bannerImage.includes(img)
+    )
+    if (removedImages.length > 0) {
+      const paths = removedImages.map(getStoragePath).filter(Boolean)
+      await deleteFromStorage(paths)
+    }
 
-      const removedImage = existingGallery.bannerImage.filter(
-        (image) => !bannerImage.includes(image)
-      )
-
-      if (removedImage.length > 0) {
-        deleteFromCloudinary(
-          removedImage.map((image) => JSON.parse(image).publicId)
-        )
-      }
-
-      const gallery = await prisma.gallery.update({
-        data: {
-          title,
-          bannerImage: bannerImage as string[],
-          date: new Date(date),
-          isPublished,
-          slug,
-        },
-        where: {
-          id: galleryId,
-        },
+    const { data: galleryRow, error } = await supabase
+      .from('galleries')
+      .update({
+        title,
+        banner_image: bannerImage as string[],
+        date: new Date(date).toISOString(),
+        is_published: isPublished,
+        slug,
+        updated_at: new Date().toISOString(),
       })
+      .eq('id', galleryId)
+      .select()
+      .single()
 
-      return gallery
-    })
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/gallery')
+    return { data: mapGallery(galleryRow) }
   } catch (error: any) {
     console.error(error.message)
-    return {
-      error: error.message || 'Failed to update gallery',
-    }
+    return { error: error.message || 'Failed to update gallery' }
   }
-
-  revalidatePath(`/gallery`)
-  return { data: result }
 }
 
 export const updateGallery = createSafeAction(GallerySchema, handler)

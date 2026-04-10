@@ -1,7 +1,7 @@
-import { Gallery } from '@prisma/client'
 import { z } from 'zod'
 
 import { ActionState } from '@/lib/create-safe-action'
+import { Gallery } from '@/types'
 
 import { GallerySchema } from './schema'
 

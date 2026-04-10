@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { cn, getCloudinaryUrl } from '@/lib/utils'
+import { cn, getStorageUrl } from '@/lib/utils'
 
 export type SingleFileFormFieldProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -76,7 +76,7 @@ export function SingleFileFormField<
 
           // If value is a string (existing URL)
           if (typeof value === 'string') {
-            setPreviewUrl(getCloudinaryUrl(value))
+            setPreviewUrl(getStorageUrl(value))
             return
           } else {
             const objectUrl = URL.createObjectURL(value)

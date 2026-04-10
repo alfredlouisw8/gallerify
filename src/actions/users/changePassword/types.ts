@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { User } from '@prisma/client'
 
 import { ActionState } from '@/lib/create-safe-action'
+import { User } from '@/types'
 
 import { ChangePasswordSchema } from './schema'
 

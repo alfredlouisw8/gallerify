@@ -1,11 +1,11 @@
 import NextAuth from 'next-auth'
 
-import { CustomPrismaAdapter } from '@/lib/auth/custom-prisma-adapter'
+import { CustomSupabaseAdapter } from '@/lib/auth/custom-supabase-adapter'
 
 import authConfig from './auth.config'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: CustomPrismaAdapter(),
+  adapter: CustomSupabaseAdapter(),
   session: {
     strategy: 'jwt',
   },

@@ -2,26 +2,47 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { deleteFromCloudinary } from '@/utils/cloudinary'
+import supabase from '@/lib/supabase'
+import { mapGallery } from '@/types'
+import { deleteFromStorage, getStoragePath } from '@/utils/storage'
 
 export default async function deleteGallery(galleryId: string) {
-  const result = await prisma.$transaction(async (prisma) => {
-    const response = await prisma.gallery.delete({
-      where: {
-        id: galleryId,
-      },
-    })
+  // Fetch gallery first to get banner images for storage cleanup
+  const { data: galleryRow, error: fetchError } = await supabase
+    .from('galleries')
+    .select('*')
+    .eq('id', galleryId)
+    .single()
 
-    const deletedImages = response.bannerImage.map(
-      (image) => JSON.parse(image).publicId
-    )
+  if (fetchError) throw new Error(fetchError.message)
 
-    deleteFromCloudinary(deletedImages)
+  // Delete banner images from Supabase Storage
+  const bannerImages: string[] = galleryRow.banner_image ?? []
+  if (bannerImages.length > 0) {
+    const paths = bannerImages.map(getStoragePath).filter(Boolean)
+    await deleteFromStorage(paths)
+  }
 
-    return response
-  })
+  // Also delete all category images from storage
+  const { data: categoryImages } = await supabase
+    .from('gallery_category_images')
+    .select('image_url, gallery_categories!inner(gallery_id)')
+    .eq('gallery_categories.gallery_id', galleryId)
+
+  if (categoryImages && categoryImages.length > 0) {
+    const paths = categoryImages.map((img) => getStoragePath(img.image_url)).filter(Boolean)
+    await deleteFromStorage(paths)
+  }
+
+  // Delete gallery (cascades to categories + images via FK)
+  const { error: deleteError } = await supabase
+    .from('galleries')
+    .delete()
+    .eq('id', galleryId)
+
+  if (deleteError) throw new Error(deleteError.message)
 
   revalidatePath('/gallery')
 
-  return result
+  return mapGallery(galleryRow)
 }

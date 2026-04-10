@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Gallery } from '@prisma/client'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -9,6 +8,7 @@ import { toast } from '@/components/ui/use-toast'
 import { createGallery } from '@/features/gallery/actions/createGallery'
 import { GallerySchema } from '@/features/gallery/actions/schema'
 import { useAction } from '@/hooks/useAction'
+import { Gallery } from '@/types'
 import { onImagesUpload } from '@/utils/functions'
 
 import { updateGallery } from '../actions/updateGallery'
