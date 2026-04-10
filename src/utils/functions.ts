@@ -1,13 +1,20 @@
-import { uploadToCloudinary } from './cloudinary'
+import { uploadToStorage } from './storage'
 
-export const onImagesUpload = async (files: File[]) => {
+/**
+ * Upload files to Supabase Storage.
+ * Returns array of JSON strings: {"path":"...","url":"..."}
+ */
+export const onImagesUpload = async (
+  files: File[],
+  folder: string = 'uploads'
+): Promise<string[] | undefined> => {
   try {
     const formData = new FormData()
     files.forEach((file) => formData.append('images', file))
 
-    // Call server action
-    return await uploadToCloudinary(formData)
+    return await uploadToStorage(formData, folder)
   } catch (error) {
-    console.error('Cloudinary Upload Error:', error)
+    console.error('Storage Upload Error:', error)
+    return undefined
   }
 }

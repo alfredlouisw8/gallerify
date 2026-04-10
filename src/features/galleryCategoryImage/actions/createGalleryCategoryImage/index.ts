@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import { auth } from '@/lib/auth/auth'
 import { createSafeAction } from '@/lib/create-safe-action'
-import prisma from '@/lib/prisma'
+import supabase from '@/lib/supabase'
+import { mapGalleryCategoryImage } from '@/types'
 
 import { GalleryCategoryImageSchema } from '../schema'
 import { InputType, ReturnType } from '../types'
@@ -13,49 +14,45 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const session = await auth()
 
   if (!session?.user) {
-    return {
-      error: 'Unauthorized',
-    }
+    return { error: 'Unauthorized' }
   }
-
-  let result
 
   const { categoryId, imageUrl } = data
 
   try {
-    const gallery = await prisma.galleryCategory.findUnique({
-      where: { id: categoryId },
-      select: { galleryId: true },
-    })
+    // Verify category exists and get galleryId for revalidation
+    const { data: category, error: catError } = await supabase
+      .from('gallery_categories')
+      .select('gallery_id')
+      .eq('id', categoryId)
+      .maybeSingle()
 
-    if (!gallery) {
+    if (catError || !category) {
       return { error: 'Gallery category not found' }
     }
 
-    result = await prisma.$transaction(async (prisma) => {
-      const createdImages = await Promise.all(
-        imageUrl.map((url) =>
-          prisma.galleryCategoryImage.create({
-            data: {
-              imageUrl: url as string,
-              categoryId,
-            },
-          })
-        )
-      )
+    // Insert all images
+    const inserts = (imageUrl ?? []).map((url) => ({
+      image_url: url as string,
+      category_id: categoryId,
+    }))
 
-      return createdImages
-    })
+    const { data: rows, error } = await supabase
+      .from('gallery_category_images')
+      .insert(inserts)
+      .select()
 
-    console.log(`/gallery/${gallery.galleryId}/collection/${categoryId}`)
+    if (error) throw new Error(error.message)
 
-    revalidatePath(`/gallery/${gallery.galleryId}/collection/${categoryId}`)
+    const result = (rows ?? []).map(mapGalleryCategoryImage)
+
+    revalidatePath(
+      `/gallery/${category.gallery_id}/collection/${categoryId}`
+    )
     return { data: result }
   } catch (error: any) {
     console.error(error.message)
-    return {
-      error: 'Failed to create gallery category image',
-    }
+    return { error: 'Failed to create gallery category image' }
   }
 }
 

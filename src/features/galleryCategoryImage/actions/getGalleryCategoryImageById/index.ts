@@ -1,10 +1,17 @@
+import supabase from '@/lib/supabase'
+import { GalleryCategoryImage, mapGalleryCategoryImage } from '@/types'
 
-import prisma from '@/lib/prisma'
+export default async function getGalleryCategoryImageById(
+  galleryCategoryImageId: string
+): Promise<GalleryCategoryImage | null> {
+  const { data: row, error } = await supabase
+    .from('gallery_category_images')
+    .select('*')
+    .eq('id', galleryCategoryImageId)
+    .maybeSingle()
 
-export default async function getGalleryCategoryImageById(galleryCategoryImageId: string) {
-  return await prisma.galleryCategoryImage.findUnique({
-    where: {
-      id: galleryCategoryImageId,
-    },
-  })
+  if (error) throw new Error(error.message)
+  if (!row) return null
+
+  return mapGalleryCategoryImage(row)
 }

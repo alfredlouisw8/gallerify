@@ -6,7 +6,8 @@ import getGalleryCategoryImageById from '@/features/galleryCategoryImage/actions
 import { GalleryCategoryImageSchema } from '@/features/galleryCategoryImage/actions/schema'
 import { auth } from '@/lib/auth/auth'
 import { createSafeAction } from '@/lib/create-safe-action'
-import prisma from '@/lib/prisma'
+import supabase from '@/lib/supabase'
+import { mapGalleryCategoryImage } from '@/types'
 
 import { InputType, ReturnTypeSingle } from '../types'
 
@@ -14,47 +15,33 @@ const handler = async (data: InputType): Promise<ReturnTypeSingle> => {
   const session = await auth()
 
   if (!session?.user) {
-    return {
-      error: 'Unauthorized',
-    }
+    return { error: 'Unauthorized' }
   }
-
-  let result
 
   const { categoryId, galleryCategoryImageId } = data
 
   try {
-    result = await prisma.$transaction(async (prisma) => {
-      if (!categoryId || !galleryCategoryImageId) {
-        throw new Error('Gallery not found')
-      }
+    if (!categoryId || !galleryCategoryImageId)
+      throw new Error('Gallery not found')
 
-      const existingGalleryCategoryImage = await getGalleryCategoryImageById(
-        galleryCategoryImageId
-      )
+    const existing = await getGalleryCategoryImageById(galleryCategoryImageId)
+    if (!existing) throw new Error('Image not found')
 
-      if (!existingGalleryCategoryImage) {
-        throw new Error('Image not found')
-      }
+    const { data: row, error } = await supabase
+      .from('gallery_category_images')
+      .update({ category_id: categoryId })
+      .eq('id', galleryCategoryImageId)
+      .select()
+      .single()
 
-      return await prisma.galleryCategoryImage.update({
-        data: {
-          categoryId,
-        },
-        where: {
-          id: galleryCategoryImageId,
-        },
-      })
-    })
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/gallery')
+    return { data: mapGalleryCategoryImage(row) }
   } catch (error: any) {
     console.error(error.message)
-    return {
-      error: error.message || 'Failed to update gallery',
-    }
+    return { error: error.message || 'Failed to update image' }
   }
-
-  revalidatePath(`/gallery`)
-  return { data: result }
 }
 
 export const updateGalleryCategoryImage = createSafeAction(
