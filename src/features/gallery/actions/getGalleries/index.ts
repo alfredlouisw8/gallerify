@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
 import {
   mapGallery,
@@ -9,7 +9,8 @@ import {
 } from '@/types'
 
 export default async function getGalleries(): Promise<GalleryWithCategoryList[]> {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: rows, error } = await supabase
     .from('galleries')
@@ -19,7 +20,7 @@ export default async function getGalleries(): Promise<GalleryWithCategoryList[]>
       gallery_categories (*)
     `
     )
-    .eq('user_id', session?.user.id)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)

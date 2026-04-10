@@ -1,7 +1,6 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Session } from 'next-auth'
 import { PropsWithChildren, Suspense } from 'react'
 
 import { AppSidebar } from '@/components/layout/app-sidebar'
@@ -11,14 +10,12 @@ import { cn } from '@/lib/utils'
 export interface ContainerProps extends PropsWithChildren {
   sideBar?: boolean
   header?: string
-  session: Session
 }
 
 export default function Container({
   sideBar,
   header,
   children,
-  session,
 }: ContainerProps) {
   const pathName = usePathname()
   const isGalleryPage = /^\/gallery\/[\w-]+(\/.*)?$/.test(pathName) // Matches "/gallery/{galleryId}" and "/gallery/{galleryId}/..."
@@ -33,7 +30,6 @@ export default function Container({
       <div className="flex h-full min-w-0 grow flex-col">
         <TopNavigationBar
           header={header}
-          session={session}
           sideBar={sideBar}
         ></TopNavigationBar>
         <main

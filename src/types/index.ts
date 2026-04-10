@@ -44,18 +44,13 @@ export type Session = {
 export type UserMetadata = {
   id: string
   userId: string
+  username: string | null
   bannerImage: string | null
   whatsapp: string | null
   instagram: string | null
   aboutImage: string | null
   aboutText: string | null
   logo: string | null
-}
-
-export type UserMetadataWithUser = UserMetadata & {
-  user: {
-    username: string
-  }
 }
 
 export type Gallery = {
@@ -115,6 +110,7 @@ export type UserRow = {
 export type UserMetadataRow = {
   id: string
   user_id: string
+  username: string | null
   banner_image: string | null
   whatsapp: string | null
   instagram: string | null
@@ -187,6 +183,7 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
   return {
     id: row.id,
     userId: row.user_id,
+    username: row.username,
     bannerImage: row.banner_image,
     whatsapp: row.whatsapp,
     instagram: row.instagram,

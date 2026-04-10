@@ -4,7 +4,7 @@ import React from 'react'
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GallerySidebar from '@/features/gallery/components/layout/gallery-sidebar'
 import GalleryTopNavigationBar from '@/features/gallery/components/layout/gallery-top-navigationbar'
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 
 export default async function GalleryLayout({
   children,
@@ -13,23 +13,20 @@ export default async function GalleryLayout({
   children: React.ReactNode
   params: Promise<{ galleryId: string }>
 }) {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { galleryId } = await params
   const gallery = await getGalleryById(galleryId)
 
-  if (!gallery) {
-    redirect('/')
-  }
-
-  if (!session) {
+  if (!gallery || !user) {
     redirect('/')
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       {/* Top Navigation Bar */}
-      <GalleryTopNavigationBar galleryData={gallery} session={session} />
+      <GalleryTopNavigationBar galleryData={gallery} />
 
       {/* Main content below nav: sidebar + children */}
       <div className="flex flex-1 overflow-hidden">

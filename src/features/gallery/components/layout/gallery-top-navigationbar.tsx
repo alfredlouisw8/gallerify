@@ -1,7 +1,6 @@
 import { format } from 'date-fns'
 import { ChevronLeft, CircleUserIcon, EyeIcon } from 'lucide-react'
 import Link from 'next/link'
-import { Session } from 'next-auth'
 import React from 'react'
 
 import LogoutButton from '@/components/auth/logout-button'
@@ -13,15 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
-import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
+import { GalleryWithCategory } from '@/types'
 
 export interface TopNavigationBarProps {
-  session: Session
   galleryData: GalleryWithCategory
 }
 
 export default function GalleryTopNavigationBar({
-  session,
   galleryData,
 }: TopNavigationBarProps) {
   return (
@@ -47,16 +44,11 @@ export default function GalleryTopNavigationBar({
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
               <CircleUserIcon className="size-5" />
-              <span className="sr-only">ナビゲーションのトグル</span>
+              <span className="sr-only">Menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Link href={`/users/${session.user.id}/change-password`}>
-                Ganti Password
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <LogoutButton />
             </DropdownMenuItem>
           </DropdownMenuContent>

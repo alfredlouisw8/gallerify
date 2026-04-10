@@ -1,46 +1,27 @@
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
-import {
-  UserMetadataWithUser,
-  UserMetadataRow,
-  mapUserMetadata,
-} from '@/types'
+import { UserMetadata, UserMetadataRow, mapUserMetadata } from '@/types'
 
 export default async function getProfile(): Promise<
-  UserMetadataWithUser | { error: string } | null
+  UserMetadata | { error: string } | null
 > {
-  const session = await auth()
+  const client = await createClient()
+  const {
+    data: { user },
+  } = await client.auth.getUser()
 
-  if (!session?.user) {
+  if (!user) {
     return { error: 'Unauthorized' }
   }
 
   const { data: row, error } = await supabase
     .from('user_metadata')
-    .select(
-      `
-      *,
-      users!inner (
-        username
-      )
-    `
-    )
-    .eq('user_id', session.user.id)
+    .select('*')
+    .eq('user_id', user.id)
     .maybeSingle()
 
   if (error) throw new Error(error.message)
   if (!row) return null
 
-  type RowWithUser = UserMetadataRow & {
-    users: { username: string }
-  }
-
-  const typedRow = row as RowWithUser
-
-  return {
-    ...mapUserMetadata(typedRow),
-    user: {
-      username: typedRow.users.username,
-    },
-  }
+  return mapUserMetadata(row as UserMetadataRow)
 }

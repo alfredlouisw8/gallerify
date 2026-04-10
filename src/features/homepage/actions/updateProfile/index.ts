@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 import { mapUserMetadata } from '@/types'
@@ -11,9 +11,12 @@ import { UpdateProfileSchema } from '../schema'
 import { InputType, ReturnType } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
-  const session = await auth()
+  const client = await createClient()
+  const {
+    data: { user },
+  } = await client.auth.getUser()
 
-  if (!session?.user) {
+  if (!user) {
     return { error: 'Unauthorized' }
   }
 
@@ -29,30 +32,20 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   try {
     // Check username uniqueness (excluding current user)
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
+    const { data: existingMeta } = await supabase
+      .from('user_metadata')
+      .select('user_id')
       .eq('username', username)
-      .neq('id', session.user.id)
+      .neq('user_id', user.id)
       .maybeSingle()
 
-    if (existingUser) throw new Error('Username already exists')
+    if (existingMeta) throw new Error('Username already exists')
 
-    // Update username
-    const { error: userError } = await supabase
-      .from('users')
-      .update({
-        username,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', session.user.id)
-
-    if (userError) throw new Error(userError.message)
-
-    // Update user metadata
+    // Update all fields including username in user_metadata
     const { data: metaRow, error: metaError } = await supabase
       .from('user_metadata')
       .update({
+        username,
         about_image: aboutImage as string,
         about_text: aboutText,
         banner_image: bannerImage as string,
@@ -60,13 +53,13 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         logo: logo as string,
         whatsapp,
       })
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .select()
       .single()
 
     if (metaError) throw new Error(metaError.message)
 
-    revalidatePath('/profile/')
+    revalidatePath('/homepage')
     return { data: mapUserMetadata(metaRow) }
   } catch (error: any) {
     console.error(error.message)

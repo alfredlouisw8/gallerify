@@ -4,12 +4,13 @@ import Container from '@/components/layout/container'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import getProfile from '@/features/homepage/actions/getProfile'
 import HomepageForm from '@/features/homepage/components/homepage-form'
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 
 export default async function HomePage() {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     redirect('/')
   }
 
@@ -17,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <SidebarProvider>
-      <Container sideBar={true} session={session}>
+      <Container sideBar={true}>
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between gap-5">
             <h1 className="text-2xl font-bold">Homepage</h1>

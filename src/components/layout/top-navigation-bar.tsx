@@ -1,10 +1,9 @@
 'use client'
 
 import { CircleUserIcon, EyeIcon } from 'lucide-react'
-import { Session } from 'next-auth'
-import { signOut } from 'next-auth/react'
 import React, { ComponentPropsWithoutRef } from 'react'
 
+import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -19,9 +18,8 @@ export interface TopNavigationBarProps
   extends ComponentPropsWithoutRef<'header'> {
   header?: string
   sideBar?: boolean
-  session: Session
 }
-// eslint-disable @next/next/no-img-element
+
 export default function TopNavigationBar({
   header,
   sideBar,
@@ -50,14 +48,8 @@ export default function TopNavigationBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              style={{ cursor: 'pointer' }}
-              onSelect={(e) => {
-                e.preventDefault() // prevent it from staying open
-                signOut({ callbackUrl: '/' })
-              }}
-            >
-              Logout
+            <DropdownMenuItem asChild>
+              <LogoutButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

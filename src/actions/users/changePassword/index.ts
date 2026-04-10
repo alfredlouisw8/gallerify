@@ -2,7 +2,7 @@
 
 import bcrypt from 'bcryptjs'
 
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 
@@ -10,9 +10,10 @@ import { ChangePasswordSchema } from './schema'
 import { InputType, ReturnType } from './types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session?.user) {
+  if (!user) {
     return { error: 'Silahkan login' }
   }
 
@@ -23,7 +24,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const { data: user, error: fetchError } = await supabase
       .from('users')
       .select('id, password')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     if (fetchError || !user) {
@@ -47,7 +48,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         password: hashedPassword,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .select()
       .single()
 

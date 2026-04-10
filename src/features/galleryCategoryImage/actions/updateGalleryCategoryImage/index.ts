@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import getGalleryCategoryImageById from '@/features/galleryCategoryImage/actions/getGalleryCategoryImageById'
 import { GalleryCategoryImageSchema } from '@/features/galleryCategoryImage/actions/schema'
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 import { mapGalleryCategoryImage } from '@/types'
@@ -12,9 +12,10 @@ import { mapGalleryCategoryImage } from '@/types'
 import { InputType, ReturnTypeSingle } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnTypeSingle> => {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session?.user) {
+  if (!user) {
     return { error: 'Unauthorized' }
   }
 

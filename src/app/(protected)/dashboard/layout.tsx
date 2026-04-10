@@ -3,22 +3,23 @@ import React from 'react'
 
 import Container from '@/components/layout/container'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     redirect('/')
   }
 
   return (
     <SidebarProvider>
-      <Container sideBar={true} session={session}>
+      <Container sideBar={true}>
         {children}
       </Container>
     </SidebarProvider>

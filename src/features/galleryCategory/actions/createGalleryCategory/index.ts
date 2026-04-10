@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { auth } from '@/lib/auth/auth'
+import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 import { mapGalleryCategory } from '@/types'
@@ -11,9 +11,10 @@ import { GalleryCategorySchema } from '../schema'
 import { InputType, ReturnType } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session?.user) {
+  if (!user) {
     return { error: 'Unauthorized' }
   }
 
