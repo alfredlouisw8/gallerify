@@ -1,4 +1,5 @@
-import { GalleryCategory } from '@prisma/client'
+'use client'
+
 import { PencilIcon } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
 import useGalleryCategoryAddForm from '@/features/galleryCategory/hooks/use-gallery-category-add-form'
+import { GalleryCategory } from '@/types'
 
 type GalleryCategoryUpdateFormProps = {
   galleryId: string

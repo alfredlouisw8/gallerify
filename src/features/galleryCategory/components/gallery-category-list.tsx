@@ -8,8 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
-import { GalleryCategoryWithImages } from '@/features/galleryCategory/actions/getCategoryById'
+import { GalleryCategoryWithImages, GalleryWithCategory } from '@/types'
 import GalleryCategoryUpdateForm from '@/features/galleryCategory/components/gallery-category-update-form'
 
 type GallerySidebarProps = {
@@ -51,7 +50,7 @@ export default function GalleryCategoryList({
             <PopoverContent className="w-52 p-0" align={'start'}>
               <div className="grid">
                 <GalleryCategoryUpdateForm
-                  galleryId={category.id}
+                  galleryId={galleryData.id}
                   galleryCategoryData={category}
                 />
                 <Button

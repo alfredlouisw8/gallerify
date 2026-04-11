@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { GalleryCategory } from '@prisma/client'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { mutate as globalMutate } from 'swr'
 import { z } from 'zod'
 
 import { toast } from '@/components/ui/use-toast'
 import { createGalleryCategory } from '@/features/galleryCategory/actions/createGalleryCategory'
 import { updateGalleryCategory } from '@/features/galleryCategory/actions/updateGalleryCategory'
 import { useAction } from '@/hooks/useAction'
+import { GalleryCategory } from '@/types'
 
 import { GalleryCategorySchema } from '../actions/schema'
 
@@ -23,6 +25,7 @@ export default function useGalleryCategoryAddForm({
   galleryCategoryData,
   handleClose,
 }: UseGalleryCategoryImageAddFormProps) {
+  const router = useRouter()
   const formSchema = GalleryCategorySchema
 
   const actions = {
@@ -32,7 +35,7 @@ export default function useGalleryCategoryAddForm({
     },
     update: {
       action: updateGalleryCategory,
-      successMessage: 'Category update successfully',
+      successMessage: 'Category updated successfully',
     },
   }
 
@@ -41,6 +44,12 @@ export default function useGalleryCategoryAddForm({
       toast({
         title: actions[type].successMessage,
       })
+      if (type === 'update' && galleryCategoryData?.id) {
+        // Revalidate the SWR cache so the category name in the detail header updates
+        globalMutate(`category-detail-${galleryCategoryData.id}`)
+      }
+      // Re-fetch server components so the sidebar category list updates
+      router.refresh()
       handleClose()
     },
     onError: (error) => {

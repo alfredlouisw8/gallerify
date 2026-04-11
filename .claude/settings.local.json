@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)",
+      "Bash(cat next.config.mjs)",
+      "Bash(rm \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\\\\route.ts\")",
+      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")"
+    ]
+  }
+}

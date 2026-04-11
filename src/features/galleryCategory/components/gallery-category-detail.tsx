@@ -48,9 +48,9 @@ export default function GalleryCategoryDetail({
     data: categoryData,
     error,
     isLoading,
-    mutate, // 🔁 This will be used to refresh images after upload
-  } = useSWR<GalleryCategoryWithImages>(
-    collectionId ? `/api/category/${collectionId}` : null,
+    mutate,
+  } = useSWR<GalleryCategoryWithImages | null>(
+    collectionId ? `category-detail-${collectionId}` : null,
     () => fetchCategoryDetail(collectionId)
   )
 
