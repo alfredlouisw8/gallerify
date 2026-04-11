@@ -16,11 +16,15 @@ import { GalleryWithCategory } from '@/types'
 
 export interface TopNavigationBarProps {
   galleryData: GalleryWithCategory
+  username: string
 }
 
 export default function GalleryTopNavigationBar({
   galleryData,
+  username,
 }: TopNavigationBarProps) {
+  const previewHref = `/${username}/${encodeURIComponent(galleryData.slug)}`
+
   return (
     <header className="bg-muted/40 flex h-14 items-center justify-between gap-4 border-b px-4 lg:h-16 lg:px-6">
       <div className="flex w-full items-center gap-4">
@@ -36,10 +40,12 @@ export default function GalleryTopNavigationBar({
         </span>
       </div>
       <div className="flex gap-4">
-        <Button variant="ghost">
-          <EyeIcon className="mr-2 size-4" />
-          Preview
-        </Button>
+        <Link href={previewHref} target="_blank" rel="noopener noreferrer">
+          <Button variant="ghost">
+            <EyeIcon className="mr-2 size-4" />
+            Preview
+          </Button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">

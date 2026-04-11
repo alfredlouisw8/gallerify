@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 
 import GalleryPageView from '@/features/public/components/GalleryPageView'
+import OwnerBanner from '@/features/public/components/OwnerBanner'
 import { getPublicGalleryBySlug } from '@/features/public/actions/getPublicGalleryBySlug'
+import { createClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,5 +39,26 @@ export default async function PublicGalleryPage({ params }: Props) {
     notFound()
   }
 
-  return <GalleryPageView gallery={gallery} username={username} />
+  let isOwnerPreview = false
+
+  if (!gallery.isPublished) {
+    // Unpublished — only the owner may view it
+    const authClient = await createClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+
+    if (!user || user.id !== gallery.userId) {
+      notFound()
+    }
+
+    isOwnerPreview = true
+  }
+
+  return (
+    <>
+      {isOwnerPreview && <OwnerBanner galleryId={gallery.id} />}
+      <GalleryPageView gallery={gallery} username={username} />
+    </>
+  )
 }

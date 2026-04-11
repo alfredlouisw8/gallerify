@@ -4,6 +4,7 @@ import React from 'react'
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GallerySidebar from '@/features/gallery/components/layout/gallery-sidebar'
 import GalleryTopNavigationBar from '@/features/gallery/components/layout/gallery-top-navigationbar'
+import supabaseAdmin from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 
 export default async function GalleryLayout({
@@ -23,10 +24,18 @@ export default async function GalleryLayout({
     redirect('/')
   }
 
+  const { data: meta } = await supabaseAdmin
+    .from('user_metadata')
+    .select('username')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const username = meta?.username ?? ''
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Top Navigation Bar */}
-      <GalleryTopNavigationBar galleryData={gallery} />
+      <GalleryTopNavigationBar galleryData={gallery} username={username} />
 
       {/* Main content below nav: sidebar + children */}
       <div className="flex flex-1 overflow-hidden">
