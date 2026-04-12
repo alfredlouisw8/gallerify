@@ -9,7 +9,12 @@
     "lint": "next lint",
     "fix": "next lint --fix",
     "prettier": "prettier --write './**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json}'",
-    "format": "npm run fix && npm run prettier"
+    "format": "npm run fix && npm run prettier",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:seed": "supabase db seed",
+    "db:types": "supabase gen types typescript --local > src/types/supabase.ts",
+    "db:studio": "supabase studio"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
@@ -51,7 +56,8 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8",
     "locomotive-scroll": "^5.0.0-beta.8",
-    "motion": "^12.6.3"
+    "motion": "^12.6.3",
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

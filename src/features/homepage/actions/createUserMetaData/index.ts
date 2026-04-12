@@ -7,7 +7,7 @@ import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 import { mapUserMetadata } from '@/types'
 
-import { UserMetadataSchema } from '../schema'
+import { UpdateProfileSchema } from '../schema'
 import { InputType, ReturnType } from '../types'
 
 const handler = async (data: InputType): Promise<ReturnType> => {
@@ -18,24 +18,11 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     return { error: 'Unauthorized' }
   }
 
-  const { userId } = data
-
   try {
-    // Verify user exists
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (userError || !user) {
-      return { error: 'User not found' }
-    }
-
     const { data: row, error } = await supabase
       .from('user_metadata')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         banner_image: data.bannerImage ?? null,
         whatsapp: data.whatsapp ?? null,
         instagram: data.instagram ?? null,
@@ -56,4 +43,4 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 }
 
-export const createUserMetadata = createSafeAction(UserMetadataSchema, handler)
+export const createUserMetadata = createSafeAction(UpdateProfileSchema, handler)

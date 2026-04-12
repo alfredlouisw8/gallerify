@@ -84,7 +84,7 @@ export function SingleFileFormField<
             return
           }
 
-          if (value instanceof Blob) {
+          if ((value as unknown) instanceof Blob) {
             setPreviewUrl(URL.createObjectURL(value))
             return
           }

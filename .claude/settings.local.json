@@ -7,7 +7,19 @@
       "Bash(cat next.config.js)",
       "Bash(cat next.config.mjs)",
       "Bash(rm \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\\\\route.ts\")",
-      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")"
+      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")",
+      "Bash(git log:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
+      "Bash(xargs -I {} bash -c \"git show feature/payment:{} 2>/dev/null | grep -l -i 'stripe\\\\|midtrans\\\\|payment\\\\|checkout\\\\|billing\\\\|webhook\\\\|subscription' && echo '{}'\")",
+      "Bash(npm info:*)",
+      "Bash(npm search:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(tasklist)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(rm -rf .next)",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }

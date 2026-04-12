@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
+import { GalleryWithCategory } from '@/types'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 import GalleryCategoryList from '@/features/galleryCategory/components/gallery-category-list'
 
