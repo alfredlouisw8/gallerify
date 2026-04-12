@@ -7,7 +7,9 @@
       "Bash(cat next.config.js)",
       "Bash(cat next.config.mjs)",
       "Bash(rm \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\\\\route.ts\")",
-      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")"
+      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")",
+      "Bash(rm \"/c/Users/gerra/PhpstormProjects/pixieset-clone/src/app/\\(protected\\)/gallery/[galleryId]/preview/page.tsx\")",
+      "Bash(rmdir \"/c/Users/gerra/PhpstormProjects/pixieset-clone/src/app/\\(protected\\)/gallery/[galleryId]/preview\")"
     ]
   }
 }
