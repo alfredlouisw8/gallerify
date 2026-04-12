@@ -1,6 +1,6 @@
 'use client'
 
-import { Gallery } from '@prisma/client'
+import { Gallery } from '@/types'
 import {
   EllipsisVerticalIcon,
   ImageIcon,

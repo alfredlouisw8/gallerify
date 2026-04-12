@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
-import { GalleryWithCategory } from '@/features/gallery/actions/getGalleryById'
+import { GalleryWithCategory } from '@/types'
 import useGalleryCategoryImageMoveForm from '@/features/galleryCategoryImage/hooks/use-gallery-category-image-move-form'
 
 type GalleryCategoryImageAddFormProps = {
@@ -37,7 +37,7 @@ export default function GalleryCategoryImageMoveForm({
     setDialogOpen(false)
   }
 
-  const categories = galleryData.GalleryCategory.map((category) => ({
+  const categories = galleryData.GalleryCategory.map((category: { id: string; name: string }) => ({
     value: category.id,
     label: category.name,
   }))

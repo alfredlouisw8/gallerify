@@ -3,6 +3,8 @@
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
+  // Run ESLint separately with `npm run lint` — not during build
+  eslint: { ignoreDuringBuilds: true },
   images: {
     remotePatterns: [
       {

@@ -51,6 +51,14 @@ export type UserMetadata = {
   aboutImage: string | null
   aboutText: string | null
   logo: string | null
+  // Subscription / billing
+  plan: string
+  trialEndsAt: string | null
+  storageUsedBytes: number
+  lsCustomerId: string | null
+  lsSubscriptionId: string | null
+  subscriptionStatus: string
+  currentPeriodEnd: string | null
 }
 
 export type Gallery = {
@@ -117,6 +125,14 @@ export type UserMetadataRow = {
   about_image: string | null
   about_text: string | null
   logo: string | null
+  // Subscription / billing
+  plan: string
+  trial_ends_at: string | null
+  storage_used_bytes: number
+  ls_customer_id: string | null
+  ls_subscription_id: string | null
+  subscription_status: string
+  current_period_end: string | null
 }
 
 export type GalleryRow = {
@@ -190,5 +206,12 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
     aboutImage: row.about_image,
     aboutText: row.about_text,
     logo: row.logo,
+    plan: row.plan ?? 'free_trial',
+    trialEndsAt: row.trial_ends_at ?? null,
+    storageUsedBytes: row.storage_used_bytes ?? 0,
+    lsCustomerId: row.ls_customer_id ?? null,
+    lsSubscriptionId: row.ls_subscription_id ?? null,
+    subscriptionStatus: row.subscription_status ?? 'trialing',
+    currentPeriodEnd: row.current_period_end ?? null,
   }
 }

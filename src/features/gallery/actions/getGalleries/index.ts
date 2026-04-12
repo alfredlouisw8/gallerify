@@ -12,6 +12,8 @@ export default async function getGalleries(): Promise<GalleryWithCategoryList[]>
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) return []
+
   const { data: rows, error } = await supabase
     .from('galleries')
     .select(

@@ -1,6 +1,6 @@
 'use client'
 
-import { Gallery } from '@prisma/client'
+import { Gallery } from '@/types'
 
 import GalleryForm from './gallery-form'
 import useGalleryForm from '../hooks/use-gallery-form'

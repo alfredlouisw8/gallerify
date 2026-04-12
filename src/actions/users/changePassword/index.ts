@@ -21,19 +21,19 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
   try {
     // Fetch current password hash
-    const { data: user, error: fetchError } = await supabase
+    const { data: userRow, error: fetchError } = await supabase
       .from('users')
       .select('id, password')
       .eq('id', user.id)
       .single()
 
-    if (fetchError || !user) {
+    if (fetchError || !userRow) {
       return { error: 'User not found' }
     }
 
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password as string
+      userRow.password as string
     )
 
     if (!isPasswordValid) {
@@ -48,7 +48,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         password: hashedPassword,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', user.id)
+      .eq('id', userRow.id)
       .select()
       .single()
 
