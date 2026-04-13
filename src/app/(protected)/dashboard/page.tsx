@@ -1,3 +1,26 @@
-export default function DashboardPage() {
-  return <p>asd</p>
+import { Suspense } from 'react'
+
+import DashboardView from '@/features/dashboard/components/dashboard-view'
+import { createClient } from '@/lib/supabase-server'
+import supabase from '@/lib/supabase'
+
+export default async function DashboardPage() {
+  const authClient = await createClient()
+  const {
+    data: { user },
+  } = await authClient.auth.getUser()
+
+  const { data: meta } = user
+    ? await supabase
+        .from('user_metadata')
+        .select('plan, subscription_status, trial_ends_at, storage_used_bytes, current_period_end')
+        .eq('user_id', user.id)
+        .single()
+    : { data: null }
+
+  return (
+    <Suspense>
+      <DashboardView meta={meta} />
+    </Suspense>
+  )
 }

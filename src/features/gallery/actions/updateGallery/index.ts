@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
 import supabase from '@/lib/supabase'
 import { mapGallery } from '@/types'
-import { deleteFromStorage } from '@/utils/storage-actions'
-import { getStoragePath } from '@/utils/storage'
+import { deleteFromStorage, decrementStorageUsage } from '@/utils/storage-actions'
+import { getStoragePath, sumStorageSizes } from '@/utils/storage'
 
 import getGalleryById from '../getGalleryById'
 import { GallerySchema } from '../schema'
@@ -29,13 +29,15 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const existingGallery = await getGalleryById(galleryId)
     if (!existingGallery) throw new Error('Gallery not found')
 
-    // Delete removed images from Supabase Storage
+    // Delete removed banner images from Supabase Storage and decrement usage
     const removedImages = existingGallery.bannerImage.filter(
       (img) => !bannerImage.includes(img)
     )
     if (removedImages.length > 0) {
       const paths = removedImages.map(getStoragePath).filter(Boolean)
       await deleteFromStorage(paths)
+      const freedBytes = sumStorageSizes(removedImages)
+      await decrementStorageUsage(user.id, freedBytes)
     }
 
     const { data: galleryRow, error } = await supabase

@@ -1,6 +1,7 @@
 'use client'
 
-import { CircleUserIcon, EyeIcon } from 'lucide-react'
+import { CircleUserIcon, CreditCardIcon, EyeIcon } from 'lucide-react'
+import Link from 'next/link'
 import React, { ComponentPropsWithoutRef } from 'react'
 
 import LogoutButton from '@/components/auth/logout-button'
@@ -9,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
@@ -48,6 +50,13 @@ export default function TopNavigationBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href="/billing" className="flex items-center gap-2">
+                <CreditCardIcon className="size-4" />
+                Billing
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <LogoutButton />
             </DropdownMenuItem>

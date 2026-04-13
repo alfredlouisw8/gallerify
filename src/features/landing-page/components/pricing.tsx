@@ -88,8 +88,8 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       })
 
       if (res.status === 401) {
-        // Not logged in — send to login
-        window.location.href = '/login'
+        // Not logged in — send to login, then back to billing with the chosen plan
+        window.location.href = `/login?next=/billing&plan=${plan.id}`
         return
       }
 
@@ -148,7 +148,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       <div className="mt-8">
         {plan.id === 'free_trial' ? (
           <Button className="w-full" variant={plan.ctaVariant} asChild>
-            <Link href="/login">{plan.cta}</Link>
+            <Link href="/login?next=/dashboard">{plan.cta}</Link>
           </Button>
         ) : (
           <Button
@@ -192,7 +192,7 @@ export default function Pricing() {
             </h2>
             <p className="text-muted-foreground max-w-[600px] md:text-xl/relaxed">
               Start free for 14 days — no credit card required. Upgrade when
-              you're ready.
+              you&apos;re ready.
             </p>
           </motion.div>
         </div>

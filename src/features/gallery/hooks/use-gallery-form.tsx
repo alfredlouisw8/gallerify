@@ -76,15 +76,15 @@ export default function useGalleryForm({
     ) as string[]
     const newFiles = images.filter((img) => img instanceof File) as File[]
 
-    let uploadedUrls: string[] | undefined = []
+    let uploadedUrls: string[] = []
 
     // Upload new files if any
     if (newFiles.length > 0) {
-      uploadedUrls = await onImagesUpload(newFiles)
-
-      if (!uploadedUrls) {
+      try {
+        uploadedUrls = await onImagesUpload(newFiles)
+      } catch (err) {
         toast({
-          title: 'Failed to upload images',
+          title: err instanceof Error ? err.message : 'Failed to upload images',
           variant: 'destructive',
         })
         return

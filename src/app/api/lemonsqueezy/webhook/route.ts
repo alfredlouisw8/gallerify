@@ -35,10 +35,15 @@ export async function POST(request: Request) {
   // Verify HMAC-SHA256 signature
   const hmac = crypto.createHmac('sha256', secret)
   const digest = hmac.update(rawBody).digest('hex')
+  const digestBuf = Buffer.from(digest, 'hex')
+  const sigBuf = Buffer.from(signature, 'hex')
 
-  if (
-    !crypto.timingSafeEqual(Buffer.from(digest, 'hex'), Buffer.from(signature, 'hex'))
-  ) {
+  // timingSafeEqual throws if lengths differ — check first
+  const valid =
+    sigBuf.length === digestBuf.length &&
+    crypto.timingSafeEqual(digestBuf, sigBuf)
+
+  if (!valid) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 

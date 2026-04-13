@@ -53,6 +53,7 @@ export async function POST(request: Request) {
         redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
         receiptButtonText: 'Go to Dashboard',
         receiptThankYouNote: 'Thank you for subscribing to Gallerify!',
+        enabledVariants: [Number(variantId)],
       },
     })
 
