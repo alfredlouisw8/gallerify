@@ -17,45 +17,85 @@ type ProfileFormProps = {
 
 export default function HomepageForm({ profileData }: ProfileFormProps) {
   const { form, handleSubmit } = UseHomepageForm({ profileData })
+
   return (
-    <Form {...form}>
-      <form
-        onSubmit={(event) => void handleSubmit(event)}
-        className="space-y-8"
-      >
-        <TextFormField name="username" label="Username" required />
+    <div className="mx-auto max-w-xl">
+      <Form {...form}>
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-6"
+        >
+          {/* Identity */}
+          <div className="rounded-2xl border bg-card p-6 space-y-5">
+            <div>
+              <p className="text-sm font-medium">Identity</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Your public profile details.
+              </p>
+            </div>
+            <TextFormField name="username" label="Username" required />
+            <SingleFileFormField
+              name="logo"
+              label="Logo"
+              accept="image/*"
+              previewImage
+            />
+          </div>
 
-        <SingleFileFormField
-          name="logo"
-          label="Logo"
-          accept="image/*"
-          previewImage
-        />
+          {/* Banner */}
+          <div className="rounded-2xl border bg-card p-6 space-y-5">
+            <div>
+              <p className="text-sm font-medium">Banner</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                The hero image on your public page.
+              </p>
+            </div>
+            <SingleFileFormField
+              name="bannerImage"
+              label="Banner Image"
+              accept="image/*"
+              previewImage
+            />
+          </div>
 
-        <SingleFileFormField
-          name="bannerImage"
-          label="Banner Image"
-          accept="image/*"
-          previewImage
-        />
+          {/* About */}
+          <div className="rounded-2xl border bg-card p-6 space-y-5">
+            <div>
+              <p className="text-sm font-medium">About</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Tell visitors a bit about yourself.
+              </p>
+            </div>
+            <TextAreaFormField name="aboutText" label="About Text" />
+            <SingleFileFormField
+              name="aboutImage"
+              label="About Image"
+              accept="image/*"
+              previewImage
+            />
+          </div>
 
-        <TextAreaFormField name="aboutText" label="About Text" />
+          {/* Social */}
+          <div className="rounded-2xl border bg-card p-6 space-y-5">
+            <div>
+              <p className="text-sm font-medium">Social links</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Let clients reach you.
+              </p>
+            </div>
+            <TextFormField name="whatsapp" label="WhatsApp" />
+            <TextFormField name="instagram" label="Instagram" />
+          </div>
 
-        <SingleFileFormField
-          name="aboutImage"
-          label="About Image"
-          accept="image/*"
-          previewImage
-        />
-
-        <TextFormField name="whatsapp" label="Whatsapp" />
-
-        <TextFormField name="instagram" label="Instagram" />
-
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          Submit
-        </Button>
-      </form>
-    </Form>
+          <Button
+            type="submit"
+            className="w-full rounded-xl"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? 'Saving…' : 'Save changes'}
+          </Button>
+        </form>
+      </Form>
+    </div>
   )
 }

@@ -1,10 +1,18 @@
-import { Inter } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 
 import './globals.css'
 import Providers from '@/components/providers'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+})
+
+export const metadata = {
+  title: 'Gallerify — Photography Portfolio Platform',
+  description: 'Build stunning client galleries and portfolio pages.',
+}
 
 export default function RootLayout({
   children,
@@ -13,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${outfit.variable} font-sans antialiased`}>
         <Providers>
           <Toaster />
           {children}

@@ -1,18 +1,10 @@
 'use client'
 
-import { CircleUserIcon, CreditCardIcon, EyeIcon } from 'lucide-react'
+import { EyeIcon } from 'lucide-react'
 import Link from 'next/link'
 import React, { ComponentPropsWithoutRef } from 'react'
 
-import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
@@ -27,41 +19,27 @@ export default function TopNavigationBar({
   sideBar,
 }: TopNavigationBarProps) {
   return (
-    <header className="bg-muted/40 flex h-14 items-center gap-4 border-b px-4 lg:h-16 lg:px-6">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-background px-4 lg:h-[57px] lg:px-5">
       {sideBar && (
         <>
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-2 h-4" />
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-1 h-4" />
         </>
       )}
-      <div className="flex w-full items-center">
-        <div>{header}</div>
+
+      <div className="flex flex-1 items-center">
+        {header && (
+          <h1 className="text-sm font-medium text-muted-foreground">{header}</h1>
+        )}
       </div>
 
-      <div className="flex gap-4">
-        <Button variant="ghost">
-          <EyeIcon className="mr-2 size-4" />
-          Preview
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
+          <Link href="#" target="_blank">
+            <EyeIcon className="size-3.5" />
+            Preview
+          </Link>
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUserIcon className="size-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href="/billing" className="flex items-center gap-2">
-                <CreditCardIcon className="size-4" />
-                Billing
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <LogoutButton />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </header>
   )
