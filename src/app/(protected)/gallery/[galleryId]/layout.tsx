@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import React from 'react'
 
+import { GalleryDesignShell } from '@/features/gallery/context/gallery-design-context'
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GallerySidebar from '@/features/gallery/components/layout/gallery-sidebar'
 import GalleryTopNavigationBar from '@/features/gallery/components/layout/gallery-top-navigationbar'
@@ -15,7 +16,9 @@ export default async function GalleryLayout({
   params: Promise<{ galleryId: string }>
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const { galleryId } = await params
   const gallery = await getGalleryById(galleryId)
@@ -33,20 +36,18 @@ export default async function GalleryLayout({
   const username = meta?.username ?? ''
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Top Navigation Bar */}
-      <GalleryTopNavigationBar galleryData={gallery} username={username} />
+    <GalleryDesignShell initialPrefs={gallery.preferences}>
+      <div className="flex h-screen flex-col">
+        <GalleryTopNavigationBar galleryData={gallery} username={username} />
 
-      {/* Main content below nav: sidebar + children */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-[250px] overflow-y-auto border-r lg:w-[330px]">
-          <GallerySidebar galleryData={gallery} />
+        <div className="flex flex-1 overflow-hidden">
+          <div className="w-[250px] overflow-y-auto border-r lg:w-[330px]">
+            <GallerySidebar galleryData={gallery} />
+          </div>
+
+          <div className="flex-1 overflow-auto">{children}</div>
         </div>
-
-        {/* Main children content */}
-        <div className="flex-1 overflow-auto">{children}</div>
       </div>
-    </div>
+    </GalleryDesignShell>
   )
 }
