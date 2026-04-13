@@ -6,11 +6,16 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getStorageUrl } from '@/lib/utils'
-import type { GalleryCategoryImage, GalleryWithCategory } from '@/types'
+import { THEMES, ACCENTS } from '@/features/gallery/constants/preferences'
+import type { GalleryCategoryImage, GalleryWithCategory, GalleryPreferences } from '@/types'
+import { DEFAULT_GALLERY_PREFERENCES } from '@/types'
 
 interface GalleryPageViewProps {
   gallery: GalleryWithCategory
   username: string
+  preferences?: GalleryPreferences
+  /** When true, photo layouts use at most 2 columns (e.g. design preview phone shell where viewport queries still match the real browser). */
+  narrowPhotoGrid?: boolean
 }
 
 const ALL_CATEGORY = '__all__'
@@ -18,7 +23,13 @@ const ALL_CATEGORY = '__all__'
 export default function GalleryPageView({
   gallery,
   username,
+  preferences,
+  narrowPhotoGrid = false,
 }: GalleryPageViewProps) {
+  const prefs = preferences ?? gallery.preferences ?? DEFAULT_GALLERY_PREFERENCES
+  const theme = THEMES[prefs.colorTheme]
+  const accent = ACCENTS[prefs.accentColor]
+
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORY)
   const [lightbox, setLightbox] = useState<{
     open: boolean
@@ -31,7 +42,6 @@ export default function GalleryPageView({
     ? getStorageUrl(gallery.bannerImage[0])
     : null
 
-  /* ── Derive image list for current category ── */
   const allImages = gallery.GalleryCategory.flatMap(
     (cat) => cat.GalleryCategoryImage
   )
@@ -42,7 +52,6 @@ export default function GalleryPageView({
       : (gallery.GalleryCategory.find((c) => c.id === activeCategory)
           ?.GalleryCategoryImage ?? [])
 
-  /* ── Lightbox helpers ── */
   const openLightbox = useCallback(
     (images: GalleryCategoryImage[], index: number) => {
       setLightbox({ open: true, images, index })
@@ -70,7 +79,6 @@ export default function GalleryPageView({
     }))
   }, [])
 
-  /* ── Keyboard navigation ── */
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (!lightbox.open) return
@@ -82,7 +90,6 @@ export default function GalleryPageView({
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightbox.open, closeLightbox, goNext, goPrev])
 
-  /* ── Scroll active category pill into view ── */
   useEffect(() => {
     const bar = categoryBarRef.current
     if (!bar) return
@@ -100,11 +107,19 @@ export default function GalleryPageView({
 
   const hasCategories = gallery.GalleryCategory.length > 0
 
+  // Title position based on alignment
+  const titlePositionClass =
+    prefs.titleAlign === 'center'
+      ? 'absolute bottom-12 left-0 right-0 flex flex-col items-center text-center px-8'
+      : prefs.titleAlign === 'right'
+        ? 'absolute bottom-12 right-8 text-right sm:right-12 lg:right-16'
+        : 'absolute bottom-12 left-8 sm:left-12 lg:left-16'
+
   return (
     <div
       style={{
-        backgroundColor: 'oklch(0.11 0.008 60)',
-        color: 'oklch(0.95 0.008 80)',
+        backgroundColor: theme.bg,
+        color: theme.text,
         fontFamily: 'var(--font-body, sans-serif)',
         minHeight: '100dvh',
       }}
@@ -121,20 +136,11 @@ export default function GalleryPageView({
             sizes="100vw"
           />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: 'oklch(0.18 0.012 60)' }}
-          />
+          <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
         )}
 
         {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(to top, oklch(0.09 0.008 60) 0%, oklch(0.09 0.008 60 / 0.4) 35%, transparent 65%)',
-          }}
-        />
+        <div className="absolute inset-0" style={{ background: theme.gradient }} />
 
         {/* Back link */}
         <motion.div
@@ -146,33 +152,23 @@ export default function GalleryPageView({
           <Link
             href={`/${username}`}
             className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-            style={{ color: 'oklch(0.75 0.008 80)' }}
+            style={{ color: theme.textMuted }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             {username}
           </Link>
         </motion.div>
 
-        {/* Title — bottom left */}
+        {/* Title */}
         <motion.div
-          className="absolute bottom-12 left-8 sm:left-12 lg:left-16"
+          className={titlePositionClass}
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         >
-          <p
-            className="mb-2 text-xs uppercase tracking-[0.2em]"
-            style={{ color: 'oklch(0.78 0.09 80)' }}
-          >
+          <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>
             {formattedDate}
           </p>
           <h1
@@ -181,15 +177,12 @@ export default function GalleryPageView({
               fontFamily: 'var(--font-display, serif)',
               fontWeight: 400,
               letterSpacing: '-0.02em',
-              textShadow: '0 2px 40px oklch(0 0 0 / 0.4)',
+              textShadow: prefs.colorTheme !== 'light' ? '0 2px 40px oklch(0 0 0 / 0.4)' : 'none',
             }}
           >
             {gallery.title}
           </h1>
-          <p
-            className="mt-3 text-sm"
-            style={{ color: 'oklch(0.60 0.008 80)' }}
-          >
+          <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>
             {allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}
           </p>
         </motion.div>
@@ -200,10 +193,10 @@ export default function GalleryPageView({
         <div
           className="sticky top-0 z-30"
           style={{
-            backgroundColor: 'oklch(0.11 0.008 60 / 0.92)',
+            backgroundColor: theme.surface,
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
-            borderBottom: '1px solid oklch(0.22 0.006 60)',
+            borderBottom: `1px solid ${theme.border}`,
           }}
         >
           <div
@@ -216,6 +209,8 @@ export default function GalleryPageView({
               count={allImages.length}
               active={activeCategory === ALL_CATEGORY}
               onClick={() => setActiveCategory(ALL_CATEGORY)}
+              theme={theme}
+              accent={accent}
             />
             {gallery.GalleryCategory.map((cat) => (
               <CategoryPill
@@ -224,41 +219,92 @@ export default function GalleryPageView({
                 count={cat.GalleryCategoryImage.length}
                 active={activeCategory === cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                data-active={activeCategory === cat.id ? 'true' : 'false'}
+                theme={theme}
+                accent={accent}
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* ── MASONRY GRID ── */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-8 lg:px-12">
+      {/* ── PHOTO GRID ── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-8 lg:px-1">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeCategory}
+            key={`${activeCategory}-${prefs.photoLayout}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="columns-1 gap-3 sm:columns-2 lg:columns-3"
-            style={{ columnFill: 'balance' }}
           >
             {visibleImages.length === 0 ? (
-              <p
-                className="py-24 text-center text-sm"
-                style={{ color: 'oklch(0.50 0.01 80)' }}
-              >
+              <p className="py-24 text-center text-sm" style={{ color: theme.textDim }}>
                 No photos in this category.
               </p>
+            ) : prefs.photoLayout === 'grid' ? (
+              <div
+                className={
+                  narrowPhotoGrid ? 'grid grid-cols-2 gap-1' : 'grid grid-cols-3 gap-1'
+                }
+              >
+                {visibleImages.map((img, i) => (
+                  <GridItem key={img.id} image={img} index={i} onClick={() => openLightbox(visibleImages, i)} />
+                ))}
+              </div>
+            ) : prefs.photoLayout === 'editorial' ? (
+              <div className="flex flex-col gap-1">
+                {visibleImages[0] && (
+                  <motion.div
+                    className="cursor-pointer overflow-hidden"
+                    style={{ borderRadius: '2px', aspectRatio: '16/7' }}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={() => openLightbox(visibleImages, 0)}
+                    whileHover={{ scale: 1.01 }}
+                  >
+                    <img
+                      src={getStorageUrl(visibleImages[0].imageUrl)}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  </motion.div>
+                )}
+                {visibleImages.length > 1 && (
+                  <div
+                    className={narrowPhotoGrid ? 'columns-2 gap-1' : 'columns-3 gap-1'}
+                    style={{ columnFill: 'balance' }}
+                  >
+                    {visibleImages.slice(1).map((img, i) => (
+                      <MasonryItem
+                        key={img.id}
+                        image={img}
+                        index={i + 1}
+                        onClick={() => openLightbox(visibleImages, i + 1)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
-              visibleImages.map((img, i) => (
-                <MasonryItem
-                  key={img.id}
-                  image={img}
-                  index={i}
-                  onClick={() => openLightbox(visibleImages, i)}
-                />
-              ))
+              /* masonry (default) */
+              <div
+                className={
+                  narrowPhotoGrid
+                    ? 'columns-2 gap-1'
+                    : 'columns-2 gap-1 sm:columns-3 lg:columns-4'
+                }
+                style={{ columnFill: 'balance' }}
+              >
+                {visibleImages.map((img, i) => (
+                  <MasonryItem
+                    key={img.id}
+                    image={img}
+                    index={i}
+                    onClick={() => openLightbox(visibleImages, i)}
+                  />
+                ))}
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -273,6 +319,7 @@ export default function GalleryPageView({
             onClose={closeLightbox}
             onNext={goNext}
             onPrev={goPrev}
+            theme={theme}
           />
         )}
       </AnimatePresence>
@@ -286,13 +333,15 @@ function CategoryPill({
   count,
   active,
   onClick,
-  ...props
+  theme,
+  accent,
 }: {
   label: string
   count: number
   active: boolean
   onClick: () => void
-  [key: string]: unknown
+  theme: (typeof THEMES)[keyof typeof THEMES]
+  accent: string
 }) {
   return (
     <button
@@ -300,22 +349,13 @@ function CategoryPill({
       data-active={active ? 'true' : 'false'}
       className="relative shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors duration-200"
       style={{
-        backgroundColor: active
-          ? 'oklch(0.78 0.09 80)'
-          : 'oklch(0.20 0.008 60)',
-        color: active ? 'oklch(0.11 0.008 60)' : 'oklch(0.65 0.008 80)',
+        backgroundColor: active ? accent : theme.pillBg,
+        color: active ? theme.bg : theme.textDim,
         letterSpacing: '0.04em',
       }}
-      {...props}
     >
       {label}
-      <span
-        className="ml-1.5 text-[10px]"
-        style={{
-          opacity: 0.7,
-          color: active ? 'oklch(0.25 0.005 60)' : 'oklch(0.50 0.006 80)',
-        }}
-      >
+      <span className="ml-1.5 text-[10px]" style={{ opacity: 0.7 }}>
         {count}
       </span>
     </button>
@@ -348,9 +388,7 @@ function MasonryItem({
     >
       <motion.div
         className="relative"
-        variants={{
-          hover: { scale: 1.03 },
-        }}
+        variants={{ hover: { scale: 1.03 } }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <img
@@ -358,9 +396,7 @@ function MasonryItem({
           alt=""
           loading="lazy"
           className="block w-full"
-          style={{ display: 'block' }}
         />
-        {/* Hover shine */}
         <motion.div
           className="absolute inset-0"
           style={{ backgroundColor: 'oklch(1 0 0 / 0)' }}
@@ -372,6 +408,40 @@ function MasonryItem({
   )
 }
 
+/* ── Grid Item ── */
+function GridItem({
+  image,
+  index,
+  onClick,
+}: {
+  image: GalleryCategoryImage
+  index: number
+  onClick: () => void
+}) {
+  return (
+    <motion.div
+      className="cursor-pointer overflow-hidden"
+      style={{ aspectRatio: '1/1', borderRadius: '1px' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: 0.4,
+        ease: [0.22, 1, 0.36, 1],
+        delay: Math.min(index * 0.03, 0.35),
+      }}
+      onClick={onClick}
+      whileHover={{ scale: 1.03 }}
+    >
+      <img
+        src={getStorageUrl(image.imageUrl)}
+        alt=""
+        loading="lazy"
+        className="size-full object-cover"
+      />
+    </motion.div>
+  )
+}
+
 /* ── Lightbox ── */
 function Lightbox({
   images,
@@ -379,16 +449,16 @@ function Lightbox({
   onClose,
   onNext,
   onPrev,
+  theme,
 }: {
   images: GalleryCategoryImage[]
   index: number
   onClose: () => void
   onNext: () => void
   onPrev: () => void
+  theme: (typeof THEMES)[keyof typeof THEMES]
 }) {
   const current = images[index]
-  const hasPrev = images.length > 1
-  const hasNext = images.length > 1
 
   return (
     <motion.div
@@ -400,10 +470,9 @@ function Lightbox({
       transition={{ duration: 0.25 }}
       onClick={onClose}
     >
-      {/* Close */}
       <button
         className="absolute right-5 top-5 z-10 flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10"
-        style={{ color: 'oklch(0.85 0.006 80)' }}
+        style={{ color: theme.text }}
         onClick={onClose}
         aria-label="Close"
       >
@@ -412,19 +481,17 @@ function Lightbox({
         </svg>
       </button>
 
-      {/* Counter */}
       <div
         className="absolute left-5 top-5 text-xs tracking-[0.15em]"
-        style={{ color: 'oklch(0.55 0.006 80)' }}
+        style={{ color: theme.textDim }}
       >
         {index + 1} / {images.length}
       </div>
 
-      {/* Prev */}
-      {hasPrev && (
+      {images.length > 1 && (
         <button
           className="absolute left-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10 sm:left-8"
-          style={{ color: 'oklch(0.85 0.006 80)' }}
+          style={{ color: theme.text }}
           onClick={(e) => { e.stopPropagation(); onPrev() }}
           aria-label="Previous"
         >
@@ -434,7 +501,6 @@ function Lightbox({
         </button>
       )}
 
-      {/* Image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={current.id}
@@ -454,11 +520,10 @@ function Lightbox({
         </motion.div>
       </AnimatePresence>
 
-      {/* Next */}
-      {hasNext && (
+      {images.length > 1 && (
         <button
           className="absolute right-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10 sm:right-8"
-          style={{ color: 'oklch(0.85 0.006 80)' }}
+          style={{ color: theme.text }}
           onClick={(e) => { e.stopPropagation(); onNext() }}
           aria-label="Next"
         >

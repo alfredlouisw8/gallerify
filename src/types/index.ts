@@ -61,6 +61,20 @@ export type UserMetadata = {
   currentPeriodEnd: string | null
 }
 
+export type GalleryPreferences = {
+  titleAlign: 'left' | 'center' | 'right'
+  colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive'
+  photoLayout: 'masonry' | 'grid' | 'editorial'
+  accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate'
+}
+
+export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
+  titleAlign: 'left',
+  colorTheme: 'dark',
+  photoLayout: 'masonry',
+  accentColor: 'gold',
+}
+
 export type Gallery = {
   id: string
   title: string
@@ -69,6 +83,7 @@ export type Gallery = {
   userId: string
   date: Date
   isPublished: boolean
+  preferences: GalleryPreferences
   createdAt: Date
   updatedAt: Date
 }
@@ -143,6 +158,7 @@ export type GalleryRow = {
   user_id: string
   date: string
   is_published: boolean
+  preferences: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }
@@ -163,6 +179,23 @@ export type GalleryCategoryImageRow = {
 // Row → App type mappers
 // =============================================
 
+function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
+  return {
+    titleAlign: (['left', 'center', 'right'].includes(raw?.titleAlign as string)
+      ? raw!.titleAlign
+      : DEFAULT_GALLERY_PREFERENCES.titleAlign) as GalleryPreferences['titleAlign'],
+    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive'].includes(raw?.colorTheme as string)
+      ? raw!.colorTheme
+      : DEFAULT_GALLERY_PREFERENCES.colorTheme) as GalleryPreferences['colorTheme'],
+    photoLayout: (['masonry', 'grid', 'editorial'].includes(raw?.photoLayout as string)
+      ? raw!.photoLayout
+      : DEFAULT_GALLERY_PREFERENCES.photoLayout) as GalleryPreferences['photoLayout'],
+    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate'].includes(raw?.accentColor as string)
+      ? raw!.accentColor
+      : DEFAULT_GALLERY_PREFERENCES.accentColor) as GalleryPreferences['accentColor'],
+  }
+}
+
 export function mapGallery(row: GalleryRow): Gallery {
   return {
     id: row.id,
@@ -172,6 +205,7 @@ export function mapGallery(row: GalleryRow): Gallery {
     userId: row.user_id,
     date: new Date(row.date),
     isPublished: row.is_published,
+    preferences: parsePreferences(row.preferences),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   }
