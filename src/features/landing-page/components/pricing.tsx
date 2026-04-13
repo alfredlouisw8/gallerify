@@ -78,7 +78,6 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
 
   const handleUpgrade = async () => {
     if (plan.id === 'free_trial') return
-
     setLoading(true)
     try {
       const res = await fetch('/api/lemonsqueezy/checkout', {
@@ -86,73 +85,104 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: plan.id }),
       })
-
       if (res.status === 401) {
-        // Not logged in — send to login, then back to billing with the chosen plan
         window.location.href = `/login?next=/billing&plan=${plan.id}`
         return
       }
-
       const { url, error } = await res.json()
-      if (error || !url) {
-        console.error('Checkout error:', error)
-        return
-      }
+      if (error || !url) return
       window.location.href = url
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // silent
     } finally {
       setLoading(false)
     }
   }
 
+  const isFeatured = plan.highlight
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut', delay }}
-      className={`bg-background flex flex-col rounded-lg border p-6 ${
-        plan.highlight ? 'ring-primary shadow-lg ring-2' : ''
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay }}
+      viewport={{ once: true }}
+      className={`relative flex flex-col rounded-2xl p-7 ${
+        isFeatured
+          ? 'bg-foreground text-background'
+          : 'border border-border bg-card'
       }`}
     >
-      {plan.highlight && (
-        <span className="bg-primary text-primary-foreground mb-4 w-fit rounded-full px-3 py-0.5 text-xs font-semibold">
+      {isFeatured && (
+        <span className="absolute -top-3 left-6 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
           Most popular
         </span>
       )}
+
       <div className="space-y-1">
-        <h3 className="text-2xl font-bold">{plan.name}</h3>
-        <p className="text-muted-foreground text-sm">{plan.description}</p>
+        <h3
+          className={`text-lg font-semibold ${isFeatured ? 'text-background' : ''}`}
+        >
+          {plan.name}
+        </h3>
+        <p
+          className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}
+        >
+          {plan.description}
+        </p>
       </div>
-      <div className="mt-4 flex items-baseline gap-1 text-3xl font-bold">
-        {plan.price}
-        <span className="text-muted-foreground text-sm font-normal">
+
+      <div className="mt-5 flex items-baseline gap-1">
+        <span
+          className={`text-4xl font-semibold tracking-tighter ${isFeatured ? 'text-background' : ''}`}
+        >
+          {plan.price}
+        </span>
+        <span
+          className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}
+        >
           {plan.priceNote}
         </span>
       </div>
-      <ul className="mt-6 flex-1 space-y-2 text-sm">
+
+      <ul className="mt-6 flex-1 space-y-2.5">
         {plan.features.map((f) => (
           <li
             key={f.label}
-            className={`flex items-center gap-2 ${f.included ? '' : 'text-muted-foreground'}`}
+            className={`flex items-center gap-2.5 text-sm ${
+              f.included
+                ? isFeatured
+                  ? 'text-background'
+                  : ''
+                : isFeatured
+                  ? 'text-background/40'
+                  : 'text-muted-foreground'
+            }`}
           >
             {f.included ? (
-              <CheckIcon className="size-4 shrink-0 text-green-500" />
+              <CheckIcon
+                className={`size-4 shrink-0 ${isFeatured ? 'text-amber-400' : 'text-green-500'}`}
+              />
             ) : (
-              <XIcon className="size-4 shrink-0" />
+              <XIcon className="size-4 shrink-0 opacity-40" />
             )}
             {f.label}
           </li>
         ))}
       </ul>
+
       <div className="mt-8">
         {plan.id === 'free_trial' ? (
-          <Button className="w-full" variant={plan.ctaVariant} asChild>
+          <Button
+            className={`w-full rounded-full ${isFeatured ? 'bg-background text-foreground hover:bg-background/90' : ''}`}
+            variant={plan.ctaVariant}
+            asChild
+          >
             <Link href="/login?next=/dashboard">{plan.cta}</Link>
           </Button>
         ) : (
           <Button
-            className="w-full"
+            className={`w-full rounded-full ${isFeatured ? 'bg-background text-foreground hover:bg-background/90' : ''}`}
             variant={plan.ctaVariant}
             onClick={() => void handleUpgrade()}
             disabled={loading}
@@ -174,34 +204,35 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
 
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-20">
-      <motion.div
-        data-scroll
-        data-scroll-speed="0.2"
-        className="container px-4 md:px-6"
-      >
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: 'easeIn' }}
-            className="space-y-2"
-          >
-            <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
-              Simple Pricing
-            </h2>
-            <p className="text-muted-foreground max-w-[600px] md:text-xl/relaxed">
-              Start free for 14 days — no credit card required. Upgrade when
-              you&apos;re ready.
-            </p>
-          </motion.div>
-        </div>
-        <div className="mx-auto grid max-w-5xl gap-6 py-12 lg:grid-cols-3">
+    <section id="pricing" className="bg-secondary/40 py-24 md:py-32">
+      <div className="container px-4 md:px-6">
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          viewport={{ once: true }}
+          className="mb-14 text-center"
+        >
+          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Pricing
+          </p>
+          <h2 className="text-4xl font-semibold tracking-tighter md:text-5xl">
+            Simple, honest pricing.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            Start free for 14 days — no credit card required. Upgrade when
+            you&apos;re ready.
+          </p>
+        </motion.div>
+
+        <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3">
           {plans.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} delay={0.1 + i * 0.1} />
+            <PlanCard key={plan.id} plan={plan} delay={0.08 + i * 0.08} />
           ))}
         </div>
-      </motion.div>
+
+      </div>
     </section>
   )
 }
