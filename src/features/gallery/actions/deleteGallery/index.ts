@@ -2,13 +2,22 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
 import { mapGallery } from '@/types'
-import { deleteFromStorage } from '@/utils/storage-actions'
-import { getStoragePath } from '@/utils/storage'
+import {
+  deleteFromStorage,
+  decrementStorageUsage,
+} from '@/utils/storage-actions'
+import { getStoragePath, sumStorageSizes } from '@/utils/storage'
 
 export default async function deleteGallery(galleryId: string) {
-  // Fetch gallery first to get banner images for storage cleanup
+  const authClient = await createClient()
+  const {
+    data: { user },
+  } = await authClient.auth.getUser()
+
+  // Fetch gallery to get banner images for storage cleanup
   const { data: galleryRow, error: fetchError } = await supabase
     .from('galleries')
     .select('*')
@@ -17,25 +26,32 @@ export default async function deleteGallery(galleryId: string) {
 
   if (fetchError) throw new Error(fetchError.message)
 
-  // Delete banner images from Supabase Storage
   const bannerImages: string[] = galleryRow.banner_image ?? []
-  if (bannerImages.length > 0) {
-    const paths = bannerImages.map(getStoragePath).filter(Boolean)
-    await deleteFromStorage(paths)
-  }
 
-  // Also delete all category images from storage
+  // Fetch all category images before cascade-deleting the gallery
   const { data: categoryImages } = await supabase
     .from('gallery_category_images')
     .select('image_url, gallery_categories!inner(gallery_id)')
     .eq('gallery_categories.gallery_id', galleryId)
 
-  if (categoryImages && categoryImages.length > 0) {
-    const paths = categoryImages.map((img) => getStoragePath(img.image_url)).filter(Boolean)
-    await deleteFromStorage(paths)
-  }
+  const categoryImageUrls = (categoryImages ?? []).map((img) => img.image_url)
 
-  // Delete gallery (cascades to categories + images via FK)
+  // Calculate total bytes being freed
+  const totalBytes =
+    sumStorageSizes(bannerImages) + sumStorageSizes(categoryImageUrls)
+
+  // Delete files from Supabase Storage
+  const bannerPaths = bannerImages.map(getStoragePath).filter(Boolean)
+  const categoryPaths = categoryImageUrls.map(getStoragePath).filter(Boolean)
+
+  await Promise.all([
+    bannerPaths.length > 0 ? deleteFromStorage(bannerPaths) : Promise.resolve(),
+    categoryPaths.length > 0
+      ? deleteFromStorage(categoryPaths)
+      : Promise.resolve(),
+  ])
+
+  // Delete gallery from DB (cascades to categories + images via FK)
   const { error: deleteError } = await supabase
     .from('galleries')
     .delete()
@@ -43,7 +59,11 @@ export default async function deleteGallery(galleryId: string) {
 
   if (deleteError) throw new Error(deleteError.message)
 
-  revalidatePath('/gallery')
+  // Decrement storage usage for the gallery owner
+  if (user && totalBytes > 0) {
+    await decrementStorageUsage(user.id, totalBytes)
+  }
 
+  revalidatePath('/gallery')
   return mapGallery(galleryRow)
 }

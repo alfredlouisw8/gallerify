@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { createClient } from '@/lib/supabase-server'
 import { createSafeAction } from '@/lib/create-safe-action'
+import { getPlanLimits, isTrialExpired, getEffectivePlan } from '@/lib/plans'
 import supabase from '@/lib/supabase'
-import { getPlanLimits, isTrialExpired } from '@/lib/plans'
+import { createClient } from '@/lib/supabase-server'
 import { mapGallery } from '@/types'
 
 import { GallerySchema } from '../schema'
@@ -24,14 +24,19 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   // --- Plan enforcement ---
   const { data: meta } = await supabase
     .from('user_metadata')
-    .select('plan, trial_ends_at')
+    .select('plan, trial_ends_at, subscription_status, current_period_end')
     .eq('user_id', user.id)
     .single()
 
   if (meta) {
-    const limits = getPlanLimits(meta.plan)
+    const effectivePlan = getEffectivePlan(
+      meta.plan,
+      meta.subscription_status,
+      meta.current_period_end
+    )
+    const limits = getPlanLimits(effectivePlan)
 
-    if (meta.plan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
       return {
         error:
           'Your free trial has expired. Please upgrade to continue creating galleries.',
@@ -46,7 +51,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
       if ((count ?? 0) >= limits.maxGalleries) {
         return {
-          error: `You've reached the ${limits.maxGalleries}-gallery limit on the Free Trial. Upgrade to Pro for unlimited galleries.`,
+          error: `You've reached the ${limits.maxGalleries}-gallery limit on the ${limits.label} plan. Upgrade to Pro for unlimited galleries.`,
         }
       }
     }

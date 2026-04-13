@@ -1,8 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { getPlanLimits, isTrialExpired, getEffectivePlan } from '@/lib/plans'
 import supabase from '@/lib/supabase'
-import { getPlanLimits, isTrialExpired } from '@/lib/plans'
+import { createClient } from '@/lib/supabase-server'
 
 const BUCKET = 'images'
 
@@ -15,10 +15,10 @@ const VIDEO_MIME_TYPES = [
 ]
 
 /**
- * Upload multiple files to Supabase Storage.
+ * Upload multiple files to Supabase Storage under the user's own folder.
  * Enforces plan limits (storage quota, video restriction, trial expiry) before uploading.
  * Increments the user's storage_used_bytes after a successful upload.
- * Returns an array of JSON strings: {"path":"...","url":"..."}
+ * Returns an array of JSON strings: {"path":"userId/filename","url":"https://...","size":12345}
  */
 export async function uploadToStorage(
   formData: FormData,
@@ -27,45 +27,49 @@ export async function uploadToStorage(
   const files = formData.getAll('images') as File[]
   if (!files.length) throw new Error('No files found')
 
-  // --- Plan enforcement ---
+  // --- Auth + plan enforcement ---
   const authClient = await createClient()
   const {
     data: { user },
   } = await authClient.auth.getUser()
 
-  if (user) {
-    const { data: meta } = await supabase
-      .from('user_metadata')
-      .select('plan, trial_ends_at, storage_used_bytes')
-      .eq('user_id', user.id)
-      .single()
+  if (!user) throw new Error('Unauthorized')
 
-    if (meta) {
-      const limits = getPlanLimits(meta.plan)
+  const { data: meta } = await supabase
+    .from('user_metadata')
+    .select(
+      'plan, trial_ends_at, storage_used_bytes, subscription_status, current_period_end'
+    )
+    .eq('user_id', user.id)
+    .single()
 
-      // Check trial expiry
-      if (meta.plan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
-        throw new Error(
-          'Your free trial has expired. Please upgrade to continue uploading.'
-        )
-      }
+  if (meta) {
+    const effectivePlan = getEffectivePlan(
+      meta.plan,
+      meta.subscription_status,
+      meta.current_period_end
+    )
+    const limits = getPlanLimits(effectivePlan)
 
-      // Check video files
-      const hasVideo = files.some((f) => VIDEO_MIME_TYPES.includes(f.type))
-      if (hasVideo && !limits.videoAllowed) {
-        throw new Error(
-          `Video uploads are not available on the ${limits.label} plan. Upgrade to Pro Max to upload videos.`
-        )
-      }
+    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+      throw new Error(
+        'Your free trial has expired. Please upgrade to continue uploading.'
+      )
+    }
 
-      // Check storage quota
-      const uploadBytes = files.reduce((sum, f) => sum + f.size, 0)
-      const usedBytes = meta.storage_used_bytes ?? 0
-      if (usedBytes + uploadBytes > limits.maxStorageBytes) {
-        throw new Error(
-          `Not enough storage. Your ${limits.label} plan includes ${limits.maxStorageLabel} total. Please upgrade or delete some files.`
-        )
-      }
+    const hasVideo = files.some((f) => VIDEO_MIME_TYPES.includes(f.type))
+    if (hasVideo && !limits.videoAllowed) {
+      throw new Error(
+        'Video uploads are not available on your current plan. Upgrade to Pro Max to upload videos.'
+      )
+    }
+
+    const uploadBytes = files.reduce((sum, f) => sum + f.size, 0)
+    const usedBytes = meta.storage_used_bytes ?? 0
+    if (usedBytes + uploadBytes > limits.maxStorageBytes) {
+      throw new Error(
+        `Not enough storage. Your ${limits.label} plan includes ${limits.maxStorageLabel} total. Please upgrade or delete some files.`
+      )
     }
   }
   // --- End plan enforcement ---
@@ -73,7 +77,8 @@ export async function uploadToStorage(
   const uploadPromises = files.map(async (file) => {
     const ext = file.name.split('.').pop() ?? 'jpg'
     const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const storagePath = `${folder}/${uniqueName}`
+    // Store under user's own folder so each user's files are isolated
+    const storagePath = `${user.id}/${folder}/${uniqueName}`
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
@@ -91,31 +96,46 @@ export async function uploadToStorage(
       data: { publicUrl },
     } = supabase.storage.from(BUCKET).getPublicUrl(data.path)
 
-    return { jsonUrl: JSON.stringify({ path: data.path, url: publicUrl }), size: file.size }
+    // Include size so we can decrement accurately on deletion
+    return {
+      jsonUrl: JSON.stringify({ path: data.path, url: publicUrl, size: file.size }),
+      size: file.size,
+    }
   })
 
   const results = await Promise.all(uploadPromises)
 
-  // Increment storage usage (atomic — no read-then-write race)
-  if (user) {
-    const totalBytes = results.reduce((sum, r) => sum + r.size, 0)
-    await supabase.rpc('increment_storage_usage', {
-      p_user_id: user.id,
-      p_bytes: totalBytes,
-    })
-  }
+  // Increment storage usage atomically
+  const totalBytes = results.reduce((sum, r) => sum + r.size, 0)
+  await supabase.rpc('increment_storage_usage', {
+    p_user_id: user.id,
+    p_bytes: totalBytes,
+  })
 
   return results.map((r) => r.jsonUrl)
 }
 
 /**
  * Delete files from Supabase Storage by their storage paths.
- * Paths are extracted from the stored JSON strings.
+ * Paths are extracted from the stored JSON strings via getStoragePath().
  */
 export async function deleteFromStorage(paths: string[]): Promise<void> {
   if (!paths.length) return
-
   const { error } = await supabase.storage.from(BUCKET).remove(paths)
-
   if (error) throw new Error(`Delete failed: ${error.message}`)
+}
+
+/**
+ * Decrement the owner's storage usage by the given byte count.
+ * Safe to call with 0 bytes (no-op).
+ */
+export async function decrementStorageUsage(
+  userId: string,
+  bytes: number
+): Promise<void> {
+  if (bytes <= 0) return
+  await supabase.rpc('decrement_storage_usage', {
+    p_user_id: userId,
+    p_bytes: bytes,
+  })
 }

@@ -19,7 +19,10 @@
       "Bash(tasklist)",
       "Bash(taskkill /F /IM node.exe)",
       "Bash(rm -rf .next)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(xargs grep:*)",
+      "Bash(npx shadcn@latest add progress alert --yes)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

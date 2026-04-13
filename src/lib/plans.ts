@@ -39,6 +39,30 @@ export function isTrialExpired(trialEndsAt: string | null): boolean {
   return new Date() > new Date(trialEndsAt)
 }
 
+/**
+ * Returns the effective plan to enforce limits against.
+ * Treats expired/cancelled-past-end subscriptions as free_trial regardless of DB plan column,
+ * as a fallback in case the webhook hasn't fired yet.
+ */
+export function getEffectivePlan(
+  plan: string,
+  subscriptionStatus: string,
+  currentPeriodEnd: string | null
+): string {
+  // If subscription is past_due or expired, treat as free_trial
+  if (subscriptionStatus === 'expired') return 'free_trial'
+  if (subscriptionStatus === 'past_due') return 'free_trial'
+  // If cancelled and period has ended, treat as free_trial (webhook fallback)
+  if (
+    subscriptionStatus === 'cancelled' &&
+    currentPeriodEnd &&
+    new Date() > new Date(currentPeriodEnd)
+  ) {
+    return 'free_trial'
+  }
+  return plan
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
   const k = 1024
