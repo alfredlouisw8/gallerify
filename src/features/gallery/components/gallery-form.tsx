@@ -22,36 +22,42 @@ export default function GalleryForm({ form, handleSubmit }: GalleryFormProps) {
   }
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={(event) => void handleSubmit(event)}
-        className="space-y-8"
-      >
-        <TextFormField
-          name="title"
-          label="Gallery Name"
-          onChangeFieldValue={onTitleChange}
-          required
-        />
+    <div className="mx-auto max-w-xl">
+      <Form {...form}>
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-6 rounded-2xl border bg-card p-6"
+        >
+          <TextFormField
+            name="title"
+            label="Gallery Name"
+            onChangeFieldValue={onTitleChange}
+            required
+          />
 
-        <TextFormField name="slug" label="Slug" required />
+          <TextFormField name="slug" label="Slug" required />
 
-        <DatePickerFormField name="date" label="Event Date" required />
+          <DatePickerFormField name="date" label="Event Date" required />
 
-        <MultiImageUpload
-          name="bannerImage"
-          label="Banner Image"
-          accept="image/*"
-          required
-          imagePreview
-        />
+          <MultiImageUpload
+            name="bannerImage"
+            label="Banner Image"
+            accept="image/*"
+            required
+            imagePreview
+          />
 
-        <CheckboxFormField name="isPublished" label="Published" />
+          <CheckboxFormField name="isPublished" label="Published" />
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          Submit
-        </Button>
-      </form>
-    </Form>
+          <Button
+            type="submit"
+            className="w-full rounded-xl"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? 'Saving…' : 'Save gallery'}
+          </Button>
+        </form>
+      </Form>
+    </div>
   )
 }

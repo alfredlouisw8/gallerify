@@ -25,7 +25,11 @@
       "Bash(taskkill //F //IM node.exe)",
       "Bash(xargs grep:*)",
       "Bash(npx shadcn@latest add progress alert --yes)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx skills:*)",
+      "Read(//c/Users/KUPOPO/.claude/**)"
     ]
   }
 }

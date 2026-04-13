@@ -1,12 +1,18 @@
 'use client'
 
-import { CheckIcon, XIcon, Loader2Icon, AlertTriangleIcon, CrownIcon } from 'lucide-react'
+import {
+  CheckIcon,
+  XIcon,
+  Loader2Icon,
+  AlertTriangleIcon,
+  CrownIcon,
+  HardDriveIcon,
+} from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { formatBytes, getPlanLimits, PLANS } from '@/lib/plans'
 
@@ -20,7 +26,10 @@ type BillingMeta = {
 }
 
 function statusBadge(status: string) {
-  const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  const map: Record<
+    string,
+    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  > = {
     trialing: { label: 'Trial', variant: 'secondary' },
     active: { label: 'Active', variant: 'default' },
     cancelled: { label: 'Cancelled', variant: 'outline' },
@@ -28,7 +37,11 @@ function statusBadge(status: string) {
     past_due: { label: 'Past Due', variant: 'destructive' },
   }
   const { label, variant } = map[status] ?? { label: status, variant: 'secondary' }
-  return <Badge variant={variant}>{label}</Badge>
+  return (
+    <Badge variant={variant} className="rounded-full text-xs">
+      {label}
+    </Badge>
+  )
 }
 
 function trialDaysLeft(trialEndsAt: string | null): number | null {
@@ -50,15 +63,13 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
     Math.round((meta.storage_used_bytes / limits.maxStorageBytes) * 100)
   )
   const daysLeft = trialDaysLeft(meta.trial_ends_at)
-  const isTrialExpired = meta.plan === 'free_trial' && (daysLeft === 0)
+  const isTrialExpired = meta.plan === 'free_trial' && daysLeft === 0
   const hasPaidPlan = meta.plan !== 'free_trial'
 
-  // Auto-trigger checkout if redirected from pricing page after login
   useEffect(() => {
     if (autoPlan && (autoPlan === 'pro' || autoPlan === 'pro_max')) {
       void handleUpgrade(autoPlan)
     }
-    // Only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -72,13 +83,11 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
       })
       const { url, error } = await res.json()
       if (error || !url) {
-        console.error('Checkout error:', error)
         setLoadingPlan(null)
         return
       }
       window.location.href = url
-    } catch (err) {
-      console.error(err)
+    } catch {
       setLoadingPlan(null)
     }
   }
@@ -89,100 +98,114 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
       const res = await fetch('/api/lemonsqueezy/portal')
       const { url, error } = await res.json()
       if (error || !url) {
-        console.error('Portal error:', error)
         setPortalLoading(false)
         return
       }
       window.location.href = url
-    } catch (err) {
-      console.error(err)
+    } catch {
       setPortalLoading(false)
     }
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
+    <div className="mx-auto max-w-2xl space-y-5 p-5 lg:p-7">
       <div>
-        <h1 className="text-2xl font-bold">Billing & Subscription</h1>
-        <p className="text-muted-foreground text-sm">Manage your plan and storage usage.</p>
+        <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Manage your plan and storage.
+        </p>
       </div>
 
-      {/* Current plan card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CrownIcon className="text-primary size-5" />
-              {PLANS[meta.plan as keyof typeof PLANS]?.label ?? meta.plan}
-            </CardTitle>
-            {statusBadge(meta.subscription_status)}
+      {/* Current plan */}
+      <div className="rounded-2xl border bg-card p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-amber-100">
+                <CrownIcon className="size-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-semibold">
+                  {PLANS[meta.plan as keyof typeof PLANS]?.label ?? meta.plan}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {hasPaidPlan && meta.current_period_end
+                    ? `${meta.subscription_status === 'cancelled' ? 'Access until' : 'Renews'} ${new Date(meta.current_period_end).toLocaleDateString('en-GB')}`
+                    : meta.plan === 'free_trial' && daysLeft !== null
+                      ? isTrialExpired
+                        ? 'Trial expired'
+                        : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in trial`
+                      : null}
+                </p>
+              </div>
+            </div>
           </div>
-          <CardDescription>
-            {hasPaidPlan && meta.current_period_end
-              ? `${meta.subscription_status === 'cancelled' ? 'Access until' : 'Renews'} ${new Date(meta.current_period_end).toLocaleDateString('en-GB')}`
-              : meta.plan === 'free_trial' && daysLeft !== null
-                ? isTrialExpired
-                  ? 'Your free trial has expired.'
-                  : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining in trial`
-                : null}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Storage usage */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Storage used</span>
-              <span className="font-medium">
+          {statusBadge(meta.subscription_status)}
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {/* Storage bar */}
+          <div>
+            <div className="mb-1.5 flex items-center gap-2">
+              <HardDriveIcon className="size-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Storage</span>
+              <span className="ml-auto tabular-nums text-xs font-medium">
                 {formatBytes(meta.storage_used_bytes)} / {limits.maxStorageLabel}
               </span>
             </div>
-            <Progress value={storagePercent} className="h-2" />
+            <Progress value={storagePercent} className="h-1.5" />
           </div>
 
-          {/* Plan features */}
-          <ul className="space-y-1 text-sm">
-            <li className="flex items-center gap-2">
-              <CheckIcon className="size-4 text-green-500" />
-              {limits.maxGalleries === Infinity ? 'Unlimited galleries' : `Up to ${limits.maxGalleries} galleries`}
+          {/* Features list */}
+          <ul className="space-y-1.5 text-sm">
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckIcon className="size-3.5 shrink-0 text-green-500" />
+              {limits.maxGalleries === Infinity
+                ? 'Unlimited galleries'
+                : `Up to ${limits.maxGalleries} galleries`}
             </li>
-            <li className="flex items-center gap-2">
-              <CheckIcon className="size-4 text-green-500" />
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckIcon className="size-3.5 shrink-0 text-green-500" />
               {limits.maxStorageLabel} storage
             </li>
-            <li className={`flex items-center gap-2 ${limits.videoAllowed ? '' : 'text-muted-foreground'}`}>
-              {limits.videoAllowed
-                ? <CheckIcon className="size-4 text-green-500" />
-                : <XIcon className="size-4" />}
+            <li
+              className={`flex items-center gap-2 ${limits.videoAllowed ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}
+            >
+              {limits.videoAllowed ? (
+                <CheckIcon className="size-3.5 shrink-0 text-green-500" />
+              ) : (
+                <XIcon className="size-3.5 shrink-0 opacity-40" />
+              )}
               Video uploads
             </li>
           </ul>
 
-          {/* Past due warning */}
+          {/* Warnings */}
           {meta.subscription_status === 'past_due' && (
-            <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertTriangleIcon className="size-4 shrink-0" />
-              Your payment is past due. Please update your payment method to keep access.
+            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+              Payment is past due. Please update your payment method.
             </div>
           )}
-
-          {/* Cancelled warning */}
           {meta.subscription_status === 'cancelled' && meta.current_period_end && (
-            <div className="flex items-center gap-2 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
-              <AlertTriangleIcon className="size-4 shrink-0" />
-              Subscription cancelled. You keep full access until {new Date(meta.current_period_end).toLocaleDateString('en-GB')}.
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-50 p-3 text-sm text-amber-700">
+              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+              Subscription cancelled. Full access until{' '}
+              {new Date(meta.current_period_end).toLocaleDateString('en-GB')}.
             </div>
           )}
 
-          {/* Manage subscription button for paid plans */}
           {hasPaidPlan && meta.ls_subscription_id && (
             <Button
               variant="outline"
+              size="sm"
+              className="rounded-xl"
               onClick={() => void handleManageSubscription()}
               disabled={portalLoading}
             >
               {portalLoading ? (
                 <>
-                  <Loader2Icon className="mr-2 size-4 animate-spin" />
+                  <Loader2Icon className="mr-2 size-3.5 animate-spin" />
                   Loading…
                 </>
               ) : (
@@ -190,69 +213,84 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
               )}
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Upgrade section — show if not on pro_max */}
+      {/* Upgrade section */}
       {meta.plan !== 'pro_max' && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">
-            {isTrialExpired ? 'Reactivate with a plan' : 'Upgrade your plan'}
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {isTrialExpired ? 'Choose a plan to continue' : 'Upgrade your plan'}
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Pro card */}
-            {meta.plan !== 'pro' && (
-              <Card className="ring-primary ring-2">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Pro</CardTitle>
-                    <Badge>Most popular</Badge>
-                  </div>
-                  <CardDescription>$10 / month</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2"><CheckIcon className="size-4 text-green-500" /> Unlimited galleries</li>
-                    <li className="flex items-center gap-2"><CheckIcon className="size-4 text-green-500" /> 10 GB storage</li>
-                    <li className="flex items-center gap-2 text-muted-foreground"><XIcon className="size-4" /> Video uploads</li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => void handleUpgrade('pro')}
-                    disabled={loadingPlan !== null}
-                  >
-                    {loadingPlan === 'pro' ? (
-                      <><Loader2Icon className="mr-2 size-4 animate-spin" />Redirecting…</>
-                    ) : 'Upgrade to Pro'}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Pro Max card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Pro Max</CardTitle>
-                <CardDescription>$20 / month</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ul className="space-y-1 text-sm">
-                  <li className="flex items-center gap-2"><CheckIcon className="size-4 text-green-500" /> Unlimited galleries</li>
-                  <li className="flex items-center gap-2"><CheckIcon className="size-4 text-green-500" /> 100 GB storage</li>
-                  <li className="flex items-center gap-2"><CheckIcon className="size-4 text-green-500" /> Video uploads</li>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {meta.plan !== 'pro' && (
+              <div className="relative rounded-2xl border-2 border-foreground bg-card p-5">
+                <span className="absolute -top-3 left-4 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
+                  Most popular
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-semibold tracking-tight">$10</span>
+                  <span className="text-xs text-muted-foreground">/month</span>
+                </div>
+                <p className="mt-0.5 font-medium">Pro</p>
+                <ul className="mt-4 space-y-1.5 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckIcon className="size-3.5 text-green-500" /> Unlimited galleries
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckIcon className="size-3.5 text-green-500" /> 10 GB storage
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground/50">
+                    <XIcon className="size-3.5 opacity-40" /> Video uploads
+                  </li>
                 </ul>
                 <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => void handleUpgrade('pro_max')}
+                  className="mt-5 w-full rounded-xl"
+                  size="sm"
+                  onClick={() => void handleUpgrade('pro')}
                   disabled={loadingPlan !== null}
                 >
-                  {loadingPlan === 'pro_max' ? (
-                    <><Loader2Icon className="mr-2 size-4 animate-spin" />Redirecting…</>
-                  ) : 'Upgrade to Pro Max'}
+                  {loadingPlan === 'pro' ? (
+                    <><Loader2Icon className="mr-2 size-3.5 animate-spin" />Redirecting…</>
+                  ) : (
+                    'Upgrade to Pro'
+                  )}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+
+            <div className="rounded-2xl border bg-card p-5">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-semibold tracking-tight">$20</span>
+                <span className="text-xs text-muted-foreground">/month</span>
+              </div>
+              <p className="mt-0.5 font-medium">Pro Max</p>
+              <ul className="mt-4 space-y-1.5 text-sm">
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <CheckIcon className="size-3.5 text-green-500" /> Unlimited galleries
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <CheckIcon className="size-3.5 text-green-500" /> 100 GB storage
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <CheckIcon className="size-3.5 text-green-500" /> Video uploads
+                </li>
+              </ul>
+              <Button
+                className="mt-5 w-full rounded-xl"
+                size="sm"
+                variant="outline"
+                onClick={() => void handleUpgrade('pro_max')}
+                disabled={loadingPlan !== null}
+              >
+                {loadingPlan === 'pro_max' ? (
+                  <><Loader2Icon className="mr-2 size-3.5 animate-spin" />Redirecting…</>
+                ) : (
+                  'Upgrade to Pro Max'
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
