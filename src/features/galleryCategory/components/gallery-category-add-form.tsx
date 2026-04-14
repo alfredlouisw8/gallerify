@@ -1,6 +1,6 @@
 'use client'
 
-import { PencilIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { TextFormField } from '@/components/forms/text-form-field'
@@ -36,30 +36,31 @@ export default function GalleryCategoryAddForm({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger onClick={() => setOpen(true)} asChild>
-        <Button variant="ghost">
-          <PencilIcon className="mr-2 size-3 text-gray-400" />
-          <span className="text-xs text-gray-400">Add Category</span>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-7 rounded-md">
+          <PlusIcon className="size-3.5" />
+          <span className="sr-only">Add category</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>Add category</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Form {...form}>
-            <form
-              onSubmit={(event) => void handleSubmit(event)}
-              className="space-y-8"
+        <Form {...form}>
+          <form
+            onSubmit={(event) => void handleSubmit(event)}
+            className="space-y-4 pt-2"
+          >
+            <TextFormField name="name" label="Category name" required />
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={form.formState.isSubmitting}
             >
-              <TextFormField name="name" label="Category Name" required />
-
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                Submit
-              </Button>
-            </form>
-          </Form>
-        </div>
+              {form.formState.isSubmitting ? 'Creating…' : 'Create category'}
+            </Button>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

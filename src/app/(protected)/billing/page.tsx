@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 
+import Container from '@/components/layout/container'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import BillingView from '@/features/billing/components/billing-view'
 import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
@@ -24,8 +26,12 @@ export default async function BillingPage() {
   if (!meta) redirect('/dashboard')
 
   return (
-    <Suspense>
-      <BillingView meta={meta} />
-    </Suspense>
+    <SidebarProvider>
+      <Container sideBar={true}>
+        <Suspense>
+          <BillingView meta={meta} />
+        </Suspense>
+      </Container>
+    </SidebarProvider>
   )
 }

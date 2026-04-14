@@ -34,8 +34,7 @@ export default function Container({
         ></TopNavigationBar>
         <main
           className={cn({
-            'gap-4 lg:gap-6': true,
-            'p-4 lg:p-4': showSidebar,
+            'p-6 lg:p-8': showSidebar,
           })}
         >
           <Suspense>{children}</Suspense>

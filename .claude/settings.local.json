@@ -26,7 +26,9 @@
       "Bash(gh repo:*)",
       "WebFetch(domain:github.com)",
       "Bash(npx skills:*)",
-      "Read(//c/Users/KUPOPO/.claude/**)"
+      "Read(//c/Users/KUPOPO/.claude/**)",
+      "Bash(grep -E \"^[^/]*\\(/[^/]*\\){0,3}$\")",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
     ]
   }
 }

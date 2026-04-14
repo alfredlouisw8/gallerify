@@ -1,11 +1,11 @@
 'use client'
 
-import { ImageIcon, ListIcon, SettingsIcon } from 'lucide-react'
+import { SettingsIcon } from 'lucide-react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import React from 'react'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 import { GalleryWithCategory } from '@/types'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 import GalleryCategoryList from '@/features/galleryCategory/components/gallery-category-list'
@@ -13,65 +13,49 @@ import GalleryCategoryList from '@/features/galleryCategory/components/gallery-c
 type GallerySidebarProps = {
   galleryData: GalleryWithCategory
 }
+
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
-  const router = useRouter()
-  const handleTabChange = (value: string) => {
-    if (value === 'category') {
-      router.push(
-        `/gallery/${galleryData.id}/collection/${galleryData.GalleryCategory[0].id}`
-      )
-    } else if (value === 'image') {
-      router.push(`/gallery/${galleryData.id}/update`)
-    } else if (value === 'settings') {
-      router.push(`/gallery/${galleryData.id}/update`)
-    }
-  }
-
-  const categories = galleryData.GalleryCategory
-
   return (
-    <div className="bg-muted/40 hidden border-r md:block">
-      {galleryData && galleryData.bannerImage.length > 0 && (
-        <div className="flex gap-2">
+    <div className="flex h-full flex-col bg-background">
+      {/* Banner thumbnail */}
+      {galleryData.bannerImage.length > 0 && (
+        <div className="relative h-36 w-full shrink-0 overflow-hidden">
           <Image
             src={JSON.parse(galleryData.bannerImage[0]).url}
-            width={330}
-            height={150}
-            alt="Banner Image"
+            fill
+            alt={galleryData.title}
             className="object-cover"
+            sizes="330px"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
       )}
-      <Tabs
-        defaultValue="category"
-        className="w-full"
-        onValueChange={handleTabChange}
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="category">
-            <ListIcon className="size-4" />
-          </TabsTrigger>
-          <TabsTrigger value="image">
-            <ImageIcon className="size-4" />
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            <SettingsIcon className="size-4" />
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="category">
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between px-4 py-2">
-              <span className="text-sm text-gray-400">Category</span>
-              <GalleryCategoryAddForm galleryId={galleryData.id} />
-            </div>
-            <div className="flex flex-col">
-              <GalleryCategoryList galleryData={galleryData} />
-            </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="image"></TabsContent>
-        <TabsContent value="settings"></TabsContent>
-      </Tabs>
+
+      {/* Categories section */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Categories
+          </span>
+          <GalleryCategoryAddForm galleryId={galleryData.id} />
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <GalleryCategoryList galleryData={galleryData} />
+        </div>
+      </div>
+
+      {/* Footer: Settings link */}
+      <div className="shrink-0">
+        <Separator />
+        <Link
+          href={`/gallery/${galleryData.id}/update`}
+          className="flex items-center gap-2.5 px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <SettingsIcon className="size-3.5" />
+          Gallery settings
+        </Link>
+      </div>
     </div>
   )
 }

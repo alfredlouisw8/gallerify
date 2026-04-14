@@ -19,14 +19,14 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
   const { form, handleSubmit } = UseHomepageForm({ profileData })
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div>
       <Form {...form}>
         <form
           onSubmit={(event) => void handleSubmit(event)}
-          className="space-y-6"
+          className="space-y-4"
         >
           {/* Identity */}
-          <div className="rounded-2xl border bg-card p-6 space-y-5">
+          <div className="rounded-2xl border bg-card p-5 space-y-4">
             <div>
               <p className="text-sm font-medium">Identity</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -43,7 +43,7 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
           </div>
 
           {/* Banner */}
-          <div className="rounded-2xl border bg-card p-6 space-y-5">
+          <div className="rounded-2xl border bg-card p-5 space-y-4">
             <div>
               <p className="text-sm font-medium">Banner</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -59,7 +59,7 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
           </div>
 
           {/* About */}
-          <div className="rounded-2xl border bg-card p-6 space-y-5">
+          <div className="rounded-2xl border bg-card p-5 space-y-4">
             <div>
               <p className="text-sm font-medium">About</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -76,7 +76,7 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
           </div>
 
           {/* Social */}
-          <div className="rounded-2xl border bg-card p-6 space-y-5">
+          <div className="rounded-2xl border bg-card p-5 space-y-4">
             <div>
               <p className="text-sm font-medium">Social links</p>
               <p className="mt-0.5 text-xs text-muted-foreground">

@@ -1,10 +1,7 @@
 'use client'
 
-import { EyeIcon } from 'lucide-react'
-import Link from 'next/link'
 import React, { ComponentPropsWithoutRef } from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
@@ -31,15 +28,6 @@ export default function TopNavigationBar({
         {header && (
           <h1 className="text-sm font-medium text-muted-foreground">{header}</h1>
         )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
-          <Link href="#" target="_blank">
-            <EyeIcon className="size-3.5" />
-            Preview
-          </Link>
-        </Button>
       </div>
     </header>
   )

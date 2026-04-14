@@ -16,11 +16,13 @@ import { updateGallery } from '../actions/updateGallery'
 type GalleryFormProps = {
   type: 'create' | 'update'
   galleryData?: Gallery
+  onSuccess?: () => void
 }
 
 export default function useGalleryForm({
   type,
   galleryData,
+  onSuccess,
 }: GalleryFormProps) {
   const router = useRouter()
   const formSchema = GallerySchema
@@ -41,6 +43,7 @@ export default function useGalleryForm({
       toast({
         title: actions[type].successMessage,
       })
+      onSuccess?.()
       router.replace('/gallery')
     },
     onError: (error) => {

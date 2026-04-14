@@ -1,12 +1,11 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { PlusIcon } from 'lucide-react'
 
 import Container from '@/components/layout/container'
-import { Button } from '@/components/ui/button'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import GalleryCreateSheet from '@/features/gallery/components/gallery-create-sheet'
 import GalleryList from '@/features/gallery/components/gallery-list'
 import { createClient } from '@/lib/supabase-server'
+import supabaseAdmin from '@/lib/supabase'
 
 export default async function GalleryPage() {
   const supabase = await createClient()
@@ -17,6 +16,14 @@ export default async function GalleryPage() {
   if (!user) {
     redirect('/')
   }
+
+  const { data: meta } = await supabaseAdmin
+    .from('user_metadata')
+    .select('username')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const username = meta?.username ?? ''
 
   return (
     <SidebarProvider>
@@ -29,14 +36,9 @@ export default async function GalleryPage() {
                 Manage your photography galleries.
               </p>
             </div>
-            <Button asChild size="sm" className="gap-2 rounded-full">
-              <Link href="/gallery/create">
-                <PlusIcon className="size-3.5" />
-                New gallery
-              </Link>
-            </Button>
+            <GalleryCreateSheet />
           </div>
-          <GalleryList />
+          <GalleryList username={username} />
         </div>
       </Container>
     </SidebarProvider>

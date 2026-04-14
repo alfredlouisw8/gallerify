@@ -23,7 +23,7 @@ import LogoutButton from '@/components/auth/logout-button'
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Gallery', url: '/gallery', icon: Images },
-  { title: 'Homepage', url: '/homepage', icon: Globe },
+  { title: 'Public page', url: '/homepage', icon: Globe },
   { title: 'Billing', url: '/billing', icon: CreditCard },
 ]
 

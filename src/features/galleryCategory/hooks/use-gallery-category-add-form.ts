@@ -40,16 +40,20 @@ export default function useGalleryCategoryAddForm({
   }
 
   const { execute, fieldErrors } = useAction(actions[type].action, {
-    onSuccess: () => {
+    onSuccess: (category) => {
       toast({
         title: actions[type].successMessage,
       })
+      if (type === 'create') {
+        // Navigate directly to the new category so users can start uploading
+        router.push(`/gallery/${category.galleryId}/collection/${category.id}`)
+      }
       if (type === 'update' && galleryCategoryData?.id) {
         // Revalidate the SWR cache so the category name in the detail header updates
         globalMutate(`category-detail-${galleryCategoryData.id}`)
+        // Re-fetch server components so the sidebar category list updates
+        router.refresh()
       }
-      // Re-fetch server components so the sidebar category list updates
-      router.refresh()
       handleClose()
     },
     onError: (error) => {

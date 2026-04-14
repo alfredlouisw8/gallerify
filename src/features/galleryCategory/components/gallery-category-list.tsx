@@ -1,5 +1,8 @@
-import { DeleteIcon, EllipsisVerticalIcon, MenuIcon } from 'lucide-react'
+'use client'
+
+import { EllipsisVerticalIcon, GripVerticalIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import React from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -11,62 +14,75 @@ import {
 import { GalleryCategoryWithImages, GalleryWithCategory } from '@/types'
 import GalleryCategoryUpdateForm from '@/features/galleryCategory/components/gallery-category-update-form'
 
-type GallerySidebarProps = {
+type GalleryCategoryListProps = {
   galleryData: GalleryWithCategory
 }
 
 export default function GalleryCategoryList({
   galleryData,
-}: GallerySidebarProps) {
+}: GalleryCategoryListProps) {
+  const pathname = usePathname()
   const categories = galleryData.GalleryCategory
 
   return (
-    <div className="">
-      {categories.map((category: GalleryCategoryWithImages) => (
-        <div
-          key={category.id}
-          className="flex cursor-pointer items-center justify-between px-6 py-3 hover:bg-gray-50"
-        >
-          <Link
-            href={`/gallery/${galleryData.id}/collection/${category.id}`}
-            className="flex flex-1 items-center gap-3"
+    <div className="flex flex-col">
+      {categories.map((category: GalleryCategoryWithImages) => {
+        const href = `/gallery/${galleryData.id}/collection/${category.id}`
+        const isActive = pathname === href
+        const imageCount = category.GalleryCategoryImage?.length ?? 0
+
+        return (
+          <div
+            key={category.id}
+            className={`group flex items-center justify-between transition-colors ${
+              isActive
+                ? 'bg-accent text-accent-foreground'
+                : 'hover:bg-muted/60'
+            }`}
           >
-            <MenuIcon className="size-4" />
-            <span className="text-sm">
-              {category.name} ({category.GalleryCategoryImage?.length || 0})
-            </span>
-          </Link>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="z-20 size-7"
-                onPointerDown={(e) => e.stopPropagation()} // Prevent drag on click
-              >
-                <EllipsisVerticalIcon className="size-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-0" align={'start'}>
-              <div className="grid">
+            {/* Drag handle */}
+            <GripVerticalIcon className="ml-3 size-3.5 shrink-0 text-muted-foreground/40" />
+
+            {/* Category link */}
+            <Link
+              href={href}
+              className="flex flex-1 items-center gap-2 px-2 py-2.5"
+            >
+              <span className="truncate text-sm">{category.name}</span>
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                {imageCount}
+              </span>
+            </Link>
+
+            {/* Actions */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="mr-1 size-6 opacity-0 transition-opacity group-hover:opacity-100"
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <EllipsisVerticalIcon className="size-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-1" align="end">
                 <GalleryCategoryUpdateForm
                   galleryId={galleryData.id}
                   galleryCategoryData={category}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-full justify-start py-6"
-                  onPointerDown={(e) => e.stopPropagation()} // Prevent drag
+                <button
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                  onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <DeleteIcon className="ml-6 mr-4 size-4 " />
+                  <Trash2Icon className="size-3.5" />
                   Delete
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      ))}
+                </button>
+              </PopoverContent>
+            </Popover>
+          </div>
+        )
+      })}
     </div>
   )
 }

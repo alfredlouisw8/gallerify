@@ -1,7 +1,9 @@
+'use client'
+
 import { format } from 'date-fns'
-import { ChevronLeft, CircleUserIcon, EyeIcon } from 'lucide-react'
+import { ChevronLeft, CircleUserIcon, EyeIcon, Globe, EyeOffIcon } from 'lucide-react'
 import Link from 'next/link'
-import React from 'react'
+import React, { useState, useTransition } from 'react'
 
 import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
@@ -12,6 +14,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { toast } from '@/components/ui/use-toast'
+import { toggleGalleryPublish } from '@/features/gallery/actions/toggleGalleryPublish'
 import { GalleryWithCategory } from '@/types'
 
 export interface TopNavigationBarProps {
@@ -24,42 +29,114 @@ export default function GalleryTopNavigationBar({
   username,
 }: TopNavigationBarProps) {
   const previewHref = `/${username}/${encodeURIComponent(galleryData.slug)}`
+  const [isPending, startTransition] = useTransition()
+  const [optimisticPublished, setOptimisticPublished] = useState(
+    galleryData.isPublished
+  )
+
+  const handleTogglePublish = () => {
+    const next = !optimisticPublished
+    setOptimisticPublished(next)
+    startTransition(async () => {
+      const result = await toggleGalleryPublish(galleryData.id, next)
+      if (result.error) {
+        setOptimisticPublished(!next) // revert on error
+        toast({ title: result.error, variant: 'destructive' })
+      } else {
+        toast({
+          title: next ? 'Gallery published' : 'Gallery set to draft',
+        })
+      }
+    })
+  }
 
   return (
-    <header className="bg-muted/40 flex h-14 items-center justify-between gap-4 border-b px-4 lg:h-16 lg:px-6">
-      <div className="flex w-full items-center gap-4">
-        <Link href="/gallery">
-          <Button variant="ghost" size="icon">
-            <ChevronLeft className="size-3" />
-          </Button>
-        </Link>
-        <span className="text-base">{galleryData.title}</span>
-        <Separator orientation="vertical" className="h-4" />
-        <span className="text-sm text-gray-500">
-          {format(galleryData.date, 'PP')}
-        </span>
-      </div>
-      <div className="flex gap-4">
-        <Link href={previewHref} target="_blank" rel="noopener noreferrer">
-          <Button variant="ghost">
-            <EyeIcon className="mr-2 size-4" />
-            Preview
-          </Button>
-        </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUserIcon className="size-5" />
-              <span className="sr-only">Menu</span>
+    <TooltipProvider>
+      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[57px] lg:px-5">
+        {/* Left: back + breadcrumb */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href="/gallery">
+            <Button variant="ghost" size="icon" className="size-8 shrink-0">
+              <ChevronLeft className="size-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <LogoutButton />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+          </Link>
+          <Separator orientation="vertical" className="h-4 shrink-0" />
+          <span className="truncate text-sm font-medium">{galleryData.title}</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">
+            {format(galleryData.date, 'PP')}
+          </span>
+        </div>
+
+        {/* Right: publish toggle + preview + user menu */}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Publish toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={optimisticPublished ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5 rounded-full text-xs"
+                onClick={handleTogglePublish}
+                disabled={isPending}
+              >
+                {optimisticPublished ? (
+                  <>
+                    <Globe className="size-3.5" />
+                    Published
+                  </>
+                ) : (
+                  <>
+                    <EyeOffIcon className="size-3.5" />
+                    Draft
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {optimisticPublished
+                ? 'Click to unpublish — clients will no longer see this gallery'
+                : 'Click to publish — make visible to clients'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Preview */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs"
+                asChild
+              >
+                <Link href={previewHref} target="_blank" rel="noopener noreferrer">
+                  <EyeIcon className="size-3.5" />
+                  {optimisticPublished ? 'Preview' : 'Preview (draft)'}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {optimisticPublished
+                ? 'Open public gallery in a new tab'
+                : 'Only you can see this. Publish to share with clients.'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* User menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8 rounded-full">
+                <CircleUserIcon className="size-5" />
+                <span className="sr-only">Menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <LogoutButton />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+    </TooltipProvider>
   )
 }

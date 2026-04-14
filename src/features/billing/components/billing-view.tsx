@@ -108,7 +108,7 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 p-5 lg:p-7">
+    <div className="mx-auto max-w-2xl space-y-5">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
