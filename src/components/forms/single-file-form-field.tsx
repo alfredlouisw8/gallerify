@@ -83,7 +83,7 @@ export function SingleFileFormField<
             return
           }
 
-          if (value instanceof Blob) {
+          if ((value as unknown) instanceof Blob) {
             if (blobRef.current) URL.revokeObjectURL(blobRef.current)
             const url = URL.createObjectURL(value)
             blobRef.current = url
