@@ -8,6 +8,9 @@
       "Bash(cat next.config.mjs)",
       "Bash(rm \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\\\\route.ts\")",
       "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")",
+      "Bash(rm \"/c/Users/gerra/PhpstormProjects/pixieset-clone/src/app/\\(protected\\)/gallery/[galleryId]/preview/page.tsx\")",
+      "Bash(rmdir \"/c/Users/gerra/PhpstormProjects/pixieset-clone/src/app/\\(protected\\)/gallery/[galleryId]/preview\")"
+      "Bash(rmdir \"C:\\\\Users\\\\gerra\\\\PhpstormProjects\\\\pixieset-clone\\\\src\\\\app\\\\api\\\\category\\\\[id]\")",
       "Bash(git log:*)",
       "Bash(git ls-tree:*)",
       "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
