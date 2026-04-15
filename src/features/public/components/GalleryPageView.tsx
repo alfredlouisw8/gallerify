@@ -4,9 +4,10 @@ import { AnimatePresence, motion } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type React from 'react'
 
 import { getStorageUrl } from '@/lib/utils'
-import { THEMES, ACCENTS } from '@/features/gallery/constants/preferences'
+import { THEMES, ACCENTS, FONT_PAIRS, SPACING } from '@/features/gallery/constants/preferences'
 import type { GalleryCategoryImage, GalleryWithCategory, GalleryPreferences } from '@/types'
 import { DEFAULT_GALLERY_PREFERENCES } from '@/types'
 
@@ -29,6 +30,14 @@ export default function GalleryPageView({
   const prefs = preferences ?? gallery.preferences ?? DEFAULT_GALLERY_PREFERENCES
   const theme = THEMES[prefs.colorTheme]
   const accent = ACCENTS[prefs.accentColor]
+  const fontPair = FONT_PAIRS[prefs.fontPairing]
+  const spacing = SPACING[prefs.photoSpacing]
+  const overlayAlpha = { subtle: 0.05, medium: 0.28, strong: 0.58 }[prefs.overlayIntensity]
+  // thumbnailSize: regular = more columns, large = fewer columns
+  const cols = {
+    desktop: prefs.thumbnailSize === 'large' ? 3 : 4,
+    mobile:  prefs.thumbnailSize === 'large' ? 1 : 2,
+  }
 
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORY)
   const [lightbox, setLightbox] = useState<{
@@ -118,11 +127,13 @@ export default function GalleryPageView({
   return (
     <div
       style={{
+        '--font-display': fontPair.display,
+        '--font-body': fontPair.body,
         backgroundColor: theme.bg,
         color: theme.text,
-        fontFamily: 'var(--font-body, sans-serif)',
+        fontFamily: fontPair.body,
         minHeight: '100dvh',
-      }}
+      } as React.CSSProperties}
     >
       {/* ── HERO ── */}
       <section className="relative h-screen overflow-hidden">
@@ -139,8 +150,19 @@ export default function GalleryPageView({
           <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
         )}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0" style={{ background: theme.gradient }} />
+        {/* Bottom seam — transitions hero into gallery bg */}
+        <div
+          className="absolute inset-x-0 bottom-0"
+          style={{
+            height: '60%',
+            background: `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}cc 25%, transparent 100%)`,
+          }}
+        />
+        {/* Intensity overlay — controls how much the photo shows */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }}
+        />
 
         {/* Back link */}
         <motion.div
@@ -187,6 +209,19 @@ export default function GalleryPageView({
           </p>
         </motion.div>
       </section>
+
+      {/* ── GRADIENT BRIDGE: hero → gallery ── */}
+      <div
+        aria-hidden
+        style={{
+          marginTop: '-96px',
+          height: '96px',
+          position: 'relative',
+          zIndex: 1,
+          background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`,
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* ── CATEGORY FILTER BAR ── */}
       {hasCategories && (
@@ -243,16 +278,15 @@ export default function GalleryPageView({
               </p>
             ) : prefs.photoLayout === 'grid' ? (
               <div
-                className={
-                  narrowPhotoGrid ? 'grid grid-cols-2 gap-1' : 'grid grid-cols-3 gap-1'
-                }
+                className="grid"
+                style={{ gridTemplateColumns: `repeat(${narrowPhotoGrid ? cols.mobile : cols.desktop}, minmax(0, 1fr))`, gap: spacing.gap }}
               >
                 {visibleImages.map((img, i) => (
                   <GridItem key={img.id} image={img} index={i} onClick={() => openLightbox(visibleImages, i)} />
                 ))}
               </div>
             ) : prefs.photoLayout === 'editorial' ? (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col" style={{ gap: spacing.gap }}>
                 {visibleImages[0] && (
                   <motion.div
                     className="cursor-pointer overflow-hidden"
@@ -272,14 +306,14 @@ export default function GalleryPageView({
                 )}
                 {visibleImages.length > 1 && (
                   <div
-                    className={narrowPhotoGrid ? 'columns-2 gap-1' : 'columns-3 gap-1'}
-                    style={{ columnFill: 'balance' }}
+                    style={{ columns: narrowPhotoGrid ? cols.mobile : cols.desktop, columnFill: 'balance', columnGap: spacing.gap }}
                   >
                     {visibleImages.slice(1).map((img, i) => (
                       <MasonryItem
                         key={img.id}
                         image={img}
                         index={i + 1}
+                        bottomMargin={spacing.gap}
                         onClick={() => openLightbox(visibleImages, i + 1)}
                       />
                     ))}
@@ -289,18 +323,14 @@ export default function GalleryPageView({
             ) : (
               /* masonry (default) */
               <div
-                className={
-                  narrowPhotoGrid
-                    ? 'columns-2 gap-1'
-                    : 'columns-2 gap-1 sm:columns-3 lg:columns-4'
-                }
-                style={{ columnFill: 'balance' }}
+                style={{ columns: narrowPhotoGrid ? cols.mobile : cols.desktop, columnFill: 'balance', columnGap: spacing.gap }}
               >
                 {visibleImages.map((img, i) => (
                   <MasonryItem
                     key={img.id}
                     image={img}
                     index={i}
+                    bottomMargin={spacing.gap}
                     onClick={() => openLightbox(visibleImages, i)}
                   />
                 ))}
@@ -366,16 +396,18 @@ function CategoryPill({
 function MasonryItem({
   image,
   index,
+  bottomMargin = '12px',
   onClick,
 }: {
   image: GalleryCategoryImage
   index: number
+  bottomMargin?: string
   onClick: () => void
 }) {
   return (
     <motion.div
-      className="mb-3 cursor-pointer overflow-hidden"
-      style={{ borderRadius: '2px', breakInside: 'avoid' }}
+      className="cursor-pointer overflow-hidden"
+      style={{ borderRadius: '2px', breakInside: 'avoid', marginBottom: bottomMargin }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{

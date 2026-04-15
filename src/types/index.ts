@@ -60,6 +60,23 @@ export type UserMetadata = {
   lsSubscriptionId: string | null
   subscriptionStatus: string
   currentPeriodEnd: string | null
+  homepagePreferences: HomepagePreferences
+}
+
+export type HomepagePreferences = {
+  colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive'
+  accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate'
+  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit'
+  overlayIntensity: 'subtle' | 'medium' | 'strong'
+  coverPosition: 'left' | 'center' | 'right'
+}
+
+export const DEFAULT_HOMEPAGE_PREFERENCES: HomepagePreferences = {
+  colorTheme: 'dark',
+  accentColor: 'gold',
+  fontPairing: 'bodoni-jost',
+  overlayIntensity: 'medium',
+  coverPosition: 'center',
 }
 
 export type GalleryPreferences = {
@@ -67,6 +84,10 @@ export type GalleryPreferences = {
   colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive'
   photoLayout: 'masonry' | 'grid' | 'editorial'
   accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate'
+  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit'
+  photoSpacing: 'tight' | 'relaxed' | 'airy'
+  overlayIntensity: 'subtle' | 'medium' | 'strong'
+  thumbnailSize: 'regular' | 'large'
 }
 
 export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
@@ -74,6 +95,10 @@ export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
   colorTheme: 'dark',
   photoLayout: 'masonry',
   accentColor: 'gold',
+  fontPairing: 'bodoni-jost',
+  photoSpacing: 'relaxed',
+  overlayIntensity: 'medium',
+  thumbnailSize: 'regular',
 }
 
 export type Gallery = {
@@ -150,6 +175,7 @@ export type UserMetadataRow = {
   ls_subscription_id: string | null
   subscription_status: string
   current_period_end: string | null
+  homepage_preferences: Record<string, unknown> | null
 }
 
 export type GalleryRow = {
@@ -181,6 +207,26 @@ export type GalleryCategoryImageRow = {
 // Row → App type mappers
 // =============================================
 
+function parseHomepagePreferences(raw: Record<string, unknown> | null | undefined): HomepagePreferences {
+  return {
+    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive'].includes(raw?.colorTheme as string)
+      ? raw!.colorTheme
+      : DEFAULT_HOMEPAGE_PREFERENCES.colorTheme) as HomepagePreferences['colorTheme'],
+    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate'].includes(raw?.accentColor as string)
+      ? raw!.accentColor
+      : DEFAULT_HOMEPAGE_PREFERENCES.accentColor) as HomepagePreferences['accentColor'],
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(raw?.fontPairing as string)
+      ? raw!.fontPairing
+      : DEFAULT_HOMEPAGE_PREFERENCES.fontPairing) as HomepagePreferences['fontPairing'],
+    overlayIntensity: (['subtle', 'medium', 'strong'].includes(raw?.overlayIntensity as string)
+      ? raw!.overlayIntensity
+      : DEFAULT_HOMEPAGE_PREFERENCES.overlayIntensity) as HomepagePreferences['overlayIntensity'],
+    coverPosition: (['left', 'center', 'right'].includes(raw?.coverPosition as string)
+      ? raw!.coverPosition
+      : DEFAULT_HOMEPAGE_PREFERENCES.coverPosition) as HomepagePreferences['coverPosition'],
+  }
+}
+
 function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
   return {
     titleAlign: (['left', 'center', 'right'].includes(raw?.titleAlign as string)
@@ -195,6 +241,18 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
     accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate'].includes(raw?.accentColor as string)
       ? raw!.accentColor
       : DEFAULT_GALLERY_PREFERENCES.accentColor) as GalleryPreferences['accentColor'],
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(raw?.fontPairing as string)
+      ? raw!.fontPairing
+      : DEFAULT_GALLERY_PREFERENCES.fontPairing) as GalleryPreferences['fontPairing'],
+    photoSpacing: (['tight', 'relaxed', 'airy'].includes(raw?.photoSpacing as string)
+      ? raw!.photoSpacing
+      : DEFAULT_GALLERY_PREFERENCES.photoSpacing) as GalleryPreferences['photoSpacing'],
+    overlayIntensity: (['subtle', 'medium', 'strong'].includes(raw?.overlayIntensity as string)
+      ? raw!.overlayIntensity
+      : DEFAULT_GALLERY_PREFERENCES.overlayIntensity) as GalleryPreferences['overlayIntensity'],
+    thumbnailSize: (['regular', 'large'].includes(raw?.thumbnailSize as string)
+      ? raw!.thumbnailSize
+      : DEFAULT_GALLERY_PREFERENCES.thumbnailSize) as GalleryPreferences['thumbnailSize'],
   }
 }
 
@@ -250,5 +308,6 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
     lsSubscriptionId: row.ls_subscription_id ?? null,
     subscriptionStatus: row.subscription_status ?? 'trialing',
     currentPeriodEnd: row.current_period_end ?? null,
+    homepagePreferences: parseHomepagePreferences(row.homepage_preferences),
   }
 }
