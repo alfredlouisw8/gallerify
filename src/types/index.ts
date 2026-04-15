@@ -124,6 +124,7 @@ export type GalleryCategoryImage = {
   id: string
   imageUrl: string
   categoryId: string
+  displayOrder: number
 }
 
 // Joined types (replaces Prisma include patterns)
@@ -201,6 +202,7 @@ export type GalleryCategoryImageRow = {
   id: string
   image_url: string
   category_id: string
+  display_order: number
 }
 
 // =============================================
@@ -286,6 +288,7 @@ export function mapGalleryCategoryImage(
     id: row.id,
     imageUrl: row.image_url,
     categoryId: row.category_id,
+    displayOrder: row.display_order ?? 0,
   }
 }
 

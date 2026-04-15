@@ -24,6 +24,7 @@ export async function fetchCategoryDetail(
     .from('gallery_category_images')
     .select('*')
     .eq('category_id', categoryId)
+    .order('display_order', { ascending: true })
 
   if (imgError) return null
 

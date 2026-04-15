@@ -1,6 +1,6 @@
 'use client'
 
-import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core'
+import { DndContext, closestCenter, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import {
   SortableContext,
   useSortable,
@@ -15,10 +15,13 @@ import {
   TrashIcon,
 } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 
+import { deleteGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/deleteGalleryCategoryImage'
+import { reorderGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/reorderGalleryCategoryImages'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/use-toast'
 import {
   Popover,
   PopoverContent,
@@ -54,8 +57,16 @@ export default function GalleryCategoryDetail({
     () => fetchCategoryDetail(collectionId)
   )
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
   const [images, setImages] = useState<GalleryCategoryImage[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  // Always holds the latest reordered array (avoids stale closure in handleDragEnd)
+  const imagesRef = useRef<GalleryCategoryImage[]>([])
+  // Snapshot of order before drag started, so we can detect real changes
+  const preDragOrderRef = useRef<string[]>([])
 
   const activeImage = activeId
     ? images?.find((img) => img.id === activeId)
@@ -63,6 +74,8 @@ export default function GalleryCategoryDetail({
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id)
+    // Capture the order before any dragging happens
+    preDragOrderRef.current = imagesRef.current.map((img) => img.id)
   }
 
   const handleDragOver = (event: any) => {
@@ -70,20 +83,44 @@ export default function GalleryCategoryDetail({
     if (!over || active.id === over.id) return
 
     setImages((items) => {
-      if (!items) return [] // Handle the case where items is undefined
+      if (!items) return []
       const oldIndex = items.findIndex((item) => item.id === active.id)
       const newIndex = items.findIndex((item) => item.id === over.id)
-      return arrayMove(items, oldIndex, newIndex)
+      const next = arrayMove(items, oldIndex, newIndex)
+      imagesRef.current = next
+      return next
     })
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = async () => {
     setActiveId(null)
+
+    const newOrder = imagesRef.current.map((img) => img.id)
+    const orderChanged = newOrder.some((id, i) => id !== preDragOrderRef.current[i])
+    if (!orderChanged) return
+
+    const result = await reorderGalleryCategoryImages(newOrder)
+
+    if (result?.error) {
+      toast({ title: 'Failed to save order', description: result.error, variant: 'destructive' })
+      await mutate()
+      return
+    }
+
+    mutate(
+      (current) => current
+        ? { ...current, GalleryCategoryImage: imagesRef.current }
+        : current,
+      { revalidate: false }
+    )
+
+    toast({ title: 'Order saved', description: 'Image order has been updated.' })
   }
 
   useEffect(() => {
     if (categoryData) {
       setImages(categoryData.GalleryCategoryImage)
+      imagesRef.current = categoryData.GalleryCategoryImage
     }
   }, [categoryData])
 
@@ -100,6 +137,7 @@ export default function GalleryCategoryDetail({
         />
       </div>
       <DndContext
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -238,13 +276,17 @@ function DraggableImage({
                     variant="ghost"
                     size="icon"
                     className="w-full justify-start py-6"
-                    onPointerDown={(e) => e.stopPropagation()} // Prevent drag
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     <TrashIcon className="ml-6 mr-4 size-4" />
                     Delete
                   </Button>
                 }
-                galleryId={item.id}
+                description="This image will be permanently deleted."
+                onConfirm={async () => {
+                  await deleteGalleryCategoryImage(item.id)
+                  await mutate()
+                }}
               />
             </div>
           </PopoverContent>
