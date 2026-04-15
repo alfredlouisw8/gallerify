@@ -32,10 +32,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       return { error: 'Gallery category not found' }
     }
 
+    // Get current max order so new images append at the end
+    const { data: maxRow } = await supabase
+      .from('gallery_category_images')
+      .select('display_order')
+      .eq('category_id', categoryId)
+      .order('display_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const startOrder = (maxRow?.display_order ?? -1) + 1
+
     // Insert all images
-    const inserts = (imageUrl ?? []).map((url) => ({
+    const inserts = (imageUrl ?? []).map((url, i) => ({
       image_url: url as string,
       category_id: categoryId,
+      display_order: startOrder + i,
     }))
 
     const { data: rows, error } = await supabase

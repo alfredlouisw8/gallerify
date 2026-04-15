@@ -19,12 +19,18 @@ import deleteGallery from '../actions/deleteGallery'
 
 type Props = {
   triggerComponent: React.ReactNode
-  galleryId: string
+  galleryId?: string
+  onConfirm?: () => Promise<void>
+  title?: string
+  description?: string
 }
 
 export default function DeleteGalleryDialog({
   triggerComponent,
   galleryId,
+  onConfirm,
+  title = 'Are you absolutely sure?',
+  description = 'This action cannot be undone.',
 }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -32,12 +38,16 @@ export default function DeleteGalleryDialog({
   const handleDelete = async () => {
     setLoading(true)
     try {
-      await deleteGallery(galleryId)
-      toast({ title: 'Gallery deleted' })
+      if (onConfirm) {
+        await onConfirm()
+      } else if (galleryId) {
+        await deleteGallery(galleryId)
+      }
+      toast({ title: 'Deleted successfully' })
       setOpen(false)
     } catch (err) {
       toast({
-        title: err instanceof Error ? err.message : 'Failed to delete gallery',
+        title: err instanceof Error ? err.message : 'Failed to delete',
         variant: 'destructive',
       })
     } finally {
@@ -50,8 +60,8 @@ export default function DeleteGalleryDialog({
       <DialogTrigger asChild>{triggerComponent}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Are you absolutely sure?</DialogTitle>
-          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button

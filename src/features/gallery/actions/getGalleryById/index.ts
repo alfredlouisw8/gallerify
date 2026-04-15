@@ -40,6 +40,7 @@ export default async function getGalleryById(
       .from('gallery_category_images')
       .select('*')
       .in('category_id', categoryIds)
+      .order('display_order', { ascending: true })
 
     if (imagesError) throw new Error(imagesError.message)
 
