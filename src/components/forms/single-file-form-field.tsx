@@ -38,6 +38,9 @@ export type SingleFileFormFieldProps<
   hasValueChangedFeedback?: boolean
   onChangeFieldValue?: ChangeEventHandler<HTMLInputElement>
   previewImage?: boolean
+  previewObjectFit?: 'cover' | 'contain'
+  previewAspect?: string
+  previewHeight?: number
 }
 
 export function SingleFileFormField<
@@ -52,6 +55,9 @@ export function SingleFileFormField<
   disabled,
   hasValueChangedFeedback,
   previewImage = false,
+  previewObjectFit = 'cover',
+  previewAspect,
+  previewHeight,
   accept,
   className,
 }: SingleFileFormFieldProps<TFieldValues, TName>) {
@@ -151,12 +157,20 @@ export function SingleFileFormField<
                 {previewImage && previewUrl ? (
                   /* Image preview state */
                   <div className="relative">
-                    <div className="relative h-36 w-full overflow-hidden rounded-[10px]">
+                    <div
+                      className="relative overflow-hidden rounded-[10px]"
+                      style={{
+                        aspectRatio: previewAspect ?? undefined,
+                        height: previewHeight ?? (previewAspect ? undefined : '9rem'),
+                        width: previewHeight && !previewAspect ? '100%' : undefined,
+                        backgroundColor: previewObjectFit === 'contain' ? 'hsl(var(--muted))' : undefined,
+                      }}
+                    >
                       <Image
                         src={previewUrl}
                         alt="Preview"
                         fill
-                        className="object-cover"
+                        className={previewObjectFit === 'contain' ? 'object-contain p-2' : 'object-cover'}
                         sizes="(max-width: 768px) 100vw, 600px"
                       />
                       <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity hover:opacity-100" />

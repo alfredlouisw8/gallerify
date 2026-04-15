@@ -22,7 +22,7 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     textMuted: 'oklch(0.60 0.008 80)',
     textDim:   'oklch(0.50 0.010 80)',
     pillBg:    'oklch(0.20 0.008 60)',
-    gradient:  'linear-gradient(to top, oklch(0.09 0.008 60) 0%, oklch(0.09 0.008 60 / 0.4) 35%, transparent 65%)',
+    gradient:  'linear-gradient(to top, oklch(0.11 0.008 60) 0%, oklch(0.11 0.008 60 / 0.5) 40%, transparent 70%)',
   },
   light: {
     bg:        'oklch(0.97 0.006 70)',
@@ -33,7 +33,7 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     textMuted: 'oklch(0.45 0.010 70)',
     textDim:   'oklch(0.58 0.008 70)',
     pillBg:    'oklch(0.90 0.006 70)',
-    gradient:  'linear-gradient(to top, oklch(0.92 0.006 70) 0%, oklch(0.92 0.006 70 / 0.4) 35%, transparent 65%)',
+    gradient:  'linear-gradient(to top, oklch(0.97 0.006 70) 0%, oklch(0.97 0.006 70 / 0.5) 40%, transparent 70%)',
   },
   rose: {
     bg:        'oklch(0.20 0.055 10)',
@@ -44,7 +44,7 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     textMuted: 'oklch(0.68 0.030 20)',
     textDim:   'oklch(0.55 0.020 20)',
     pillBg:    'oklch(0.28 0.055 10)',
-    gradient:  'linear-gradient(to top, oklch(0.16 0.055 10) 0%, oklch(0.16 0.055 10 / 0.4) 35%, transparent 65%)',
+    gradient:  'linear-gradient(to top, oklch(0.20 0.055 10) 0%, oklch(0.20 0.055 10 / 0.5) 40%, transparent 70%)',
   },
   sand: {
     bg:        'oklch(0.24 0.050 75)',
@@ -55,7 +55,7 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     textMuted: 'oklch(0.70 0.030 75)',
     textDim:   'oklch(0.56 0.020 75)',
     pillBg:    'oklch(0.32 0.050 75)',
-    gradient:  'linear-gradient(to top, oklch(0.19 0.050 75) 0%, oklch(0.19 0.050 75 / 0.4) 35%, transparent 65%)',
+    gradient:  'linear-gradient(to top, oklch(0.24 0.050 75) 0%, oklch(0.24 0.050 75 / 0.5) 40%, transparent 70%)',
   },
   olive: {
     bg:        'oklch(0.20 0.060 130)',
@@ -66,8 +66,23 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     textMuted: 'oklch(0.68 0.035 130)',
     textDim:   'oklch(0.55 0.025 130)',
     pillBg:    'oklch(0.28 0.060 130)',
-    gradient:  'linear-gradient(to top, oklch(0.15 0.060 130) 0%, oklch(0.15 0.060 130 / 0.4) 35%, transparent 65%)',
+    gradient:  'linear-gradient(to top, oklch(0.20 0.060 130) 0%, oklch(0.20 0.060 130 / 0.5) 40%, transparent 70%)',
   },
+}
+
+export const FONT_PAIRS: Record<
+  GalleryPreferences['fontPairing'],
+  { display: string; body: string; displayLabel: string; bodyLabel: string }
+> = {
+  'bodoni-jost':      { display: 'var(--font-bodoni)',    body: 'var(--font-jost)',     displayLabel: 'Bodoni Moda',       bodyLabel: 'Jost' },
+  'playfair-inter':   { display: 'var(--font-playfair)',  body: 'var(--font-inter)',    displayLabel: 'Playfair Display',  bodyLabel: 'Inter' },
+  'cormorant-outfit': { display: 'var(--font-cormorant)', body: 'var(--font-outfit)',   displayLabel: 'Cormorant Garamond', bodyLabel: 'Outfit' },
+}
+
+export const SPACING: Record<GalleryPreferences['photoSpacing'], { gap: string }> = {
+  tight:   { gap: '2px'  },
+  relaxed: { gap: '12px' },
+  airy:    { gap: '24px' },
 }
 
 export const ACCENTS: Record<GalleryPreferences['accentColor'], string> = {

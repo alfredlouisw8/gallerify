@@ -9,13 +9,15 @@ import {
   SmartphoneIcon,
 } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import type React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/use-toast'
 import GalleryPageView from '@/features/public/components/GalleryPageView'
 import { updateGalleryPreferences } from '@/features/gallery/actions/updateGalleryPreferences'
 import { useGalleryDesign } from '@/features/gallery/context/gallery-design-context'
-import { ACCENTS } from '@/features/gallery/constants/preferences'
+import { ACCENTS, FONT_PAIRS } from '@/features/gallery/constants/preferences'
 import type { GalleryPreferences, GalleryWithCategory } from '@/types'
 
 interface Props {
@@ -43,14 +45,14 @@ function OptionsPanel({ galleryId }: { galleryId: string }) {
     startTransition(async () => {
       await updateGalleryPreferences(galleryId, prefs)
       setIsDirty(false)
+      toast({ title: 'Design saved', description: 'Your gallery design has been updated.' })
     })
   }
 
   const titles: Record<string, string> = {
-    cover: 'Cover position',
-    color: 'Color theme',
-    layout: 'Photo layout',
-    accent: 'Accent color',
+    style:  'Style',
+    color:  'Color',
+    layout: 'Layout',
   }
 
   return (
@@ -64,136 +66,268 @@ function OptionsPanel({ galleryId }: { galleryId: string }) {
           exit={{ width: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex h-full w-[240px] flex-col gap-3 overflow-y-auto p-4">
+          <div className="flex h-full w-[240px] flex-col gap-4 overflow-y-auto p-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {titles[selectedPanel]}
             </p>
 
-            {/* Cover position */}
-            {selectedPanel === 'cover' && (
-              <div className="grid grid-cols-3 gap-2">
-                {(
-                  [
-                    { value: 'left',   icon: <AlignLeftIcon className="size-4" />,                     label: 'Left' },
-                    { value: 'center', icon: <AlignCenterIcon className="size-4" />,                   label: 'Center' },
-                    { value: 'right',  icon: <AlignLeftIcon className="size-4 scale-x-[-1]" />,        label: 'Right' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => update('titleAlign', opt.value)}
-                    className="flex flex-col items-center gap-1.5 rounded-lg border py-3 text-[11px] font-medium transition-all"
-                    style={{
-                      borderColor: prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                      background:  prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80 / 0.10)' : 'transparent',
-                      color:       prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80)' : 'hsl(var(--muted-foreground))',
-                    }}
-                  >
-                    {opt.icon}
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Color theme */}
-            {selectedPanel === 'color' && (
-              <div className="flex flex-col gap-1.5">
-                {(
-                  [
-                    { value: 'dark',  bg: 'oklch(0.11 0.008 60)',  label: 'Dark' },
-                    { value: 'light', bg: 'oklch(0.97 0.006 70)',  label: 'Light' },
-                    { value: 'rose',  bg: 'oklch(0.12 0.012 10)',  label: 'Rose' },
-                    { value: 'sand',  bg: 'oklch(0.14 0.016 75)',  label: 'Sand' },
-                    { value: 'olive', bg: 'oklch(0.12 0.012 130)', label: 'Olive' },
-                  ] as const
-                ).map((theme) => {
-                  const active = prefs.colorTheme === theme.value
-                  return (
-                    <button
-                      key={theme.value}
-                      onClick={() => update('colorTheme', theme.value)}
-                      className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                      style={{
-                        borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                        background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                        color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
-                      }}
-                    >
-                      <span className="size-4 shrink-0 rounded-full ring-1 ring-border" style={{ background: theme.bg }} />
-                      {theme.label}
-                      {active && <CheckIcon className="ml-auto size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Photo layout */}
-            {selectedPanel === 'layout' && (
-              <div className="flex flex-col gap-1.5">
-                {(
-                  [
-                    { value: 'masonry',   label: 'Masonry',   desc: 'Variable heights' },
-                    { value: 'grid',      label: 'Grid',      desc: 'Square crop' },
-                    { value: 'editorial', label: 'Editorial', desc: 'First photo hero' },
-                  ] as const
-                ).map((opt) => {
-                  const active = prefs.photoLayout === opt.value
-                  return (
+            {/* ── STYLE: cover + font + overlay ── */}
+            {selectedPanel === 'style' && (<>
+              <Section label="Cover position">
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      { value: 'left',   icon: <AlignLeftIcon className="size-4" />,              label: 'Left' },
+                      { value: 'center', icon: <AlignCenterIcon className="size-4" />,            label: 'Center' },
+                      { value: 'right',  icon: <AlignLeftIcon className="size-4 scale-x-[-1]" />, label: 'Right' },
+                    ] as const
+                  ).map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => update('photoLayout', opt.value)}
-                      className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                      onClick={() => update('titleAlign', opt.value)}
+                      className="flex flex-col items-center gap-1.5 rounded-lg border py-3 text-[11px] font-medium transition-all"
                       style={{
-                        borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                        background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                        color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                        borderColor: prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                        background:  prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80 / 0.10)' : 'transparent',
+                        color:       prefs.titleAlign === opt.value ? 'oklch(0.78 0.09 80)' : 'hsl(var(--muted-foreground))',
                       }}
                     >
-                      <span className="flex flex-col items-start gap-0.5">
-                        <span className="font-medium">{opt.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
-                      </span>
-                      {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      {opt.icon}
+                      {opt.label}
                     </button>
-                  )
-                })}
-              </div>
-            )}
+                  ))}
+                </div>
+              </Section>
 
-            {/* Accent color */}
-            {selectedPanel === 'accent' && (
-              <div className="flex flex-col gap-1.5">
-                {(
-                  [
-                    { value: 'gold',  label: 'Gold' },
-                    { value: 'ivory', label: 'Ivory' },
-                    { value: 'sage',  label: 'Sage' },
-                    { value: 'rose',  label: 'Rose' },
-                    { value: 'slate', label: 'Slate' },
-                  ] as const
-                ).map((ac) => {
-                  const active = prefs.accentColor === ac.value
-                  return (
-                    <button
-                      key={ac.value}
-                      onClick={() => update('accentColor', ac.value)}
-                      className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                      style={{
-                        borderColor: active ? ACCENTS[ac.value] : 'hsl(var(--border))',
-                        background:  active ? `${ACCENTS[ac.value]}1a` : 'transparent',
-                        color:       active ? ACCENTS[ac.value] : 'hsl(var(--foreground))',
-                      }}
-                    >
-                      <span className="size-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: ACCENTS[ac.value] }} />
-                      {ac.label}
-                      {active && <CheckIcon className="ml-auto size-3" />}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+              <Section label="Font pairing">
+                <div className="flex flex-col gap-1.5">
+                  {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
+                    const active = prefs.fontPairing === key
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => update('fontPairing', key)}
+                        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                        }}
+                      >
+                        <span className="flex flex-1 flex-col gap-0.5">
+                          <span className="text-sm leading-tight" style={{ fontFamily: pair.display, color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
+                            {pair.displayLabel}
+                          </span>
+                          <span className="text-[10px] tracking-wide" style={{ fontFamily: pair.body, color: 'hsl(var(--muted-foreground))' }}>
+                            {pair.bodyLabel}
+                          </span>
+                        </span>
+                        {active && <CheckIcon className="ml-auto size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+
+              <Section label="Overlay">
+                <div className="flex flex-col gap-1.5">
+                  {(
+                    [
+                      { value: 'subtle' as const, label: 'Subtle', desc: 'Photo-forward' },
+                      { value: 'medium' as const, label: 'Medium', desc: 'Balanced' },
+                      { value: 'strong' as const, label: 'Strong', desc: 'Cinematic' },
+                    ]
+                  ).map((opt) => {
+                    const active = prefs.overlayIntensity === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => update('overlayIntensity', opt.value)}
+                        className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                        }}
+                      >
+                        <span className="flex flex-col items-start gap-0.5">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                        </span>
+                        {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+            </>)}
+
+            {/* ── COLOR: theme + accent ── */}
+            {selectedPanel === 'color' && (<>
+              <Section label="Theme">
+                <div className="flex flex-col gap-1.5">
+                  {(
+                    [
+                      { value: 'dark'  as const, label: 'Dark',  swatch: 'oklch(0.11 0.008 60)' },
+                      { value: 'light' as const, label: 'Light', swatch: 'oklch(0.97 0.006 70)' },
+                      { value: 'rose'  as const, label: 'Rose',  swatch: 'oklch(0.58 0.18 10)'  },
+                      { value: 'sand'  as const, label: 'Sand',  swatch: 'oklch(0.72 0.10 75)'  },
+                      { value: 'olive' as const, label: 'Olive', swatch: 'oklch(0.55 0.14 130)' },
+                    ]
+                  ).map((t) => {
+                    const active = prefs.colorTheme === t.value
+                    return (
+                      <button
+                        key={t.value}
+                        onClick={() => update('colorTheme', t.value)}
+                        className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                        }}
+                      >
+                        <span className="size-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: t.swatch }} />
+                        {t.label}
+                        {active && <CheckIcon className="ml-auto size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+
+              <Section label="Accent">
+                <div className="flex flex-col gap-1.5">
+                  {(
+                    [
+                      { value: 'gold'  as const, label: 'Gold' },
+                      { value: 'ivory' as const, label: 'Ivory' },
+                      { value: 'sage'  as const, label: 'Sage' },
+                      { value: 'rose'  as const, label: 'Rose' },
+                      { value: 'slate' as const, label: 'Slate' },
+                    ]
+                  ).map((ac) => {
+                    const active = prefs.accentColor === ac.value
+                    return (
+                      <button
+                        key={ac.value}
+                        onClick={() => update('accentColor', ac.value)}
+                        className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
+                        style={{
+                          borderColor: active ? ACCENTS[ac.value] : 'hsl(var(--border))',
+                          background:  active ? `${ACCENTS[ac.value]}1a` : 'transparent',
+                          color:       active ? ACCENTS[ac.value] : 'hsl(var(--foreground))',
+                        }}
+                      >
+                        <span className="size-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: ACCENTS[ac.value] }} />
+                        {ac.label}
+                        {active && <CheckIcon className="ml-auto size-3" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+            </>)}
+
+            {/* ── LAYOUT: photo layout + spacing ── */}
+            {selectedPanel === 'layout' && (<>
+              <Section label="Grid">
+                <div className="flex flex-col gap-1.5">
+                  {(
+                    [
+                      { value: 'masonry'   as const, label: 'Masonry',   desc: 'Variable heights' },
+                      { value: 'grid'      as const, label: 'Grid',      desc: 'Square crop' },
+                      { value: 'editorial' as const, label: 'Editorial', desc: 'First photo hero' },
+                    ]
+                  ).map((opt) => {
+                    const active = prefs.photoLayout === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => update('photoLayout', opt.value)}
+                        className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                        }}
+                      >
+                        <span className="flex flex-col items-start gap-0.5">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                        </span>
+                        {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+
+              <Section label="Spacing">
+                <div className="flex flex-col gap-1.5">
+                  {(
+                    [
+                      { value: 'tight'   as const, label: 'Tight',   desc: '2px gap' },
+                      { value: 'relaxed' as const, label: 'Relaxed', desc: '12px gap' },
+                      { value: 'airy'    as const, label: 'Airy',    desc: '24px gap' },
+                    ]
+                  ).map((opt) => {
+                    const active = prefs.photoSpacing === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => update('photoSpacing', opt.value)}
+                        className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                        }}
+                      >
+                        <span className="flex flex-col items-start gap-0.5">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                        </span>
+                        {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+
+              <Section label="Thumbnail size">
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      { value: 'regular' as const, label: 'Regular', desc: '4 / 2 cols' },
+                      { value: 'large'   as const, label: 'Large',   desc: '3 / 1 cols' },
+                    ]
+                  ).map((opt) => {
+                    const active = prefs.thumbnailSize === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => update('thumbnailSize', opt.value)}
+                        className="flex flex-col items-center gap-1.5 rounded-lg border py-3 text-[11px] font-medium transition-all"
+                        style={{
+                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.10)' : 'transparent',
+                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--muted-foreground))',
+                        }}
+                      >
+                        {/* Mini grid preview */}
+                        <span className={`grid gap-0.5 ${opt.value === 'regular' ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                          {Array.from({ length: opt.value === 'regular' ? 8 : 6 }).map((_, i) => (
+                            <span key={i} className="h-2 w-3 rounded-[1px]" style={{ background: active ? 'oklch(0.78 0.09 80 / 0.5)' : 'hsl(var(--border))' }} />
+                          ))}
+                        </span>
+                        {opt.label}
+                        <span className="text-[9px] opacity-60">{opt.desc}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+            </>)}
 
             {isDirty && (
               <Button onClick={handleSave} disabled={isPending} size="sm" className="mt-auto w-full">
@@ -349,6 +483,18 @@ function PreviewCard({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/* ── Section sub-header ── */
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+        {label}
+      </p>
+      {children}
     </div>
   )
 }

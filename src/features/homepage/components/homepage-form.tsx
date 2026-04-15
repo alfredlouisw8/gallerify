@@ -58,6 +58,9 @@ export default function HomepageForm({ profileData, isProd, rootDomain }: Profil
               label="Logo"
               accept="image/*"
               previewImage
+              previewObjectFit="contain"
+              previewAspect="1/1"
+              previewHeight={80}
             />
           </div>
 
@@ -74,6 +77,8 @@ export default function HomepageForm({ profileData, isProd, rootDomain }: Profil
               label="Banner Image"
               accept="image/*"
               previewImage
+              previewObjectFit="cover"
+              previewHeight={96}
             />
           </div>
 
@@ -91,6 +96,8 @@ export default function HomepageForm({ profileData, isProd, rootDomain }: Profil
               label="About Image"
               accept="image/*"
               previewImage
+              previewObjectFit="contain"
+              previewHeight={112}
             />
           </div>
 

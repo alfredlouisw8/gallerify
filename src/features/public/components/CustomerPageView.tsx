@@ -5,8 +5,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRef } from 'react'
 
+import {
+  THEMES,
+  ACCENTS,
+  FONT_PAIRS,
+} from '@/features/gallery/constants/preferences'
 import { getStorageUrl } from '@/lib/utils'
-import type { Gallery, UserMetadata } from '@/types'
+import { DEFAULT_HOMEPAGE_PREFERENCES as DEFAULTS } from '@/types'
+
+import type { Gallery, UserMetadata, HomepagePreferences } from '@/types'
+import type React from 'react'
 
 interface CustomerPageViewProps {
   profile: UserMetadata
@@ -14,6 +22,9 @@ interface CustomerPageViewProps {
   username: string
   /** Base path for gallery links. '/' on subdomains, '/{username}' otherwise. */
   galleryBasePath: string
+  preferences?: HomepagePreferences
+  preview?: boolean
+  mobileLayout?: boolean
 }
 
 function formatDate(date: Date) {
@@ -28,7 +39,18 @@ export default function CustomerPageView({
   galleries,
   username,
   galleryBasePath,
+  preferences,
+  preview = false,
+  mobileLayout = false,
 }: CustomerPageViewProps) {
+  const prefs = preferences ?? profile.homepagePreferences ?? DEFAULTS
+  const theme = THEMES[prefs.colorTheme]
+  const accent = ACCENTS[prefs.accentColor]
+  const fontPair = FONT_PAIRS[prefs.fontPairing]
+  const overlayAlpha = { subtle: 0.05, medium: 0.28, strong: 0.58 }[
+    prefs.overlayIntensity
+  ]
+
   const publishedGalleries = galleries.filter((g) => g.isPublished)
 
   const heroRef = useRef<HTMLDivElement>(null)
@@ -36,9 +58,21 @@ export default function CustomerPageView({
     target: heroRef,
     offset: ['start start', 'end start'],
   })
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.08])
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
-  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '20%'])
+  const heroScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    preview ? [1, 1] : [1, 1.08]
+  )
+  const heroOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.7],
+    preview ? [1, 1] : [1, 0]
+  )
+  const heroY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    preview ? ['0%', '0%'] : ['0%', '20%']
+  )
 
   const instagramHandle = profile.instagram?.replace(
     /^https?:\/\/(www\.)?instagram\.com\//,
@@ -48,11 +82,15 @@ export default function CustomerPageView({
 
   return (
     <div
-      style={{
-        backgroundColor: 'oklch(0.11 0.008 60)',
-        color: 'oklch(0.95 0.008 80)',
-        fontFamily: 'var(--font-body, sans-serif)',
-      }}
+      style={
+        {
+          '--font-display': fontPair.display,
+          '--font-body': fontPair.body,
+          backgroundColor: theme.bg,
+          color: theme.text,
+          fontFamily: fontPair.body,
+        } as React.CSSProperties
+      }
     >
       {/* ── HERO ── */}
       <section ref={heroRef} className="relative h-screen overflow-hidden">
@@ -73,29 +111,46 @@ export default function CustomerPageView({
         ) : (
           <div
             className="absolute inset-0"
-            style={{ background: 'oklch(0.18 0.015 60)' }}
+            style={{ backgroundColor: theme.bgDim }}
           />
         )}
 
-        {/* Gradient overlay */}
+        {/* Bottom seam */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-x-0 bottom-0"
           style={{
-            background:
-              'linear-gradient(to top, oklch(0.11 0.008 60) 0%, oklch(0.11 0.008 60 / 0.5) 40%, transparent 70%)',
+            height: '60%',
+            background: `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}cc 25%, transparent 100%)`,
           }}
         />
+        {/* Intensity overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }}
+        />
 
-        {/* Logo + Name — bottom-left */}
+        {/* Logo + Name */}
         <motion.div
-          className="absolute bottom-12 left-8 flex items-end gap-5 sm:left-12 lg:left-16"
+          className={`absolute bottom-12 flex items-end gap-5 ${
+            prefs.coverPosition === 'center'
+              ? 'inset-x-0 justify-center px-8 text-center'
+              : prefs.coverPosition === 'right'
+                ? mobileLayout
+                  ? 'right-8'
+                  : 'right-8 sm:right-12 lg:right-16'
+                : mobileLayout
+                  ? 'left-8'
+                  : 'left-8 sm:left-12 lg:left-16'
+          }`}
           style={{ opacity: heroOpacity }}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
         >
           {profile.logo && (
-            <div className="size-14 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20 sm:size-16">
+            <div
+              className={`shrink-0 overflow-hidden rounded-full ring-1 ring-white/20 ${mobileLayout ? 'size-14' : 'size-14 sm:size-16'}`}
+            >
               <Image
                 src={getStorageUrl(profile.logo)}
                 alt="Logo"
@@ -105,15 +160,19 @@ export default function CustomerPageView({
               />
             </div>
           )}
-          <div>
+          <div
+            className={
+              prefs.coverPosition === 'center' ? 'text-center' : undefined
+            }
+          >
             <p
               className="mb-0.5 text-xs font-medium uppercase tracking-[0.2em]"
-              style={{ color: 'oklch(0.78 0.09 80)' }}
+              style={{ color: accent }}
             >
               Photography
             </p>
             <h1
-              className="text-4xl leading-none sm:text-5xl lg:text-6xl"
+              className={`leading-none ${mobileLayout ? 'text-4xl' : 'text-4xl sm:text-5xl lg:text-6xl'}`}
               style={{
                 fontFamily: 'var(--font-display, serif)',
                 fontWeight: 400,
@@ -127,7 +186,7 @@ export default function CustomerPageView({
 
         {/* Scroll cue */}
         <motion.div
-          className="absolute bottom-8 right-8 flex flex-col items-center gap-2 sm:right-12 lg:right-16"
+          className={`absolute bottom-8 flex flex-col items-center gap-2 ${mobileLayout ? 'right-8' : 'right-8 sm:right-12 lg:right-16'}`}
           style={{ opacity: heroOpacity }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -135,13 +194,13 @@ export default function CustomerPageView({
         >
           <span
             className="text-[10px] uppercase tracking-[0.25em]"
-            style={{ color: 'oklch(0.65 0.01 80)' }}
+            style={{ color: theme.textDim }}
           >
             Scroll
           </span>
           <motion.div
             className="h-8 w-px origin-top"
-            style={{ backgroundColor: 'oklch(0.78 0.09 80)' }}
+            style={{ backgroundColor: accent }}
             animate={{ scaleY: [0, 1, 0] }}
             transition={{
               duration: 1.6,
@@ -154,7 +213,9 @@ export default function CustomerPageView({
       </section>
 
       {/* ── GALLERIES ── */}
-      <section className="mx-auto max-w-7xl px-6 pb-24 pt-20 sm:px-10 lg:px-16">
+      <section
+        className={`mx-auto max-w-7xl px-6 pb-24 pt-20 ${mobileLayout ? '' : 'sm:px-10 lg:px-16'}`}
+      >
         <motion.div
           className="mb-14 flex items-baseline justify-between"
           initial={{ opacity: 0, y: 20 }}
@@ -163,7 +224,7 @@ export default function CustomerPageView({
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
           <h2
-            className="text-4xl italic sm:text-5xl"
+            className={`italic ${mobileLayout ? 'text-4xl' : 'text-4xl sm:text-5xl'}`}
             style={{
               fontFamily: 'var(--font-display, serif)',
               fontWeight: 400,
@@ -171,10 +232,7 @@ export default function CustomerPageView({
           >
             Portfolio
           </h2>
-          <span
-            className="text-sm"
-            style={{ color: 'oklch(0.55 0.01 80)' }}
-          >
+          <span className="text-sm" style={{ color: theme.textDim }}>
             {publishedGalleries.length}{' '}
             {publishedGalleries.length === 1 ? 'gallery' : 'galleries'}
           </span>
@@ -183,7 +241,7 @@ export default function CustomerPageView({
         {publishedGalleries.length === 0 ? (
           <motion.p
             className="py-24 text-center"
-            style={{ color: 'oklch(0.50 0.01 80)' }}
+            style={{ color: theme.textDim }}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -191,7 +249,9 @@ export default function CustomerPageView({
             No galleries published yet.
           </motion.p>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`grid gap-5 ${mobileLayout ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}
+          >
             {publishedGalleries.map((gallery, i) => (
               <GalleryCard
                 key={gallery.id}
@@ -199,6 +259,8 @@ export default function CustomerPageView({
                 username={username}
                 index={i}
                 galleryBasePath={galleryBasePath}
+                theme={theme}
+                accent={accent}
               />
             ))}
           </div>
@@ -207,11 +269,10 @@ export default function CustomerPageView({
 
       {/* ── ABOUT + CONTACT ── */}
       {(profile.aboutText || profile.whatsapp || profile.instagram) && (
-        <section
-          className="border-t"
-          style={{ borderColor: 'oklch(0.22 0.006 60)' }}
-        >
-          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 py-24 sm:px-10 lg:grid-cols-2 lg:px-16">
+        <section className="border-t" style={{ borderColor: theme.border }}>
+          <div
+            className={`mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 py-24 ${mobileLayout ? '' : 'sm:px-10 lg:grid-cols-2 lg:px-16'}`}
+          >
             {profile.aboutText && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -221,15 +282,15 @@ export default function CustomerPageView({
               >
                 <p
                   className="mb-5 text-xs uppercase tracking-[0.2em]"
-                  style={{ color: 'oklch(0.78 0.09 80)' }}
+                  style={{ color: accent }}
                 >
                   About
                 </p>
                 <p
                   className="max-w-prose text-base leading-relaxed"
                   style={{
-                    color: 'oklch(0.72 0.008 80)',
-                    fontFamily: 'var(--font-body, sans-serif)',
+                    color: theme.textMuted,
+                    fontFamily: fontPair.body,
                   }}
                 >
                   {profile.aboutText}
@@ -250,7 +311,7 @@ export default function CustomerPageView({
             >
               <p
                 className="text-xs uppercase tracking-[0.2em]"
-                style={{ color: 'oklch(0.78 0.09 80)' }}
+                style={{ color: accent }}
               >
                 Contact
               </p>
@@ -263,7 +324,10 @@ export default function CustomerPageView({
                     className="group flex items-center gap-4 transition-opacity hover:opacity-80"
                   >
                     <WhatsAppIcon />
-                    <span className="text-sm" style={{ color: 'oklch(0.72 0.008 80)' }}>
+                    <span
+                      className="text-sm"
+                      style={{ color: theme.textMuted }}
+                    >
                       {profile.whatsapp}
                     </span>
                   </a>
@@ -276,7 +340,10 @@ export default function CustomerPageView({
                     className="group flex items-center gap-4 transition-opacity hover:opacity-80"
                   >
                     <InstagramIcon />
-                    <span className="text-sm" style={{ color: 'oklch(0.72 0.008 80)' }}>
+                    <span
+                      className="text-sm"
+                      style={{ color: theme.textMuted }}
+                    >
                       {instagramHandle || profile.instagram}
                     </span>
                   </a>
@@ -291,8 +358,8 @@ export default function CustomerPageView({
       <footer
         className="border-t py-8 text-center"
         style={{
-          borderColor: 'oklch(0.18 0.006 60)',
-          color: 'oklch(0.40 0.006 80)',
+          borderColor: theme.border,
+          color: theme.textDim,
           fontSize: '0.75rem',
           letterSpacing: '0.1em',
         }}
@@ -309,11 +376,15 @@ function GalleryCard({
   username,
   index,
   galleryBasePath,
+  theme,
+  accent,
 }: {
   gallery: Gallery
   username: string
   index: number
   galleryBasePath: string
+  theme: import('@/features/gallery/constants/preferences').ThemeTokens
+  accent: string
 }) {
   const rawThumb = gallery.bannerImage?.[0]
   const thumb = rawThumb ? getStorageUrl(rawThumb) : null
@@ -348,7 +419,7 @@ function GalleryCard({
           ) : (
             <div
               className="size-full"
-              style={{ backgroundColor: 'oklch(0.18 0.008 60)' }}
+              style={{ backgroundColor: theme.bgDim }}
             />
           )}
 
@@ -356,15 +427,14 @@ function GalleryCard({
           <div
             className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             style={{
-              background:
-                'linear-gradient(to top, oklch(0.08 0.008 60 / 0.85) 0%, transparent 60%)',
+              background: `linear-gradient(to top, ${theme.bg}dd 0%, transparent 60%)`,
             }}
           />
 
           <div className="absolute inset-x-0 bottom-0 translate-y-3 p-5 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
             <p
               className="text-[10px] uppercase tracking-[0.2em]"
-              style={{ color: 'oklch(0.78 0.09 80)' }}
+              style={{ color: accent }}
             >
               View gallery
             </p>
@@ -377,15 +447,12 @@ function GalleryCard({
             style={{
               fontFamily: 'var(--font-display, serif)',
               fontWeight: 500,
-              color: 'oklch(0.88 0.008 80)',
+              color: theme.text,
             }}
           >
             {gallery.title}
           </h3>
-          <span
-            className="shrink-0 text-xs"
-            style={{ color: 'oklch(0.50 0.008 80)' }}
-          >
+          <span className="shrink-0 text-xs" style={{ color: theme.textDim }}>
             {formatDate(gallery.date)}
           </span>
         </div>
