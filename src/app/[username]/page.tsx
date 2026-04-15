@@ -1,9 +1,9 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
-import CustomerPageView from '@/features/public/components/CustomerPageView'
 import { getProfileByUsername } from '@/features/public/actions/getProfileByUsername'
 import { getPublishedGalleriesByUsername } from '@/features/public/actions/getPublishedGalleriesByUsername'
+import CustomerPageView from '@/features/public/components/CustomerPageView'
 
 // Always render fresh — never serve a cached version of the portfolio page
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,8 @@ export async function generateMetadata({ params }: Props) {
 
   return {
     title: `${username} — Photography`,
-    description: profile.aboutText ?? `View ${username}'s photography portfolio.`,
+    description:
+      profile.aboutText ?? `View ${username}'s photography portfolio.`,
   }
 }
 
