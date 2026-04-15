@@ -33,7 +33,17 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
                 Your public profile details.
               </p>
             </div>
-            <TextFormField name="username" label="Username" required />
+            <TextFormField name="name" label="Display Name" />
+            <div className="space-y-1">
+              <TextFormField name="username" label="Username" required />
+              <p className="text-xs text-muted-foreground">
+                Your gallery URL:{' '}
+                <span className="font-medium text-foreground">
+                  username.gallerify.app
+                </span>
+                . Lowercase letters, numbers, and hyphens only.
+              </p>
+            </div>
             <SingleFileFormField
               name="logo"
               label="Logo"
