@@ -1,4 +1,4 @@
-import { Bodoni_Moda, Jost } from 'next/font/google'
+import { Bodoni_Moda, Cormorant_Garamond, Inter, Jost, Outfit, Playfair_Display } from 'next/font/google'
 
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import supabaseAdmin from '@/lib/supabase'
@@ -9,15 +9,40 @@ export const dynamic = 'force-dynamic'
 
 const bodoniModa = Bodoni_Moda({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-bodoni',
   weight: ['400', '500', '600', '700', '900'],
   style: ['normal', 'italic'],
   display: 'swap',
 })
-
 const jost = Jost({
   subsets: ['latin'],
-  variable: '--font-body',
+  variable: '--font-jost',
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+})
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+})
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-cormorant',
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
   weight: ['300', '400', '500', '600'],
   display: 'swap',
 })
@@ -48,7 +73,7 @@ export default async function GalleryDesignPage({ params }: Props) {
   const username = metaResult.data?.username ?? ''
 
   return (
-    <div className={`${bodoniModa.variable} ${jost.variable} h-full overflow-hidden`}>
+    <div className={`${bodoniModa.variable} ${jost.variable} ${playfair.variable} ${inter.variable} ${cormorant.variable} ${outfit.variable} h-full overflow-hidden`}>
       <GalleryDesignPreview gallery={gallery} username={username} />
     </div>
   )

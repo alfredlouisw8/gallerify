@@ -1,13 +1,12 @@
 'use client'
 
 import {
-  CircleIcon,
   GridIcon,
   ImageIcon,
   ListIcon,
   PaletteIcon,
   SettingsIcon,
-  SquareMousePointer,
+  SlidersHorizontalIcon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -27,21 +26,11 @@ type GallerySidebarProps = {
   galleryData: GalleryWithCategory
 }
 
-const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] =
-  [
-    {
-      id: 'cover',
-      label: 'Cover',
-      icon: <SquareMousePointer className="size-3.5" />,
-    },
-    { id: 'color', label: 'Color', icon: <PaletteIcon className="size-3.5" /> },
-    { id: 'layout', label: 'Layout', icon: <GridIcon className="size-3.5" /> },
-    {
-      id: 'accent',
-      label: 'Accent',
-      icon: <CircleIcon className="size-3.5" />,
-    },
-  ]
+const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
+  { id: 'style',  label: 'Style',  icon: <SlidersHorizontalIcon className="size-3.5" /> },
+  { id: 'color',  label: 'Color',  icon: <PaletteIcon className="size-3.5" /> },
+  { id: 'layout', label: 'Layout', icon: <GridIcon className="size-3.5" /> },
+]
 
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   const router = useRouter()
@@ -117,7 +106,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
           {NAV_POINTS.map((point) => {
             const active = selectedPanel === point.id
             const accentDotColor =
-              point.id === 'accent' ? ACCENTS[prefs.accentColor] : undefined
+              point.id === 'color' ? ACCENTS[prefs.accentColor] : undefined
 
             return (
               <button
@@ -140,10 +129,9 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
                 {point.icon}
                 <span className="font-medium">{point.label}</span>
                 <span className="ml-auto text-xs capitalize opacity-50">
-                  {point.id === 'cover' && prefs.titleAlign}
-                  {point.id === 'color' && prefs.colorTheme}
+                  {point.id === 'style'  && prefs.titleAlign}
+                  {point.id === 'color'  && prefs.colorTheme}
                   {point.id === 'layout' && prefs.photoLayout}
-                  {point.id === 'accent' && prefs.accentColor}
                 </span>
               </button>
             )

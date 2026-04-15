@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon, GlobeIcon } from 'lucide-react'
+import { ArrowUpRightIcon, GlobeIcon, PaletteIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -46,14 +46,22 @@ export default async function PublicPageEditor() {
                 Customize your portfolio — this is what clients see when you share your link.
               </p>
             </div>
-            {publicUrl && (
-              <Button variant="outline" size="sm" className="shrink-0 gap-1.5 rounded-full" asChild>
-                <Link href={publicUrl} target="_blank" rel="noopener noreferrer">
-                  View live page
-                  <ArrowUpRightIcon className="size-3.5" />
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
+                <Link href="/homepage/design">
+                  <PaletteIcon className="size-3.5" />
+                  Design
                 </Link>
               </Button>
-            )}
+              {publicUrl && (
+                <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
+                  <Link href={publicUrl} target="_blank" rel="noopener noreferrer">
+                    View live page
+                    <ArrowUpRightIcon className="size-3.5" />
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Two-column layout */}
