@@ -37,6 +37,7 @@ export default function UseHomepageForm({ profileData }: ProfileFormProps) {
   const form = useForm<Inputs>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: profileData.name ?? '',
       username: profileData.username ?? '',
       aboutImage: profileData.aboutImage || undefined,
       aboutText: profileData.aboutText ?? '',

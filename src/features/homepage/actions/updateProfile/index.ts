@@ -21,6 +21,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   }
 
   const {
+    name,
     username,
     aboutImage,
     aboutText,
@@ -45,6 +46,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     const { data: metaRow, error: metaError } = await supabase
       .from('user_metadata')
       .update({
+        name,
         username,
         about_image: aboutImage as string,
         about_text: aboutText,
