@@ -286,6 +286,7 @@ function PreviewCard({
               <GalleryPageView
                 gallery={gallery}
                 username={username}
+                profilePath={`/${username}`}
                 preferences={prefs}
                 narrowPhotoGrid
               />
@@ -344,7 +345,7 @@ function PreviewCard({
               pointerEvents: 'none',
             }}
           >
-            <GalleryPageView gallery={gallery} username={username} preferences={prefs} />
+            <GalleryPageView gallery={gallery} username={username} profilePath={`/${username}`} preferences={prefs} />
           </div>
         )}
       </div>

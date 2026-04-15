@@ -13,6 +13,8 @@ import { DEFAULT_GALLERY_PREFERENCES } from '@/types'
 interface GalleryPageViewProps {
   gallery: GalleryWithCategory
   username: string
+  /** Href for the back-to-portfolio link. '/' on subdomains, '/{username}' otherwise. */
+  profilePath: string
   preferences?: GalleryPreferences
   /** When true, photo layouts use at most 2 columns (e.g. design preview phone shell where viewport queries still match the real browser). */
   narrowPhotoGrid?: boolean
@@ -23,6 +25,7 @@ const ALL_CATEGORY = '__all__'
 export default function GalleryPageView({
   gallery,
   username,
+  profilePath,
   preferences,
   narrowPhotoGrid = false,
 }: GalleryPageViewProps) {
@@ -150,7 +153,7 @@ export default function GalleryPageView({
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
-            href={`/${username}`}
+            href={profilePath}
             className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
             style={{ color: theme.textMuted }}
           >

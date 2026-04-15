@@ -13,10 +13,13 @@ import { ProfileData } from '../types'
 
 type ProfileFormProps = {
   profileData: ProfileData
+  isProd: boolean
+  rootDomain?: string
 }
 
-export default function HomepageForm({ profileData }: ProfileFormProps) {
+export default function HomepageForm({ profileData, isProd, rootDomain }: ProfileFormProps) {
   const { form, handleSubmit } = UseHomepageForm({ profileData })
+  const watchedUsername = form.watch('username')
 
   return (
     <div>
@@ -39,7 +42,13 @@ export default function HomepageForm({ profileData }: ProfileFormProps) {
               <p className="text-xs text-muted-foreground">
                 Your gallery URL:{' '}
                 <span className="font-medium text-foreground">
-                  username.gallerify.app
+                  {watchedUsername
+                    ? isProd && rootDomain
+                      ? `${watchedUsername}.${rootDomain}`
+                      : `localhost:3000/${watchedUsername}`
+                    : isProd && rootDomain
+                      ? `username.${rootDomain}`
+                      : 'localhost:3000/username'}
                 </span>
                 . Lowercase letters, numbers, and hyphens only.
               </p>

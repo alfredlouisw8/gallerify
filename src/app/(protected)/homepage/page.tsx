@@ -32,7 +32,20 @@ export default async function PublicPageEditor() {
     )
   }
 
-  const publicUrl = profile.username ? `/${profile.username}` : null
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN
+  const isProd = process.env.NODE_ENV === 'production'
+
+  const publicUrl = profile.username
+    ? isProd && rootDomain
+      ? `https://${profile.username}.${rootDomain}`
+      : `/${profile.username}`
+    : null
+
+  const publicUrlDisplay = profile.username
+    ? isProd && rootDomain
+      ? `${profile.username}.${rootDomain}`
+      : `localhost:3000/${profile.username}`
+    : null
 
   return (
     <SidebarProvider>
@@ -60,7 +73,7 @@ export default async function PublicPageEditor() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Form — takes 2/3 on desktop */}
             <div className="lg:col-span-2">
-              <HomepageForm profileData={profile} />
+              <HomepageForm profileData={profile} isProd={isProd} rootDomain={rootDomain} />
             </div>
 
             {/* Context panel — takes 1/3 on desktop */}
@@ -73,13 +86,13 @@ export default async function PublicPageEditor() {
                 </div>
                 {profile.username ? (
                   <Link
-                    href={`/${profile.username}`}
+                    href={publicUrl!}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center gap-1.5 break-all text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <span className="font-mono text-xs">
-                      gallerify.com/{profile.username}
+                      {publicUrlDisplay}
                     </span>
                     <ArrowUpRightIcon className="size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                   </Link>

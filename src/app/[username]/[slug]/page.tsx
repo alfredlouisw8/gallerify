@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import GalleryPageView from '@/features/public/components/GalleryPageView'
@@ -33,6 +34,9 @@ export async function generateMetadata({ params }: Props) {
 export default async function PublicGalleryPage({ params }: Props) {
   const { username, slug } = await params
 
+  const headersList = await headers()
+  const isSubdomain = headersList.get('x-username') !== null
+
   const gallery = await getPublicGalleryBySlug(username, slug)
 
   if (!gallery) {
@@ -55,10 +59,13 @@ export default async function PublicGalleryPage({ params }: Props) {
     isOwnerPreview = true
   }
 
+  // On subdomains the username is in the host, so '/' goes back to the portfolio.
+  const profilePath = isSubdomain ? '/' : `/${username}`
+
   return (
     <>
       {isOwnerPreview && <OwnerBanner galleryId={gallery.id} />}
-      <GalleryPageView gallery={gallery} username={username} />
+      <GalleryPageView gallery={gallery} username={username} profilePath={profilePath} />
     </>
   )
 }

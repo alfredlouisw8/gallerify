@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import CustomerPageView from '@/features/public/components/CustomerPageView'
@@ -28,6 +29,9 @@ export async function generateMetadata({ params }: Props) {
 export default async function CustomerPage({ params }: Props) {
   const { username } = await params
 
+  const headersList = await headers()
+  const isSubdomain = headersList.get('x-username') !== null
+
   const [profile, galleries] = await Promise.all([
     getProfileByUsername(username),
     getPublishedGalleriesByUsername(username),
@@ -36,11 +40,16 @@ export default async function CustomerPage({ params }: Props) {
     notFound()
   }
 
+  // On subdomains (gerrardarya.gallerify.app) the username is in the host,
+  // so gallery links should be /slug — not /username/slug.
+  const galleryBasePath = isSubdomain ? '/' : `/${username}/`
+
   return (
     <CustomerPageView
       profile={profile}
       galleries={galleries}
       username={username}
+      galleryBasePath={galleryBasePath}
     />
   )
 }

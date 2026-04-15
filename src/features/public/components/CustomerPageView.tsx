@@ -12,6 +12,8 @@ interface CustomerPageViewProps {
   profile: UserMetadata
   galleries: Gallery[]
   username: string
+  /** Base path for gallery links. '/' on subdomains, '/{username}' otherwise. */
+  galleryBasePath: string
 }
 
 function formatDate(date: Date) {
@@ -25,6 +27,7 @@ export default function CustomerPageView({
   profile,
   galleries,
   username,
+  galleryBasePath,
 }: CustomerPageViewProps) {
   const publishedGalleries = galleries.filter((g) => g.isPublished)
 
@@ -195,6 +198,7 @@ export default function CustomerPageView({
                 gallery={gallery}
                 username={username}
                 index={i}
+                galleryBasePath={galleryBasePath}
               />
             ))}
           </div>
@@ -304,10 +308,12 @@ function GalleryCard({
   gallery,
   username,
   index,
+  galleryBasePath,
 }: {
   gallery: Gallery
   username: string
   index: number
+  galleryBasePath: string
 }) {
   const rawThumb = gallery.bannerImage?.[0]
   const thumb = rawThumb ? getStorageUrl(rawThumb) : null
@@ -324,7 +330,7 @@ function GalleryCard({
       }}
     >
       <Link
-        href={`/${username}/${encodeURIComponent(gallery.slug)}`}
+        href={`${galleryBasePath}${encodeURIComponent(gallery.slug)}`}
         className="group block"
       >
         <div
