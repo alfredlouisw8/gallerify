@@ -4,8 +4,10 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase-browser'
 
 const stats = [
   { value: '12,400+', label: 'Photographers' },
@@ -14,6 +16,15 @@ const stats = [
 ]
 
 export default function Intro() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAuthenticated(!!data.user)
+    })
+  }, [])
+
   return (
     <section className="flex min-h-[100dvh] items-center pb-16 pt-28">
       <div className="container px-4 md:px-6">
@@ -67,8 +78,8 @@ export default function Intro() {
               className="flex flex-col gap-3 sm:flex-row"
             >
               <Button size="lg" asChild className="group rounded-full px-6">
-                <Link href="/login">
-                  Start for free
+                <Link href={isAuthenticated ? '/dashboard' : '/login'}>
+                  {isAuthenticated ? 'Go to Dashboard' : 'Start for free'}
                   <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>

@@ -17,5 +17,5 @@ export default function GalleryUpdateForm({
     galleryData,
   })
 
-  return <GalleryForm form={form} handleSubmit={handleSubmit} />
+  return <GalleryForm form={form} handleSubmit={handleSubmit} noCard />
 }
