@@ -1,7 +1,7 @@
 'use client'
 
 import { PlusCircleIcon } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import { MultiImageUpload } from '@/components/forms/multi-image-upload'
 import { Button } from '@/components/ui/button'
@@ -19,13 +19,34 @@ import useGalleryCategoryImageAddForm from '@/features/galleryCategoryImage/hook
 type GalleryCategoryImageAddFormProps = {
   collectionId: string
   mutateData: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export default function GalleryCategoryImageAddForm({
   collectionId,
   mutateData,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: GalleryCategoryImageAddFormProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const [formKey, setFormKey] = useState(0)
+
+  const isControlled = externalOpen !== undefined
+  const open = isControlled ? externalOpen! : internalOpen
+  const setOpen = (value: boolean) => {
+    if (isControlled) externalOnOpenChange?.(value)
+    else setInternalOpen(value)
+  }
+
+  // Reset form contents each time the dialog opens
+  const prevOpen = useRef(open)
+  useEffect(() => {
+    if (open && !prevOpen.current) {
+      setFormKey((k) => k + 1)
+    }
+    prevOpen.current = open
+  }, [open])
 
   const onSuccessCallback = () => {
     mutateData()
@@ -53,6 +74,7 @@ export default function GalleryCategoryImageAddForm({
         <div className="grid gap-4 py-4">
           <Form {...form}>
             <form
+              key={formKey}
               onSubmit={(event) => void handleSubmit(event)}
               className="space-y-8"
             >

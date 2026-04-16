@@ -13,13 +13,17 @@ import {
   EllipsisVerticalIcon,
   ImageIcon,
   TrashIcon,
+  UploadCloudIcon,
 } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
 import useSWR from 'swr'
 
+import { createGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/createGalleryCategoryImage'
 import { deleteGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/deleteGalleryCategoryImage'
 import { reorderGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/reorderGalleryCategoryImages'
+import { onImagesUpload } from '@/utils/functions'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import {
@@ -63,6 +67,47 @@ export default function GalleryCategoryDetail({
 
   const [images, setImages] = useState<GalleryCategoryImage[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleFileDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles.length) return
+      setIsUploading(true)
+      try {
+        const uploadedUrls = await onImagesUpload(acceptedFiles)
+        const result = await createGalleryCategoryImage({
+          categoryId: collectionId,
+          imageUrl: uploadedUrls,
+        })
+        if (result?.error) throw new Error(result.error)
+        await mutate()
+        toast({
+          title: `${acceptedFiles.length} photo${acceptedFiles.length > 1 ? 's' : ''} uploaded!`,
+        })
+      } catch (err) {
+        toast({
+          title: err instanceof Error ? err.message : 'Upload failed',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [collectionId, mutate]
+  )
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    open: openFileDialog,
+  } = useDropzone({
+    onDrop: handleFileDrop,
+    multiple: true,
+    accept: { 'image/*': [] },
+    noClick: true,
+  })
   // Always holds the latest reordered array (avoids stale closure in handleDragEnd)
   const imagesRef = useRef<GalleryCategoryImage[]>([])
   // Snapshot of order before drag started, so we can detect real changes
@@ -134,6 +179,8 @@ export default function GalleryCategoryDetail({
         <GalleryCategoryImageAddForm
           collectionId={collectionId}
           mutateData={mutate}
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
         />
       </div>
       <DndContext
@@ -145,10 +192,54 @@ export default function GalleryCategoryDetail({
       >
         <div className="grid">
           {images?.length === 0 ? (
-            <div className="flex h-full items-center justify-center border-2 border-dotted p-6 hover:cursor-pointer">
-              <div className="text-sm text-gray-600">
-                Drag and drop or select a file
+            <div
+              {...getRootProps()}
+              onClick={isUploading ? undefined : openFileDialog}
+              className={`group flex w-full flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed px-8 py-24 text-center transition-all duration-200 ${
+                isUploading
+                  ? 'cursor-wait border-border bg-secondary/30'
+                  : isDragActive
+                    ? 'cursor-copy border-primary bg-primary/5'
+                    : 'cursor-pointer border-border bg-secondary/30 hover:border-primary/30 hover:bg-secondary/60'
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div
+                className={`flex size-16 items-center justify-center rounded-full ring-1 transition-all duration-200 ${
+                  isDragActive
+                    ? 'bg-primary/10 ring-primary/40'
+                    : 'bg-muted ring-border group-hover:bg-muted/80 group-hover:ring-primary/20'
+                }`}
+              >
+                <UploadCloudIcon
+                  className={`size-7 transition-colors duration-200 ${
+                    isDragActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                  }`}
+                />
               </div>
+              <div className="space-y-1.5">
+                <p
+                  className={`text-base font-medium tracking-wide transition-colors duration-200 ${
+                    isDragActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
+                  }`}
+                >
+                  {isUploading
+                    ? 'Uploading…'
+                    : isDragActive
+                      ? 'Release to upload'
+                      : 'Drop your photos here'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isUploading
+                    ? 'Please wait while your photos are being saved'
+                    : 'or click to browse — multiple images supported'}
+                </p>
+              </div>
+              {isUploading && (
+                <div className="h-1 w-32 overflow-hidden rounded-full bg-muted">
+                  <div className="animate-shimmer h-full w-full bg-gradient-to-r from-muted via-primary/40 to-muted bg-[length:200%_100%]" />
+                </div>
+              )}
             </div>
           ) : (
             <SortableContext
