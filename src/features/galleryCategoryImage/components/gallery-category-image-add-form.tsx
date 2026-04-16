@@ -53,7 +53,7 @@ export default function GalleryCategoryImageAddForm({
     setOpen(false)
   }
 
-  const { form, handleSubmit } = useGalleryCategoryImageAddForm({
+  const { form, handleSubmit, uploadProgress } = useGalleryCategoryImageAddForm({
     collectionId,
     onSuccessCallback,
   })
@@ -86,7 +86,11 @@ export default function GalleryCategoryImageAddForm({
               />
 
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                Submit
+                {uploadProgress
+                  ? `Uploading ${uploadProgress.uploaded} / ${uploadProgress.total}…`
+                  : form.formState.isSubmitting
+                    ? 'Saving…'
+                    : 'Upload'}
               </Button>
             </form>
           </Form>

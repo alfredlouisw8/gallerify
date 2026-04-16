@@ -69,13 +69,22 @@ export default function GalleryCategoryDetail({
   const [activeId, setActiveId] = useState<string | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{
+    uploaded: number
+    total: number
+  } | null>(null)
 
   const handleFileDrop = useCallback(
     async (acceptedFiles: File[]) => {
       if (!acceptedFiles.length) return
       setIsUploading(true)
+      setUploadProgress({ uploaded: 0, total: acceptedFiles.length })
       try {
-        const uploadedUrls = await onImagesUpload(acceptedFiles)
+        const uploadedUrls = await onImagesUpload(
+          acceptedFiles,
+          'uploads',
+          (uploaded, total) => setUploadProgress({ uploaded, total })
+        )
         const result = await createGalleryCategoryImage({
           categoryId: collectionId,
           imageUrl: uploadedUrls,
@@ -92,6 +101,7 @@ export default function GalleryCategoryDetail({
         })
       } finally {
         setIsUploading(false)
+        setUploadProgress(null)
       }
     },
     [collectionId, mutate]
@@ -223,21 +233,31 @@ export default function GalleryCategoryDetail({
                     isDragActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
                   }`}
                 >
-                  {isUploading
-                    ? 'Uploading…'
+                  {uploadProgress
+                    ? `Uploading ${uploadProgress.uploaded} / ${uploadProgress.total}…`
                     : isDragActive
                       ? 'Release to upload'
                       : 'Drop your photos here'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {isUploading
+                  {uploadProgress
                     ? 'Please wait while your photos are being saved'
                     : 'or click to browse — multiple images supported'}
                 </p>
               </div>
-              {isUploading && (
-                <div className="h-1 w-32 overflow-hidden rounded-full bg-muted">
-                  <div className="animate-shimmer h-full w-full bg-gradient-to-r from-muted via-primary/40 to-muted bg-[length:200%_100%]" />
+              {uploadProgress && (
+                <div className="w-48 space-y-1.5">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-300"
+                      style={{
+                        width: `${Math.round((uploadProgress.uploaded / uploadProgress.total) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-center text-xs text-muted-foreground">
+                    {Math.round((uploadProgress.uploaded / uploadProgress.total) * 100)}%
+                  </p>
                 </div>
               )}
             </div>

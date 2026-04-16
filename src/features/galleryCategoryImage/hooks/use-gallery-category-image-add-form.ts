@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import React from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -21,6 +22,11 @@ export default function useGalleryCategoryImageAddForm({
   const formSchema = GalleryCategoryImageSchema
 
   type Inputs = z.infer<typeof formSchema>
+
+  const [uploadProgress, setUploadProgress] = React.useState<{
+    uploaded: number
+    total: number
+  } | null>(null)
 
   const { execute, fieldErrors } = useAction(createGalleryCategoryImage, {
     onSuccess: () => {
@@ -53,14 +59,20 @@ export default function useGalleryCategoryImageAddForm({
 
     // Upload new files if any
     if (newFiles.length > 0) {
+      setUploadProgress({ uploaded: 0, total: newFiles.length })
       try {
-        uploadedUrls = await onImagesUpload(newFiles)
+        uploadedUrls = await onImagesUpload(newFiles, 'uploads', (uploaded, total) => {
+          setUploadProgress({ uploaded, total })
+        })
       } catch (err) {
         toast({
           title: err instanceof Error ? err.message : 'Failed to upload images',
           variant: 'destructive',
         })
+        setUploadProgress(null)
         return
+      } finally {
+        setUploadProgress(null)
       }
     }
 
@@ -82,5 +94,5 @@ export default function useGalleryCategoryImageAddForm({
     }
   })
 
-  return { form, handleSubmit }
+  return { form, handleSubmit, uploadProgress }
 }
