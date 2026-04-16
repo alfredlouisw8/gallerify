@@ -116,6 +116,95 @@ export async function uploadToStorage(
 }
 
 /**
+ * Validates plan limits server-side and returns one-time signed upload tokens.
+ * File bytes never pass through Next.js — the client uploads directly to Supabase.
+ */
+export async function createSignedUploadUrls(
+  files: { name: string; size: number; type: string }[],
+  folder: string = 'uploads'
+): Promise<{ userId: string; uploads: { path: string; token: string }[] }> {
+  if (!files.length) throw new Error('No files provided')
+
+  const authClient = await createClient()
+  const {
+    data: { user },
+  } = await authClient.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: meta } = await supabase
+    .from('user_metadata')
+    .select(
+      'plan, trial_ends_at, storage_used_bytes, subscription_status, current_period_end'
+    )
+    .eq('user_id', user.id)
+    .single()
+
+  if (meta) {
+    const effectivePlan = getEffectivePlan(
+      meta.plan,
+      meta.subscription_status,
+      meta.current_period_end
+    )
+    const limits = getPlanLimits(effectivePlan)
+
+    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+      throw new Error(
+        'Your free trial has expired. Please upgrade to continue uploading.'
+      )
+    }
+
+    const hasVideo = files.some((f) => VIDEO_MIME_TYPES.includes(f.type))
+    if (hasVideo && !limits.videoAllowed) {
+      throw new Error(
+        'Video uploads are not available on your current plan. Upgrade to Pro Max to upload videos.'
+      )
+    }
+
+    const uploadBytes = files.reduce((sum, f) => sum + f.size, 0)
+    const usedBytes = meta.storage_used_bytes ?? 0
+    if (usedBytes + uploadBytes > limits.maxStorageBytes) {
+      throw new Error(
+        `Not enough storage. Your ${limits.label} plan includes ${limits.maxStorageLabel} total. Please upgrade or delete some files.`
+      )
+    }
+  }
+
+  const uploads = await Promise.all(
+    files.map(async (file, i) => {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const uniqueName = `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`
+      const path = `${user.id}/${folder}/${uniqueName}`
+
+      const { data, error } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUploadUrl(path)
+
+      if (error || !data) {
+        throw new Error(`Failed to create upload URL: ${error?.message}`)
+      }
+
+      return { path, token: data.token }
+    })
+  )
+
+  return { userId: user.id, uploads }
+}
+
+/**
+ * Increments the user's storage usage after a successful direct client upload.
+ */
+export async function recordUploadedFiles(
+  userId: string,
+  totalBytes: number
+): Promise<void> {
+  if (totalBytes <= 0) return
+  await supabase.rpc('increment_storage_usage', {
+    p_user_id: userId,
+    p_bytes: totalBytes,
+  })
+}
+
+/**
  * Delete files from Supabase Storage by their storage paths.
  * Paths are extracted from the stored JSON strings via getStoragePath().
  */
