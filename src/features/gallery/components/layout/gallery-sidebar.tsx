@@ -5,6 +5,7 @@ import {
   ImageIcon,
   ListIcon,
   PaletteIcon,
+  Settings2Icon,
   SettingsIcon,
   SlidersHorizontalIcon,
 } from 'lucide-react'
@@ -30,6 +31,10 @@ const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = 
   { id: 'style',  label: 'Style',  icon: <SlidersHorizontalIcon className="size-3.5" /> },
   { id: 'color',  label: 'Color',  icon: <PaletteIcon className="size-3.5" /> },
   { id: 'layout', label: 'Layout', icon: <GridIcon className="size-3.5" /> },
+]
+
+const SETTINGS_ITEMS = [
+  { id: 'general', label: 'General', icon: <Settings2Icon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/update` },
 ]
 
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
@@ -138,7 +143,20 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
           })}
         </TabsContent>
 
-        <TabsContent value="settings" className="mt-0" />
+        {/* Settings tab */}
+        <TabsContent value="settings" className="mt-0 flex flex-col">
+          {SETTINGS_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => router.push(item.href(galleryData.id))}
+              className="flex items-center gap-3 border-r-2 border-transparent px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            >
+              <span className="size-1.5 shrink-0 rounded-full bg-border" />
+              {item.icon}
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+        </TabsContent>
       </Tabs>
     </div>
   )

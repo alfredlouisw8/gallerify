@@ -14,19 +14,20 @@ import useGalleryForm from '../hooks/use-gallery-form'
 type GalleryFormProps = {
   form: ReturnType<typeof useGalleryForm>['form']
   handleSubmit: ReturnType<typeof useGalleryForm>['handleSubmit']
+  noCard?: boolean
 }
 
-export default function GalleryForm({ form, handleSubmit }: GalleryFormProps) {
+export default function GalleryForm({ form, handleSubmit, noCard }: GalleryFormProps) {
   const onTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('slug', event.target.value.replace(/\s+/g, '-').toLowerCase())
   }
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div className={noCard ? undefined : 'mx-auto max-w-xl'}>
       <Form {...form}>
         <form
           onSubmit={(event) => void handleSubmit(event)}
-          className="space-y-6 rounded-2xl border bg-card p-6"
+          className={noCard ? 'space-y-6' : 'space-y-6 rounded-2xl border bg-card p-6'}
         >
           <TextFormField
             name="title"
