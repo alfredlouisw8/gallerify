@@ -21,11 +21,22 @@ const handler = async (data: InputType): Promise<ReturnType> => {
   const { galleryId, name } = data
 
   try {
+    const { data: maxRow } = await supabase
+      .from('gallery_categories')
+      .select('display_order')
+      .eq('gallery_id', galleryId)
+      .order('display_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const nextOrder = (maxRow?.display_order ?? -1) + 1
+
     const { data: row, error } = await supabase
       .from('gallery_categories')
       .insert({
         gallery_id: galleryId,
         name,
+        display_order: nextOrder,
       })
       .select()
       .single()
@@ -34,7 +45,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     const result = mapGalleryCategory(row)
 
-    revalidatePath(`/gallery/${galleryId}/collection/${result.id}`)
+    revalidatePath(`/gallery/${galleryId}`)
     return { data: result }
   } catch (error: any) {
     console.error(error.message)

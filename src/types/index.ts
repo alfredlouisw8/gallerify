@@ -118,6 +118,7 @@ export type GalleryCategory = {
   id: string
   name: string
   galleryId: string
+  displayOrder: number
 }
 
 export type GalleryCategoryImage = {
@@ -196,6 +197,7 @@ export type GalleryCategoryRow = {
   id: string
   name: string
   gallery_id: string
+  display_order: number
 }
 
 export type GalleryCategoryImageRow = {
@@ -278,6 +280,7 @@ export function mapGalleryCategory(row: GalleryCategoryRow): GalleryCategory {
     id: row.id,
     name: row.name,
     galleryId: row.gallery_id,
+    displayOrder: row.display_order ?? 0,
   }
 }
 
