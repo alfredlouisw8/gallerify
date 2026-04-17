@@ -41,8 +41,8 @@ export default function GalleryCategoryUpdateForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger onClick={() => setOpen(true)} asChild>
-        <Button variant="ghost" className="w-full justify-start py-6">
-          <PencilIcon className="ml-2 mr-4 size-4 " />
+        <Button variant="ghost" className="h-auto w-full justify-start gap-2 px-2.5 py-2 text-sm font-normal">
+          <PencilIcon className="size-3.5 mr-1" />
           Rename
         </Button>
       </DialogTrigger>

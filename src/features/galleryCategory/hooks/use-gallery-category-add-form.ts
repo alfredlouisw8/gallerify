@@ -45,7 +45,8 @@ export default function useGalleryCategoryAddForm({
         title: actions[type].successMessage,
       })
       if (type === 'create') {
-        // Navigate directly to the new category so users can start uploading
+        // Refresh first so the layout re-fetches galleryData (includes the new category)
+        router.refresh()
         router.push(`/gallery/${category.galleryId}/collection/${category.id}`)
       }
       if (type === 'update' && galleryCategoryData?.id) {

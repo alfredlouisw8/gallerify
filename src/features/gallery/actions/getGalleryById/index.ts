@@ -17,7 +17,7 @@ export default async function getGalleryById(
     .select(
       `
       *,
-      gallery_categories (*)
+      gallery_categories (*, display_order)
     `
     )
     .eq('id', galleryId)
@@ -31,7 +31,9 @@ export default async function getGalleryById(
   }
 
   const typedRow = row as RowWithRelations
-  const categories = typedRow.gallery_categories ?? []
+  const categories = (typedRow.gallery_categories ?? []).sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+  )
   const categoryIds = categories.map((c) => c.id)
 
   const imagesByCategory: Record<string, GalleryCategoryImageRow[]> = {}

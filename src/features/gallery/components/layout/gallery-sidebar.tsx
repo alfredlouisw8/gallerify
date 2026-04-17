@@ -8,19 +8,23 @@ import {
   Settings2Icon,
   SettingsIcon,
   SlidersHorizontalIcon,
+  UploadCloudIcon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useRef, useState } from 'react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from '@/components/ui/use-toast'
 import { ACCENTS } from '@/features/gallery/constants/preferences'
 import {
   useGalleryDesign,
   type DesignPanel,
 } from '@/features/gallery/context/gallery-design-context'
+import { updateGalleryBanner } from '@/features/gallery/actions/updateGalleryBanner'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 import GalleryCategoryList from '@/features/galleryCategory/components/gallery-category-list'
+import { onImagesUpload } from '@/utils/functions'
 import { GalleryWithCategory } from '@/types'
 
 type GallerySidebarProps = {
@@ -40,6 +44,8 @@ const SETTINGS_ITEMS = [
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   const router = useRouter()
   const { prefs, selectedPanel, setSelectedPanel } = useGalleryDesign()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
 
   const handleTabChange = (value: string) => {
     if (value === 'category') {
@@ -55,17 +61,67 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
     }
   }
 
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Reset input so the same file can be re-selected later
+    e.target.value = ''
+
+    setIsUploadingBanner(true)
+    try {
+      const [jsonUrl] = await onImagesUpload([file], 'banners')
+      await updateGalleryBanner(galleryData.id, jsonUrl)
+      router.refresh()
+      toast({ title: 'Cover updated.' })
+    } catch (err) {
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to update cover',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
   return (
     <div className="hidden bg-background md:flex md:flex-col">
-      {galleryData.bannerImage.length > 0 && (
-        <Image
-          src={JSON.parse(galleryData.bannerImage[0]).url}
-          width={330}
-          height={150}
-          alt={`${galleryData.title} banner`}
-          className="w-full object-cover"
+      {/* Banner / cover image */}
+      <div
+        className="group relative cursor-pointer overflow-hidden"
+        onClick={() => !isUploadingBanner && fileInputRef.current?.click()}
+      >
+        {galleryData.bannerImage.length > 0 ? (
+          <Image
+            src={JSON.parse(galleryData.bannerImage[0]).url}
+            width={330}
+            height={150}
+            alt={`${galleryData.title} banner`}
+            className="w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-24 w-full items-center justify-center bg-muted/40 text-xs text-muted-foreground">
+            No cover
+          </div>
+        )}
+
+        {/* Hover overlay */}
+        <div className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/50 transition-opacity duration-150 ${
+          isUploadingBanner ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
+          <UploadCloudIcon className="size-5 text-white" />
+          <span className="text-xs font-medium text-white">
+            {isUploadingBanner ? 'Uploading…' : 'Change Cover'}
+          </span>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleBannerFileChange}
         />
-      )}
+      </div>
 
       <Tabs
         defaultValue="category"

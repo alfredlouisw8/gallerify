@@ -62,9 +62,11 @@ export async function bulkMoveGalleryCategoryImages(
     .select('id, gallery_id')
     .in('id', allCategoryIds)
 
+  const galleryIds = Array.from(new Set((categories ?? []).map((c) => c.gallery_id)))
   for (const category of categories ?? []) {
-    revalidatePath(
-      `/gallery/${category.gallery_id}/collection/${category.id}`
-    )
+    revalidatePath(`/gallery/${category.gallery_id}/collection/${category.id}`)
+  }
+  for (const galleryId of galleryIds) {
+    revalidatePath(`/gallery/${galleryId}`)
   }
 }

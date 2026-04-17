@@ -2,17 +2,21 @@
 
 import {
   DndContext,
-  closestCenter,
   DragOverlay,
   PointerSensor,
+  closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
-  useSortable,
   arrayMove,
   rectSortingStrategy,
+  useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -20,6 +24,8 @@ import {
   DownloadIcon,
   EllipsisVerticalIcon,
   FolderInputIcon,
+  Grid2X2Icon,
+  Grid3X3Icon,
   ImageIcon,
   TrashIcon,
   UploadCloudIcon,
@@ -29,6 +35,7 @@ import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 
 import { bulkDeleteGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/bulkDeleteGalleryCategoryImages'
 import { bulkMoveGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/bulkMoveGalleryCategoryImages'
@@ -63,19 +70,54 @@ import { getStorageUrl } from '@/lib/utils'
 import {
   GalleryCategoryImage,
   GalleryCategoryWithImages,
+  GalleryCategory,
   GalleryWithCategory,
 } from '@/types'
 import { fetchCategoryDetail } from '../fetcher'
+
+const CAT_DROP_PREFIX = 'cat-drop-'
 
 type GalleryDetailProps = {
   galleryData: GalleryWithCategory
   collectionId: string
 }
 
+// ── Category drop zone ──────────────────────────────────────────────────────
+
+function CategoryDropZone({
+  category,
+  dragCount,
+}: {
+  category: GalleryCategory
+  dragCount: number
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${CAT_DROP_PREFIX}${category.id}` })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-4 text-center transition-all duration-150 ${
+        isOver
+          ? 'border-primary bg-primary/10 text-primary'
+          : 'border-dashed border-border bg-muted/30 text-muted-foreground'
+      }`}
+    >
+      <FolderInputIcon className="size-4 shrink-0" />
+      <span className="text-xs font-medium leading-tight">{category.name}</span>
+      {isOver && dragCount > 1 && (
+        <span className="text-xs opacity-70">+{dragCount}</span>
+      )}
+    </div>
+  )
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
+
 export default function GalleryCategoryDetail({
   galleryData,
   collectionId,
 }: GalleryDetailProps) {
+  const router = useRouter()
   const {
     data: categoryData,
     error,
@@ -100,6 +142,7 @@ export default function GalleryCategoryDetail({
   } | null>(null)
 
   // ── Selection state ──────────────────────────────────────────────────────
+  const [gridSize, setGridSize] = useState<'small' | 'large'>('small')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false)
   const [targetCategoryId, setTargetCategoryId] = useState('')
@@ -117,7 +160,6 @@ export default function GalleryCategoryDetail({
 
   const clearSelection = () => setSelectedIds(new Set())
 
-  // Escape key clears selection
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') clearSelection()
@@ -149,6 +191,7 @@ export default function GalleryCategoryDetail({
     try {
       await bulkMoveGalleryCategoryImages(Array.from(selectedIds), targetCategoryId)
       await mutate()
+      router.refresh()
       clearSelection()
       setBulkMoveOpen(false)
       setTargetCategoryId('')
@@ -209,34 +252,113 @@ export default function GalleryCategoryDetail({
     noClick: true,
   })
 
-  // ── Drag-to-reorder ──────────────────────────────────────────────────────
+  // ── Drag-to-reorder / drag-to-move ───────────────────────────────────────
   const imagesRef = useRef<GalleryCategoryImage[]>([])
   const preDragOrderRef = useRef<string[]>([])
+  const selectedDragOrderRef = useRef<GalleryCategoryImage[]>([])
 
-  const activeImage = activeId
-    ? images?.find((img) => img.id === activeId)
-    : undefined
+  const activeImage = activeId ? images.find((img) => img.id === activeId) : undefined
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id)
+  // How many items will be moved: if dragging a selected image → all selected; otherwise just 1
+  const dragCount =
+    activeId && selectedIds.size > 0 && selectedIds.has(activeId)
+      ? selectedIds.size
+      : 1
+
+  const isMultiDrag = dragCount > 1
+
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    setActiveId(active.id as string)
     preDragOrderRef.current = imagesRef.current.map((img) => img.id)
+    // Capture original order of selected items once — used throughout the drag
+    selectedDragOrderRef.current = imagesRef.current.filter((img) =>
+      selectedIds.has(img.id)
+    )
   }
 
-  const handleDragOver = (event: any) => {
-    const { active, over } = event
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
     if (!over || active.id === over.id) return
+
+    const overId = over.id as string
+    if (overId.startsWith(CAT_DROP_PREFIX)) return
+
+    // Compute directly from active.id — avoids stale closure on isMultiDrag (state-derived)
+    const activeIdStr = active.id as string
+    const isMulti = selectedIds.size > 1 && selectedIds.has(activeIdStr)
+
     setImages((items) => {
-      if (!items) return []
-      const oldIndex = items.findIndex((item) => item.id === active.id)
-      const newIndex = items.findIndex((item) => item.id === over.id)
-      const next = arrayMove(items, oldIndex, newIndex)
+      const activeIdx = items.findIndex((img) => img.id === activeIdStr)
+      const overIdx = items.findIndex((img) => img.id === overId)
+      if (activeIdx === -1 || overIdx === -1) return items
+
+      if (isMulti) {
+        // Selected items are LOCKED — they never swap among themselves.
+        // The whole group moves only when hovering over a non-selected item.
+        if (selectedIds.has(overId)) return items // hovering over another selected → no change
+
+        // Always use the original captured order so selected items never reorder during drag
+        const selected = selectedDragOrderRef.current
+        const nonSelected = items.filter((img) => !selectedIds.has(img.id))
+
+        const overInNonSelected = nonSelected.findIndex((img) => img.id === overId)
+        // Insert before or after depending on drag direction
+        const insertAt = overIdx > activeIdx ? overInNonSelected + 1 : overInNonSelected
+
+        const result = [
+          ...nonSelected.slice(0, insertAt),
+          ...selected,
+          ...nonSelected.slice(insertAt),
+        ]
+        imagesRef.current = result
+        return result
+      }
+
+      // Single drag reorder
+      const next = arrayMove(items, activeIdx, overIdx)
       imagesRef.current = next
       return next
     })
   }
 
-  const handleDragEnd = async () => {
+  const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     setActiveId(null)
+    if (!over) return
+
+    const overId = over.id as string
+    const activeIdStr = active.id as string
+    const isMulti = selectedIds.size > 1 && selectedIds.has(activeIdStr)
+
+    // ── Drop on a category zone → move ──────────────────────────────────────
+    if (overId.startsWith(CAT_DROP_PREFIX)) {
+      const targetCatId = overId.slice(CAT_DROP_PREFIX.length)
+      const idsToMove = isMulti
+        ? Array.from(selectedIds)
+        : [activeIdStr]
+
+      // Optimistic: remove moved images from local state
+      setImages((prev) => prev.filter((img) => !idsToMove.includes(img.id)))
+      imagesRef.current = imagesRef.current.filter((img) => !idsToMove.includes(img.id))
+      clearSelection()
+
+      try {
+        await bulkMoveGalleryCategoryImages(idsToMove, targetCatId)
+        await mutate()
+        router.refresh() // re-run layout server component so sidebar counts update
+        const targetName = galleryData.GalleryCategory.find(
+          (c) => c.id === targetCatId
+        )?.name
+        toast({ title: `Moved to "${targetName}".` })
+      } catch (err) {
+        await mutate()
+        toast({
+          title: err instanceof Error ? err.message : 'Move failed',
+          variant: 'destructive',
+        })
+      }
+      return
+    }
+
+    // ── Drop on an image → reorder ───────────────────────────────────────────
     const newOrder = imagesRef.current.map((img) => img.id)
     const orderChanged = newOrder.some(
       (id, i) => id !== preDragOrderRef.current[i]
@@ -245,19 +367,13 @@ export default function GalleryCategoryDetail({
 
     const result = await reorderGalleryCategoryImages(newOrder)
     if (result?.error) {
-      toast({
-        title: 'Failed to save order',
-        description: result.error,
-        variant: 'destructive',
-      })
+      toast({ title: 'Failed to save order', variant: 'destructive' })
       await mutate()
       return
     }
     mutate(
       (current) =>
-        current
-          ? { ...current, GalleryCategoryImage: imagesRef.current }
-          : current,
+        current ? { ...current, GalleryCategoryImage: imagesRef.current } : current,
       { revalidate: false }
     )
     toast({ title: 'Order saved.' })
@@ -274,125 +390,146 @@ export default function GalleryCategoryDetail({
   if (error) return <div>Failed to load images</div>
 
   const selectionActive = selectedIds.size > 0
-  const categories = galleryData.GalleryCategory.filter(
+  const otherCategories = galleryData.GalleryCategory.filter(
     (c) => c.id !== collectionId
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-5">
-        <h1 className="text-xl">{categoryData?.name}</h1>
-        <GalleryCategoryImageAddForm
-          collectionId={collectionId}
-          mutateData={mutate}
-          open={uploadOpen}
-          onOpenChange={setUploadOpen}
-        />
-      </div>
-
-      {/* ── Selection toolbar ── */}
-      {selectionActive && (
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-sm">
-          <span className="text-sm font-medium text-foreground">
-            {selectedIds.size} selected
-          </span>
-          <button
-            onClick={clearSelection}
-            className="ml-1 rounded p-0.5 text-muted-foreground hover:text-foreground"
-          >
-            <XIcon className="size-3.5" />
-          </button>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setBulkMoveOpen(true)}
-            >
-              <FolderInputIcon className="mr-1.5 size-3.5" />
-              Move to…
-            </Button>
-            <DeleteGalleryDialog
-              triggerComponent={
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isBulkDeleting}
-                >
-                  <TrashIcon className="mr-1.5 size-3.5" />
-                  {isBulkDeleting
-                    ? 'Deleting…'
-                    : `Delete ${selectedIds.size}`}
-                </Button>
-              }
-              description={`${selectedIds.size} photo${selectedIds.size > 1 ? 's' : ''} will be permanently deleted.`}
-              onConfirm={handleBulkDelete}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex flex-col gap-4">
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between gap-5">
+          <h1 className="text-xl">{categoryData?.name}</h1>
+          <div className="flex items-center gap-2">
+            {/* Grid size toggle */}
+            <div className="flex items-center rounded-lg border border-border p-0.5">
+              <button
+                onClick={() => setGridSize('small')}
+                className={`rounded-md p-1.5 transition-colors ${
+                  gridSize === 'small'
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Small grid"
+              >
+                <Grid3X3Icon className="size-3.5" />
+              </button>
+              <button
+                onClick={() => setGridSize('large')}
+                className={`rounded-md p-1.5 transition-colors ${
+                  gridSize === 'large'
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Large grid"
+              >
+                <Grid2X2Icon className="size-3.5" />
+              </button>
+            </div>
+            <GalleryCategoryImageAddForm
+              collectionId={collectionId}
+              mutateData={mutate}
+              open={uploadOpen}
+              onOpenChange={setUploadOpen}
             />
           </div>
         </div>
-      )}
 
-      {/* ── Bulk move dialog ── */}
-      <Dialog
-        open={bulkMoveOpen}
-        onOpenChange={(v) => {
-          setBulkMoveOpen(v)
-          if (!v) setTargetCategoryId('')
-        }}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              Move {selectedIds.size} photo
-              {selectedIds.size > 1 ? 's' : ''} to…
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-3">
-            <Select
-              value={targetCategoryId}
-              onValueChange={setTargetCategoryId}
+        {/* ── Selection toolbar ── */}
+        {selectionActive && (
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-sm">
+            <span className="text-sm font-medium text-foreground">
+              {selectedIds.size} selected
+            </span>
+            <button
+              onClick={clearSelection}
+              className="ml-1 rounded p-0.5 text-muted-foreground hover:text-foreground"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a collection" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <XIcon className="size-3.5" />
+            </button>
+            {selectedIds.size < images.length && (
+              <button
+                onClick={() => setSelectedIds(new Set(images.map((img) => img.id)))}
+                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Select all {images.length}
+              </button>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkMoveOpen(true)}
+              >
+                <FolderInputIcon className="mr-1.5 size-3.5" />
+                Move to…
+              </Button>
+              <DeleteGalleryDialog
+                triggerComponent={
+                  <Button variant="destructive" size="sm" disabled={isBulkDeleting}>
+                    <TrashIcon className="mr-1.5 size-3.5" />
+                    {isBulkDeleting ? 'Deleting…' : `Delete ${selectedIds.size}`}
+                  </Button>
+                }
+                description={`${selectedIds.size} photo${selectedIds.size > 1 ? 's' : ''} will be permanently deleted.`}
+                onConfirm={handleBulkDelete}
+              />
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setBulkMoveOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleBulkMove}
-              disabled={!targetCategoryId || isBulkMoving}
-            >
-              {isBulkMoving ? 'Moving…' : 'Move'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        )}
 
-      {/* ── Image grid ── */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
+        {/* ── Bulk move dialog ── */}
+        <Dialog
+          open={bulkMoveOpen}
+          onOpenChange={(v) => {
+            setBulkMoveOpen(v)
+            if (!v) setTargetCategoryId('')
+          }}
+        >
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>
+                Move {selectedIds.size} photo{selectedIds.size > 1 ? 's' : ''} to…
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-3">
+              <Select value={targetCategoryId} onValueChange={setTargetCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a collection" />
+                </SelectTrigger>
+                <SelectContent>
+                  {otherCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setBulkMoveOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBulkMove}
+                disabled={!targetCategoryId || isBulkMoving}
+              >
+                {isBulkMoving ? 'Moving…' : 'Move'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Image grid ── */}
         <div className="grid">
-          {images?.length === 0 ? (
+          {images.length === 0 ? (
             <div
               {...getRootProps()}
               onClick={isUploading ? undefined : openFileDialog}
@@ -414,18 +551,14 @@ export default function GalleryCategoryDetail({
               >
                 <UploadCloudIcon
                   className={`size-7 transition-colors duration-200 ${
-                    isDragActive
-                      ? 'text-primary'
-                      : 'text-muted-foreground group-hover:text-foreground'
+                    isDragActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                 />
               </div>
               <div className="space-y-1.5">
                 <p
                   className={`text-base font-medium tracking-wide transition-colors duration-200 ${
-                    isDragActive
-                      ? 'text-primary'
-                      : 'text-foreground/70 group-hover:text-foreground'
+                    isDragActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
                   }`}
                 >
                   {uploadProgress
@@ -451,30 +584,36 @@ export default function GalleryCategoryDetail({
                     />
                   </div>
                   <p className="text-center text-xs text-muted-foreground">
-                    {Math.round(
-                      (uploadProgress.uploaded / uploadProgress.total) * 100
-                    )}
-                    %
+                    {Math.round((uploadProgress.uploaded / uploadProgress.total) * 100)}%
                   </p>
                 </div>
               )}
             </div>
           ) : (
             <SortableContext
-              items={(images ?? []).map((img: GalleryCategoryImage) => img.id)}
+              items={images.map((img) => img.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-2 gap-4 xs:grid-cols-[repeat(auto-fill,_minmax(75px,1fr))] md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]">
-                {images?.map((item: GalleryCategoryImage) => (
+              <div className={`grid gap-4 ${
+                gridSize === 'large'
+                  ? 'grid-cols-2 md:grid-cols-[repeat(auto-fill,_minmax(260px,1fr))]'
+                  : 'grid-cols-2 xs:grid-cols-[repeat(auto-fill,_minmax(75px,1fr))] md:grid-cols-[repeat(auto-fill,_minmax(150px,1fr))]'
+              }`}>
+                {images.map((item) => (
                   <DraggableImage
                     key={item.id}
                     item={item}
                     mutate={mutate}
                     galleryData={galleryData}
-                    isBeingDragged={activeId === item.id}
+                    isBeingDragged={
+                      activeId === item.id ||
+                      (isMultiDrag && selectedIds.has(item.id))
+                    }
+                    isGroupDrag={isMultiDrag}
                     isSelected={selectedIds.has(item.id)}
                     selectionActive={selectionActive}
                     onToggleSelect={toggleSelect}
+                    gridSize={gridSize}
                   />
                 ))}
               </div>
@@ -482,21 +621,53 @@ export default function GalleryCategoryDetail({
           )}
         </div>
 
-        <DragOverlay>
-          {activeId && activeImage?.imageUrl ? (
-            <Image
-              src={getStorageUrl(activeImage.imageUrl)}
-              alt="Dragged Image"
-              width={150}
-              height={150}
-              className="size-full object-contain opacity-100"
-              priority
-              sizes="150px"
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    </div>
+        {/* ── Category drop zones (shown while dragging) ── */}
+        {activeId && otherCategories.length > 0 && (
+          <div className="mt-2">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Move to collection
+            </p>
+            <div className="grid grid-cols-[repeat(auto-fill,_minmax(100px,1fr))] gap-2">
+              {otherCategories.map((cat) => (
+                <CategoryDropZone key={cat.id} category={cat} dragCount={dragCount} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Drag overlay ── */}
+      <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>
+        {activeId && activeImage?.imageUrl ? (
+          <div className="relative">
+            {/* Stack ghost cards (offset behind the main card) */}
+            {isMultiDrag && dragCount >= 3 && (
+              <div className="absolute left-3 top-3 size-[120px] rounded-lg border border-border bg-muted/70 shadow-md" />
+            )}
+            {isMultiDrag && dragCount >= 2 && (
+              <div className="absolute left-1.5 top-1.5 size-[120px] rounded-lg border border-border bg-muted/80 shadow-md" />
+            )}
+            {/* Main card — the thumbnail of the image being dragged */}
+            <div className="relative size-[120px] overflow-hidden rounded-lg shadow-2xl ring-2 ring-primary">
+              <Image
+                src={getStorageUrl(activeImage.imageUrl)}
+                alt=""
+                width={120}
+                height={120}
+                className="size-full object-cover"
+                priority
+              />
+            </div>
+            {/* Count badge */}
+            {dragCount > 1 && (
+              <div className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow">
+                {dragCount}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -505,19 +676,23 @@ export default function GalleryCategoryDetail({
 function DraggableImage({
   item,
   isBeingDragged,
+  isGroupDrag,
   mutate,
   galleryData,
   isSelected,
   selectionActive,
   onToggleSelect,
+  gridSize,
 }: {
   item: GalleryCategoryImage
   isBeingDragged: boolean
+  isGroupDrag: boolean
   mutate: () => void
   galleryData: GalleryWithCategory
   isSelected: boolean
   selectionActive: boolean
   onToggleSelect: (id: string) => void
+  gridSize: 'small' | 'large'
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const didDragRef = useRef(false)
@@ -525,7 +700,6 @@ function DraggableImage({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
 
-  // Track whether this item was actually dragged so we don't fire select on drag-end click
   useEffect(() => {
     if (isDragging) didDragRef.current = true
   }, [isDragging])
@@ -545,12 +719,13 @@ function DraggableImage({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      // Disable reorder drag while items are selected or a dialog is open
-      {...(selectionActive || dialogOpen ? {} : listeners)}
+      {...(dialogOpen ? {} : listeners)}
       onClick={handleClick}
       className={[
-        'group relative h-52 cursor-pointer rounded-lg p-2 transition-all duration-150',
-        isBeingDragged ? 'opacity-20' : '',
+        `group relative cursor-pointer rounded-lg p-2 transition-all duration-150 ${gridSize === 'large' ? 'h-72' : 'h-52'}`,
+        // Group drag: low opacity ghost at destination position (shows where images will land)
+        // Single drag: ghost the active item only
+        isBeingDragged && isGroupDrag ? 'opacity-30 pointer-events-none' : isBeingDragged ? 'opacity-20' : '',
         isSelected
           ? 'bg-primary/10 ring-2 ring-primary shadow-md'
           : 'bg-muted/40 hover:bg-muted/70 hover:shadow-lg hover:ring-2 hover:ring-primary/25',
@@ -568,7 +743,7 @@ function DraggableImage({
         priority
       />
 
-      {/* Selection indicator — top-left */}
+      {/* Selection indicator */}
       <div
         className={[
           'absolute left-2 top-2 flex size-5 items-center justify-center rounded-full border-2 transition-all duration-150',
@@ -577,12 +752,10 @@ function DraggableImage({
             : 'border-white/80 bg-black/25 opacity-0 group-hover:opacity-100',
         ].join(' ')}
       >
-        {isSelected && (
-          <CheckIcon className="size-3 text-white" strokeWidth={3} />
-        )}
+        {isSelected && <CheckIcon className="size-3 text-white" strokeWidth={3} />}
       </div>
 
-      {/* Three-dot context menu — top-right */}
+      {/* Three-dot context menu */}
       <div
         className="absolute right-1 top-1 z-10 rounded p-1 opacity-0 transition group-hover:opacity-100"
         onClick={(e) => e.stopPropagation()}
