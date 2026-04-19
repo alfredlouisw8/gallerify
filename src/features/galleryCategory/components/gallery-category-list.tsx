@@ -17,7 +17,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { EllipsisVerticalIcon, GripVerticalIcon, Trash2Icon } from 'lucide-react'
+import { EllipsisVerticalIcon, GripVerticalIcon, HeartIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -181,6 +181,21 @@ export default function GalleryCategoryList({ galleryData }: GalleryCategoryList
     >
       <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col">
+          {/* Client Selects — only shown when client access is enabled */}
+          {galleryData.clientAccessEnabled && (
+            <Link
+              href={`/gallery/${galleryData.id}/selects`}
+              className={`flex items-center gap-2 border-b border-border px-4 py-2.5 text-sm transition-colors ${
+                pathname === `/gallery/${galleryData.id}/selects`
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+              }`}
+            >
+              <HeartIcon className="size-3.5 shrink-0 fill-rose-400 text-rose-400" />
+              <span className="truncate font-medium">Client Selects</span>
+            </Link>
+          )}
+
           {categories.map((category) => {
             const href = `/gallery/${galleryData.id}/collection/${category.id}`
             const handleDelete = async () => {

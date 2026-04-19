@@ -3,7 +3,7 @@
 import { format } from 'date-fns'
 import { ChevronLeft, CircleUserIcon, EyeIcon, Globe, EyeOffIcon } from 'lucide-react'
 import Link from 'next/link'
-import React, { useState, useTransition } from 'react'
+import React, { useEffect, useState, useTransition } from 'react'
 
 import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from '@/components/ui/use-toast'
 import { toggleGalleryPublish } from '@/features/gallery/actions/toggleGalleryPublish'
+import GalleryShareButton from '@/features/gallery/components/gallery-share-button'
 import { GalleryWithCategory } from '@/types'
 
 export interface TopNavigationBarProps {
@@ -29,6 +30,9 @@ export default function GalleryTopNavigationBar({
   username,
 }: TopNavigationBarProps) {
   const previewHref = `/${username}/${encodeURIComponent(galleryData.slug)}`
+  const [origin, setOrigin] = useState('')
+  useEffect(() => { setOrigin(window.location.origin) }, [])
+  const galleryPublicUrl = `${origin}/${username}/${encodeURIComponent(galleryData.slug)}`
   const [isPending, startTransition] = useTransition()
   const [optimisticPublished, setOptimisticPublished] = useState(
     galleryData.isPublished
@@ -120,6 +124,14 @@ export default function GalleryTopNavigationBar({
                 : 'Only you can see this. Publish to share with clients.'}
             </TooltipContent>
           </Tooltip>
+
+          {/* Share */}
+          <GalleryShareButton
+            galleryUrl={galleryPublicUrl}
+            galleryTitle={galleryData.title}
+            passwordPlain={galleryData.passwordPlain}
+            clientPasswordPlain={galleryData.clientPasswordPlain}
+          />
 
           {/* User menu */}
           <DropdownMenu>

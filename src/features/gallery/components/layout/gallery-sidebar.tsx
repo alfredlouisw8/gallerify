@@ -7,11 +7,12 @@ import {
   PaletteIcon,
   Settings2Icon,
   SettingsIcon,
+  ShieldIcon,
   SlidersHorizontalIcon,
   UploadCloudIcon,
 } from 'lucide-react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import React, { useRef, useState } from 'react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -38,14 +39,24 @@ const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = 
 ]
 
 const SETTINGS_ITEMS = [
-  { id: 'general', label: 'General', icon: <Settings2Icon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/update` },
+  { id: 'general',  label: 'General',  icon: <Settings2Icon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/update` },
+  { id: 'security', label: 'Security', icon: <ShieldIcon className="size-3.5" />,    href: (galleryId: string) => `/gallery/${galleryId}/security` },
 ]
+
+function useActiveTab(galleryId: string) {
+  const pathname = usePathname()
+  if (pathname.includes(`/gallery/${galleryId}/design`)) return 'image'
+  if (pathname.includes(`/gallery/${galleryId}/update`) || pathname.includes(`/gallery/${galleryId}/security`)) return 'settings'
+  return 'category'
+}
 
 export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { prefs, selectedPanel, setSelectedPanel } = useGalleryDesign()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const activeTab = useActiveTab(galleryData.id)
 
   const handleTabChange = (value: string) => {
     if (value === 'category') {
@@ -124,7 +135,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
       </div>
 
       <Tabs
-        defaultValue="category"
+        value={activeTab}
         className="w-full"
         onValueChange={handleTabChange}
       >
@@ -201,17 +212,27 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
 
         {/* Settings tab */}
         <TabsContent value="settings" className="mt-0 flex flex-col">
-          {SETTINGS_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => router.push(item.href(galleryData.id))}
-              className="flex items-center gap-3 border-r-2 border-transparent px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-            >
-              <span className="size-1.5 shrink-0 rounded-full bg-border" />
-              {item.icon}
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
+          {SETTINGS_ITEMS.map((item) => {
+            const active = pathname.includes(item.href(galleryData.id))
+            return (
+              <button
+                key={item.id}
+                onClick={() => router.push(item.href(galleryData.id))}
+                className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
+                  active
+                    ? 'border-foreground bg-accent text-accent-foreground'
+                    : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                }`}
+              >
+                <span
+                  className="size-1.5 shrink-0 rounded-full"
+                  style={{ background: active ? 'currentColor' : 'hsl(var(--border))' }}
+                />
+                {item.icon}
+                <span className="font-medium">{item.label}</span>
+              </button>
+            )
+          })}
         </TabsContent>
       </Tabs>
     </div>

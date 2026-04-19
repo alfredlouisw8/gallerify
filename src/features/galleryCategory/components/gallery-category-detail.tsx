@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
+  ArrowRightFromLineIcon,
   CheckIcon,
   DownloadIcon,
   EllipsisVerticalIcon,
@@ -44,28 +45,15 @@ import { deleteGalleryCategoryImage } from '@/features/galleryCategoryImage/acti
 import { reorderGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/reorderGalleryCategoryImages'
 import { onImagesUpload } from '@/utils/functions'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { toast } from '@/components/ui/use-toast'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import DeleteGalleryDialog from '@/features/gallery/components/delete-dialog-modal'
 import GalleryCategoryImageAddForm from '@/features/galleryCategoryImage/components/gallery-category-image-add-form'
-import GalleryCategoryImageMoveForm from '@/features/galleryCategoryImage/components/gallery-category-image-move-form'
+import MoveToCategoryModal from '@/features/galleryCategory/components/move-to-category-modal'
 import { getStorageUrl } from '@/lib/utils'
 import {
   GalleryCategoryImage,
@@ -145,9 +133,7 @@ export default function GalleryCategoryDetail({
   const [gridSize, setGridSize] = useState<'small' | 'large'>('small')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false)
-  const [targetCategoryId, setTargetCategoryId] = useState('')
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-  const [isBulkMoving, setIsBulkMoving] = useState(false)
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -185,25 +171,12 @@ export default function GalleryCategoryDetail({
     }
   }
 
-  const handleBulkMove = async () => {
-    if (!targetCategoryId) return
-    setIsBulkMoving(true)
-    try {
-      await bulkMoveGalleryCategoryImages(Array.from(selectedIds), targetCategoryId)
-      await mutate()
-      router.refresh()
-      clearSelection()
-      setBulkMoveOpen(false)
-      setTargetCategoryId('')
-      toast({ title: 'Photos moved.' })
-    } catch (err) {
-      toast({
-        title: err instanceof Error ? err.message : 'Move failed',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsBulkMoving(false)
-    }
+  const handleBulkMove = async (targetCategoryId: string) => {
+    await bulkMoveGalleryCategoryImages(Array.from(selectedIds), targetCategoryId)
+    await mutate()
+    router.refresh()
+    clearSelection()
+    toast({ title: 'Photos moved.' })
   }
 
   // ── Upload / drop zone ───────────────────────────────────────────────────
@@ -390,9 +363,7 @@ export default function GalleryCategoryDetail({
   if (error) return <div>Failed to load images</div>
 
   const selectionActive = selectedIds.size > 0
-  const otherCategories = galleryData.GalleryCategory.filter(
-    (c) => c.id !== collectionId
-  )
+  const otherCategories = galleryData.GalleryCategory.filter((c) => c.id !== collectionId)
 
   return (
     <DndContext
@@ -484,48 +455,15 @@ export default function GalleryCategoryDetail({
           </div>
         )}
 
-        {/* ── Bulk move dialog ── */}
-        <Dialog
+        {/* ── Bulk move modal ── */}
+        <MoveToCategoryModal
           open={bulkMoveOpen}
-          onOpenChange={(v) => {
-            setBulkMoveOpen(v)
-            if (!v) setTargetCategoryId('')
-          }}
-        >
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>
-                Move {selectedIds.size} photo{selectedIds.size > 1 ? 's' : ''} to…
-              </DialogTitle>
-            </DialogHeader>
-            <div className="py-3">
-              <Select value={targetCategoryId} onValueChange={setTargetCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a collection" />
-                </SelectTrigger>
-                <SelectContent>
-                  {otherCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setBulkMoveOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleBulkMove}
-                disabled={!targetCategoryId || isBulkMoving}
-              >
-                {isBulkMoving ? 'Moving…' : 'Move'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          onOpenChange={setBulkMoveOpen}
+          galleryData={galleryData}
+          collectionId={collectionId}
+          count={selectedIds.size}
+          onMove={handleBulkMove}
+        />
 
         {/* ── Image grid ── */}
         <div className="grid">
@@ -605,6 +543,7 @@ export default function GalleryCategoryDetail({
                     item={item}
                     mutate={mutate}
                     galleryData={galleryData}
+                    collectionId={collectionId}
                     isBeingDragged={
                       activeId === item.id ||
                       (isMultiDrag && selectedIds.has(item.id))
@@ -679,6 +618,7 @@ function DraggableImage({
   isGroupDrag,
   mutate,
   galleryData,
+  collectionId,
   isSelected,
   selectionActive,
   onToggleSelect,
@@ -689,12 +629,14 @@ function DraggableImage({
   isGroupDrag: boolean
   mutate: () => void
   galleryData: GalleryWithCategory
+  collectionId: string
   isSelected: boolean
   selectionActive: boolean
   onToggleSelect: (id: string) => void
   gridSize: 'small' | 'large'
 }) {
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const router = useRouter()
+  const [moveOpen, setMoveOpen] = useState(false)
   const didDragRef = useRef(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -719,7 +661,7 @@ function DraggableImage({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...(dialogOpen ? {} : listeners)}
+      {...(moveOpen ? {} : listeners)}
       onClick={handleClick}
       className={[
         `group relative cursor-pointer rounded-lg p-2 transition-all duration-150 ${gridSize === 'large' ? 'h-72' : 'h-52'}`,
@@ -779,11 +721,27 @@ function DraggableImage({
                 <DownloadIcon className="ml-6 mr-4 size-4" />
                 Download
               </Button>
-              <GalleryCategoryImageMoveForm
-                categoryImageId={item.id}
-                mutateData={mutate}
+              <Button
+                variant="ghost"
+                className="w-full justify-start py-6"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setMoveOpen(true)}
+              >
+                <ArrowRightFromLineIcon className="ml-2 mr-4 size-4" />
+                Move
+              </Button>
+              <MoveToCategoryModal
+                open={moveOpen}
+                onOpenChange={setMoveOpen}
                 galleryData={galleryData}
-                setDialogOpen={setDialogOpen}
+                collectionId={collectionId}
+                count={1}
+                onMove={async (targetCategoryId) => {
+                  await bulkMoveGalleryCategoryImages([item.id], targetCategoryId)
+                  await mutate()
+                  router.refresh()
+                  toast({ title: 'Photo moved.' })
+                }}
               />
               <Button
                 variant="ghost"

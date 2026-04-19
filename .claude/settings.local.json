@@ -31,7 +31,8 @@
       "Bash(npx skills:*)",
       "Read(//c/Users/KUPOPO/.claude/**)",
       "Bash(grep -E \"^[^/]*\\(/[^/]*\\){0,3}$\")",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(node *)"
     ]
   }
 }

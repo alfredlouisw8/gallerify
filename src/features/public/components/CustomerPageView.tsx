@@ -267,90 +267,198 @@ export default function CustomerPageView({
         )}
       </section>
 
-      {/* ── ABOUT + CONTACT ── */}
-      {(profile.aboutText || profile.whatsapp || profile.instagram) && (
-        <section className="border-t" style={{ borderColor: theme.border }}>
-          <div
-            className={`mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 py-24 ${mobileLayout ? '' : 'sm:px-10 lg:grid-cols-2 lg:px-16'}`}
-          >
-            {profile.aboutText && (
+      {/* ── ABOUT ── */}
+      {(profile.aboutText || profile.aboutImage || profile.whatsapp || profile.instagram) && (
+        <section className="border-t overflow-hidden" style={{ borderColor: theme.border }}>
+          {profile.aboutImage ? (
+            /* Editorial split: image left, text right */
+            <div className={`${mobileLayout ? 'flex flex-col' : 'flex flex-col lg:flex-row'}`}>
+              {/* Image — 60% on desktop, full width stacked on mobile */}
               <motion.div
+                className={`relative shrink-0 ${mobileLayout ? 'aspect-[4/3] w-full' : 'aspect-[4/3] w-full lg:aspect-auto lg:w-[60%] lg:min-h-[640px]'}`}
+                initial={{ opacity: 0, scale: 1.04 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Image
+                  src={getStorageUrl(profile.aboutImage)}
+                  alt={`${username} portrait`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                />
+                {/* Fade toward text column on desktop */}
+                <div
+                  className="absolute inset-0 hidden lg:block"
+                  style={{
+                    background: `linear-gradient(to right, transparent 55%, ${theme.bg} 100%)`,
+                  }}
+                />
+                {/* Bottom fade on mobile */}
+                <div
+                  className="absolute inset-0 lg:hidden"
+                  style={{
+                    background: `linear-gradient(to top, ${theme.bg} 0%, transparent 50%)`,
+                  }}
+                />
+              </motion.div>
+
+              {/* Text — remaining width, vertically centered */}
+              <div
+                className={`flex flex-col justify-center gap-10 ${mobileLayout ? 'px-6 pb-20 pt-10' : 'px-6 pb-20 pt-10 sm:px-10 lg:w-[40%] lg:px-14 lg:py-20'}`}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+                >
+                  <p
+                    className="mb-5 text-xs uppercase tracking-[0.22em]"
+                    style={{ color: accent }}
+                  >
+                    About
+                  </p>
+                  <h2
+                    className={`mb-6 italic leading-none ${mobileLayout ? 'text-4xl' : 'text-4xl sm:text-5xl'}`}
+                    style={{
+                      fontFamily: 'var(--font-display, serif)',
+                      fontWeight: 400,
+                      color: theme.text,
+                    }}
+                  >
+                    {username}
+                  </h2>
+                  {profile.aboutText && (
+                    <p
+                      className="text-base leading-loose"
+                      style={{
+                        color: theme.textMuted,
+                        fontFamily: fontPair.body,
+                        maxWidth: '46ch',
+                      }}
+                    >
+                      {profile.aboutText}
+                    </p>
+                  )}
+                </motion.div>
+
+                {(profile.whatsapp || profile.instagram) && (
+                  <motion.div
+                    className="flex flex-col gap-4"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+                  >
+                    <p
+                      className="mb-1 text-xs uppercase tracking-[0.22em]"
+                      style={{ color: accent }}
+                    >
+                      Contact
+                    </p>
+                    {profile.whatsapp && (
+                      <a
+                        href={`https://wa.me/${whatsappClean}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-4 transition-opacity hover:opacity-70"
+                      >
+                        <WhatsAppIcon />
+                        <span className="text-sm" style={{ color: theme.textMuted }}>
+                          {profile.whatsapp}
+                        </span>
+                      </a>
+                    )}
+                    {profile.instagram && (
+                      <a
+                        href={profile.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-4 transition-opacity hover:opacity-70"
+                      >
+                        <InstagramIcon />
+                        <span className="text-sm" style={{ color: theme.textMuted }}>
+                          {instagramHandle || profile.instagram}
+                        </span>
+                      </a>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* No about image — 2-col text layout */
+            <div
+              className={`mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 py-24 ${mobileLayout ? '' : 'sm:px-10 lg:grid-cols-2 lg:px-16'}`}
+            >
+              {profile.aboutText && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <p
+                    className="mb-5 text-xs uppercase tracking-[0.2em]"
+                    style={{ color: accent }}
+                  >
+                    About
+                  </p>
+                  <p
+                    className="max-w-prose text-base leading-relaxed"
+                    style={{ color: theme.textMuted, fontFamily: fontPair.body }}
+                  >
+                    {profile.aboutText}
+                  </p>
+                </motion.div>
+              )}
+
+              <motion.div
+                className="flex flex-col gap-6"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
               >
                 <p
-                  className="mb-5 text-xs uppercase tracking-[0.2em]"
+                  className="text-xs uppercase tracking-[0.2em]"
                   style={{ color: accent }}
                 >
-                  About
+                  Contact
                 </p>
-                <p
-                  className="max-w-prose text-base leading-relaxed"
-                  style={{
-                    color: theme.textMuted,
-                    fontFamily: fontPair.body,
-                  }}
-                >
-                  {profile.aboutText}
-                </p>
+                <div className="flex flex-col gap-4">
+                  {profile.whatsapp && (
+                    <a
+                      href={`https://wa.me/${whatsappClean}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 transition-opacity hover:opacity-80"
+                    >
+                      <WhatsAppIcon />
+                      <span className="text-sm" style={{ color: theme.textMuted }}>
+                        {profile.whatsapp}
+                      </span>
+                    </a>
+                  )}
+                  {profile.instagram && (
+                    <a
+                      href={profile.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 transition-opacity hover:opacity-80"
+                    >
+                      <InstagramIcon />
+                      <span className="text-sm" style={{ color: theme.textMuted }}>
+                        {instagramHandle || profile.instagram}
+                      </span>
+                    </a>
+                  )}
+                </div>
               </motion.div>
-            )}
-
-            <motion.div
-              className="flex flex-col gap-6"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{
-                duration: 0.7,
-                ease: [0.22, 1, 0.36, 1],
-                delay: 0.1,
-              }}
-            >
-              <p
-                className="text-xs uppercase tracking-[0.2em]"
-                style={{ color: accent }}
-              >
-                Contact
-              </p>
-              <div className="flex flex-col gap-4">
-                {profile.whatsapp && (
-                  <a
-                    href={`https://wa.me/${whatsappClean}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-4 transition-opacity hover:opacity-80"
-                  >
-                    <WhatsAppIcon />
-                    <span
-                      className="text-sm"
-                      style={{ color: theme.textMuted }}
-                    >
-                      {profile.whatsapp}
-                    </span>
-                  </a>
-                )}
-                {profile.instagram && (
-                  <a
-                    href={profile.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-4 transition-opacity hover:opacity-80"
-                  >
-                    <InstagramIcon />
-                    <span
-                      className="text-sm"
-                      style={{ color: theme.textMuted }}
-                    >
-                      {instagramHandle || profile.instagram}
-                    </span>
-                  </a>
-                )}
-              </div>
-            </motion.div>
-          </div>
+            </div>
+          )}
         </section>
       )}
 
