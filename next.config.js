@@ -5,6 +5,11 @@
 const nextConfig = {
   // Run ESLint separately with `npm run lint` — not during build
   eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    // Disable client-side router cache for dynamic pages so navigating
+    // back to a tab always re-fetches fresh server data.
+    staleTimes: { dynamic: 0 },
+  },
   images: {
     remotePatterns: [
       {

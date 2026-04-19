@@ -1,0 +1,1 @@
+ALTER TABLE galleries ADD COLUMN IF NOT EXISTS show_client_selects BOOLEAN DEFAULT FALSE;

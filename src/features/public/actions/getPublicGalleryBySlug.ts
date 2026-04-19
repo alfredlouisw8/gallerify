@@ -14,7 +14,7 @@ import {
 export async function getPublicGalleryBySlug(
   username: string,
   slug: string
-): Promise<GalleryWithCategory | null> {
+): Promise<{ gallery: GalleryWithCategory; passwordHash: string | null } | null> {
   noStore()
 
   // Next.js route params are URL-decoded, but encode/decode defensively
@@ -69,7 +69,7 @@ export async function getPublicGalleryBySlug(
     }
   }
 
-  return {
+  const gallery: GalleryWithCategory = {
     ...mapGallery(typedRow),
     GalleryCategory: categories.map((cat) => ({
       ...mapGalleryCategory(cat),
@@ -78,4 +78,6 @@ export async function getPublicGalleryBySlug(
       ),
     })),
   }
+
+  return { gallery, passwordHash: (typedRow as GalleryRow & { password_hash?: string | null }).password_hash ?? null }
 }

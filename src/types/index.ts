@@ -109,6 +109,14 @@ export type Gallery = {
   userId: string
   date: Date
   isPublished: boolean
+  isPasswordProtected: boolean
+  passwordPlain: string | null
+  clientAccessEnabled: boolean
+  downloadEnabled: boolean
+  downloadPinRequired: boolean
+  isClientPasswordProtected: boolean
+  clientPasswordPlain: string | null
+  showClientSelects: boolean
   preferences: GalleryPreferences
   createdAt: Date
   updatedAt: Date
@@ -188,6 +196,14 @@ export type GalleryRow = {
   user_id: string
   date: string
   is_published: boolean
+  password_hash: string | null
+  password_plain: string | null
+  client_access_enabled: boolean | null
+  download_enabled: boolean | null
+  download_pin: string | null
+  client_password_hash: string | null
+  client_password_plain: string | null
+  show_client_selects: boolean | null
   preferences: Record<string, unknown> | null
   created_at: string
   updated_at: string
@@ -269,6 +285,14 @@ export function mapGallery(row: GalleryRow): Gallery {
     userId: row.user_id,
     date: new Date(row.date),
     isPublished: row.is_published,
+    isPasswordProtected: !!row.password_hash,
+    passwordPlain: row.password_plain ?? null,
+    clientAccessEnabled: !!row.client_access_enabled,
+    downloadEnabled: !!row.download_enabled,
+    downloadPinRequired: !!row.download_enabled && !!row.download_pin,
+    isClientPasswordProtected: !!row.client_password_hash,
+    clientPasswordPlain: row.client_password_plain ?? null,
+    showClientSelects: !!row.show_client_selects,
     preferences: parsePreferences(row.preferences),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
