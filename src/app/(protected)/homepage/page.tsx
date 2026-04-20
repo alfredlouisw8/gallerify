@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import getProfile from '@/features/homepage/actions/getProfile'
+import CustomDomainSection from '@/features/homepage/components/custom-domain-section'
 import HomepageForm from '@/features/homepage/components/homepage-form'
 import { createClient } from '@/lib/supabase-server'
 
@@ -110,6 +111,9 @@ export default async function PublicPageEditor() {
                   </p>
                 )}
               </div>
+
+              {/* Custom Domain */}
+              <CustomDomainSection currentDomain={profile.customDomain} />
 
               {/* What clients see */}
               <div className="rounded-2xl border bg-card p-5 space-y-4">

@@ -61,6 +61,7 @@ export type UserMetadata = {
   subscriptionStatus: string
   currentPeriodEnd: string | null
   homepagePreferences: HomepagePreferences
+  customDomain: string | null
 }
 
 export type HomepagePreferences = {
@@ -186,6 +187,7 @@ export type UserMetadataRow = {
   subscription_status: string
   current_period_end: string | null
   homepage_preferences: Record<string, unknown> | null
+  custom_domain: string | null
 }
 
 export type GalleryRow = {
@@ -339,5 +341,6 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
     subscriptionStatus: row.subscription_status ?? 'trialing',
     currentPeriodEnd: row.current_period_end ?? null,
     homepagePreferences: parseHomepagePreferences(row.homepage_preferences),
+    customDomain: row.custom_domain ?? null,
   }
 }
