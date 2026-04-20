@@ -1,11 +1,11 @@
 export const PRICING = {
   pro: {
-    global: { amount: '$10', note: '/month' },
-    ID: { amount: '$4', note: '/month' },
+    global: { amount: '$7.99', note: '/month' },
+    ID: { amount: '$5.99', note: '/month' },
   },
   pro_max: {
-    global: { amount: '$20', note: '/month' },
-    ID: { amount: '$8', note: '/month' },
+    global: { amount: '$15.99', note: '/month' },
+    ID: { amount: '$11.99', note: '/month' },
   },
 } as const
 
