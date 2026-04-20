@@ -14,6 +14,7 @@ interface Props {
   hasClientPassword: boolean
   hasClientAccess: boolean
   hasGalleryPassword: boolean
+  backgroundImage?: string
 }
 
 export default function GalleryRoleSelector({
@@ -23,6 +24,7 @@ export default function GalleryRoleSelector({
   hasClientPassword,
   hasClientAccess,
   hasGalleryPassword,
+  backgroundImage,
 }: Props) {
   const [showClientGate, setShowClientGate] = useState(false)
   const [showViewerPasswordForm, setShowViewerPasswordForm] = useState(false)
@@ -56,6 +58,7 @@ export default function GalleryRoleSelector({
         galleryId={galleryId}
         galleryTitle={galleryTitle}
         redirectPath={redirectPath}
+        backgroundImage={backgroundImage}
         onBack={() => setShowClientGate(false)}
       />
     )
@@ -63,8 +66,16 @@ export default function GalleryRoleSelector({
 
   if (showViewerPasswordForm) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm space-y-8 text-center">
+      <div className="relative flex min-h-dvh flex-col items-center justify-center px-4">
+        {backgroundImage && (
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${backgroundImage})` }}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          </div>
+        )}
+        <div className="relative z-10 w-full max-w-sm space-y-8 text-center">
           <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-muted">
             <LockIcon className="size-6 text-muted-foreground" />
           </div>
@@ -83,7 +94,7 @@ export default function GalleryRoleSelector({
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Gallery password"
               autoFocus
-              className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+              className="w-full rounded-lg border border-border bg-background/10 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
             />
             {error && <p className="text-sm text-destructive">{error}</p>}
             <button
@@ -108,8 +119,16 @@ export default function GalleryRoleSelector({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-8 text-center">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center px-4">
+      {backgroundImage && (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${backgroundImage})` }}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        </div>
+      )}
+      <div className="relative z-10 w-full max-w-sm space-y-8 text-center">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">{galleryTitle}</h1>
           <p className="text-sm text-muted-foreground">How would you like to view this gallery?</p>

@@ -11,6 +11,7 @@ import { getClientFavoritedImages } from '@/features/public/actions/getOwnerClie
 import { getClientInteractions } from '@/features/public/actions/getClientInteractions'
 import { getPublicGalleryBySlug } from '@/features/public/actions/getPublicGalleryBySlug'
 import { createClient } from '@/lib/supabase-server'
+import { getStorageUrl } from '@/lib/utils'
 import { computeGalleryToken, galleryTokenCookieName } from '@/utils/gallery-password-token'
 import {
   clientTokenCookieName,
@@ -22,9 +23,10 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ username: string; slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params }: Omit<Props, 'searchParams'>) {
   const { username, slug } = await params
   const result = await getPublicGalleryBySlug(username, slug)
   if (!result) return { title: 'Not Found' }
@@ -36,8 +38,9 @@ export async function generateMetadata({ params }: Props) {
   }
 }
 
-export default async function PublicGalleryPage({ params }: Props) {
+export default async function PublicGalleryPage({ params, searchParams }: Props) {
   const { username, slug } = await params
+  const resolvedSearch = await searchParams
 
   const headersList = await headers()
   const isSubdomain = headersList.get('x-username') !== null
@@ -47,7 +50,9 @@ export default async function PublicGalleryPage({ params }: Props) {
 
   const { gallery, passwordHash } = result
 
-  const redirectPath = isSubdomain ? `/${slug}` : `/${username}/${slug}`
+  const imageParam = typeof resolvedSearch?.image === 'string' ? `?image=${resolvedSearch.image}` : ''
+  const redirectPath = (isSubdomain ? `/${slug}` : `/${username}/${slug}`) + imageParam
+  const backgroundImage = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : undefined
   const profilePath = isSubdomain ? '/' : `/${username}`
 
   // ── Owner preview bypass ─────────────────────────────────────────────────────
@@ -77,6 +82,7 @@ export default async function PublicGalleryPage({ params }: Props) {
           hasClientPassword={gallery.isClientPasswordProtected}
           hasClientAccess={gallery.clientAccessEnabled}
           hasGalleryPassword={gallery.isPasswordProtected}
+          backgroundImage={backgroundImage}
         />
       )
     }
@@ -94,6 +100,7 @@ export default async function PublicGalleryPage({ params }: Props) {
             hasClientPassword={gallery.isClientPasswordProtected}
             hasClientAccess={gallery.clientAccessEnabled}
             hasGalleryPassword={gallery.isPasswordProtected}
+            backgroundImage={backgroundImage}
           />
         )
       }
@@ -124,6 +131,7 @@ export default async function PublicGalleryPage({ params }: Props) {
             galleryId={gallery.id}
             galleryTitle={gallery.title}
             redirectPath={redirectPath}
+            backgroundImage={backgroundImage}
           />
         )
       }

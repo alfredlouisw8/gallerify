@@ -9,6 +9,7 @@ interface Props {
   galleryId: string
   galleryTitle: string
   redirectPath: string
+  backgroundImage?: string
   onBack?: () => void
 }
 
@@ -16,6 +17,7 @@ export default function GalleryClientPasswordGate({
   galleryId,
   galleryTitle,
   redirectPath,
+  backgroundImage,
   onBack,
 }: Props) {
   const [password, setPassword] = useState('')
@@ -33,8 +35,16 @@ export default function GalleryClientPasswordGate({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-8 text-center">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center px-4">
+      {backgroundImage && (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${backgroundImage})` }}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        </div>
+      )}
+      <div className="relative z-10 w-full max-w-sm space-y-8 text-center">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
           <LockIcon className="size-6 text-primary" />
         </div>
