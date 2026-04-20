@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { formatBytes, getPlanLimits, PLANS } from '@/lib/plans'
+import { getPricing } from '@/lib/pricing'
 
 type BillingMeta = {
   plan: string
@@ -50,7 +51,8 @@ function trialDaysLeft(trialEndsAt: string | null): number | null {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
 
-export default function BillingView({ meta }: { meta: BillingMeta }) {
+export default function BillingView({ meta, isIndonesia = false }: { meta: BillingMeta; isIndonesia?: boolean }) {
+  const pricing = getPricing(isIndonesia)
   const searchParams = useSearchParams()
   const router = useRouter()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
@@ -230,8 +232,8 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
                   Most popular
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-semibold tracking-tight">$10</span>
-                  <span className="text-xs text-muted-foreground">/month</span>
+                  <span className="text-2xl font-semibold tracking-tight">{pricing.pro.amount}</span>
+                  <span className="text-xs text-muted-foreground">{pricing.pro.note}</span>
                 </div>
                 <p className="mt-0.5 font-medium">Pro</p>
                 <ul className="mt-4 space-y-1.5 text-sm">
@@ -262,8 +264,8 @@ export default function BillingView({ meta }: { meta: BillingMeta }) {
 
             <div className="rounded-2xl border bg-card p-5">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-semibold tracking-tight">$20</span>
-                <span className="text-xs text-muted-foreground">/month</span>
+                <span className="text-2xl font-semibold tracking-tight">{pricing.pro_max.amount}</span>
+                <span className="text-xs text-muted-foreground">{pricing.pro_max.note}</span>
               </div>
               <p className="mt-0.5 font-medium">Pro Max</p>
               <ul className="mt-4 space-y-1.5 text-sm">

@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 
@@ -25,11 +26,14 @@ export default async function BillingPage() {
 
   if (!meta) redirect('/dashboard')
 
+  const hdrs = await headers()
+  const isIndonesia = hdrs.get('x-vercel-ip-country') === 'ID'
+
   return (
     <SidebarProvider>
       <Container sideBar={true}>
         <Suspense>
-          <BillingView meta={meta} />
+          <BillingView meta={meta} isIndonesia={isIndonesia} />
         </Suspense>
       </Container>
     </SidebarProvider>

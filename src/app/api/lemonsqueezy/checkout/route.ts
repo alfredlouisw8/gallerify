@@ -3,9 +3,15 @@ import { NextResponse } from 'next/server'
 import { configureLemonSqueezy, createCheckout } from '@/lib/lemonsqueezy'
 import { createClient } from '@/lib/supabase-server'
 
-const VARIANT_IDS: Record<string, string> = {
-  pro: process.env.LEMONSQUEEZY_PRO_VARIANT_ID ?? '',
-  pro_max: process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID ?? '',
+const VARIANT_IDS: Record<string, Record<string, string>> = {
+  pro: {
+    default: process.env.LEMONSQUEEZY_PRO_VARIANT_ID ?? '',
+    ID: process.env.LEMONSQUEEZY_PRO_VARIANT_ID_ID ?? '',
+  },
+  pro_max: {
+    default: process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID ?? '',
+    ID: process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID_ID ?? '',
+  },
 }
 
 export async function POST(request: Request) {
@@ -19,7 +25,8 @@ export async function POST(request: Request) {
   }
 
   const { plan } = (await request.json()) as { plan: 'pro' | 'pro_max' }
-  const variantId = VARIANT_IDS[plan]
+  const country = request.headers.get('x-vercel-ip-country') ?? 'default'
+  const variantId = VARIANT_IDS[plan][country] ?? VARIANT_IDS[plan]['default']
 
   if (!variantId) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })

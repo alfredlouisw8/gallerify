@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { getPricing } from '@/lib/pricing'
 
 type Plan = {
   id: 'free_trial' | 'pro' | 'pro_max'
@@ -19,59 +20,62 @@ type Plan = {
   highlight: boolean
 }
 
-const plans: Plan[] = [
-  {
-    id: 'free_trial',
-    name: 'Free Trial',
-    price: '$0',
-    priceNote: '14 days',
-    description: 'Try Gallerify free — no credit card required.',
-    features: [
-      { label: 'Up to 3 galleries', included: true },
-      { label: '1 GB total storage', included: true },
-      { label: 'Public portfolio page', included: true },
-      { label: 'Video uploads', included: false },
-      { label: 'Unlimited galleries', included: false },
-    ],
-    cta: 'Start free trial',
-    ctaVariant: 'outline',
-    highlight: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: '$10',
-    priceNote: '/month',
-    description: 'For photographers ready to grow.',
-    features: [
-      { label: 'Unlimited galleries', included: true },
-      { label: '10 GB total storage', included: true },
-      { label: 'Public portfolio page', included: true },
-      { label: 'Priority support', included: true },
-      { label: 'Video uploads', included: false },
-    ],
-    cta: 'Upgrade to Pro',
-    ctaVariant: 'default',
-    highlight: true,
-  },
-  {
-    id: 'pro_max',
-    name: 'Pro Max',
-    price: '$20',
-    priceNote: '/month',
-    description: 'For full-service studios and videographers.',
-    features: [
-      { label: 'Unlimited galleries', included: true },
-      { label: '100 GB total storage', included: true },
-      { label: 'Public portfolio page', included: true },
-      { label: 'Priority support', included: true },
-      { label: 'Video uploads', included: true },
-    ],
-    cta: 'Upgrade to Pro Max',
-    ctaVariant: 'outline',
-    highlight: false,
-  },
-]
+function buildPlans(isIndonesia: boolean): Plan[] {
+  const pricing = getPricing(isIndonesia)
+  return [
+    {
+      id: 'free_trial',
+      name: 'Free Trial',
+      price: '$0',
+      priceNote: '14 days',
+      description: 'Try Gallerify free — no credit card required.',
+      features: [
+        { label: 'Up to 3 galleries', included: true },
+        { label: '1 GB total storage', included: true },
+        { label: 'Public portfolio page', included: true },
+        { label: 'Video uploads', included: false },
+        { label: 'Unlimited galleries', included: false },
+      ],
+      cta: 'Start free trial',
+      ctaVariant: 'outline',
+      highlight: false,
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: pricing.pro.amount,
+      priceNote: pricing.pro.note,
+      description: 'For photographers ready to grow.',
+      features: [
+        { label: 'Unlimited galleries', included: true },
+        { label: '10 GB total storage', included: true },
+        { label: 'Public portfolio page', included: true },
+        { label: 'Priority support', included: true },
+        { label: 'Video uploads', included: false },
+      ],
+      cta: 'Upgrade to Pro',
+      ctaVariant: 'default',
+      highlight: true,
+    },
+    {
+      id: 'pro_max',
+      name: 'Pro Max',
+      price: pricing.pro_max.amount,
+      priceNote: pricing.pro_max.note,
+      description: 'For full-service studios and videographers.',
+      features: [
+        { label: 'Unlimited galleries', included: true },
+        { label: '100 GB total storage', included: true },
+        { label: 'Public portfolio page', included: true },
+        { label: 'Priority support', included: true },
+        { label: 'Video uploads', included: true },
+      ],
+      cta: 'Upgrade to Pro Max',
+      ctaVariant: 'outline',
+      highlight: false,
+    },
+  ]
+}
 
 function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   const [loading, setLoading] = useState(false)
@@ -202,7 +206,9 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   )
 }
 
-export default function Pricing() {
+export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean }) {
+  const plans = buildPlans(isIndonesia)
+
   return (
     <section id="pricing" className="bg-secondary/40 py-24 md:py-32">
       <div className="container px-4 md:px-6">
