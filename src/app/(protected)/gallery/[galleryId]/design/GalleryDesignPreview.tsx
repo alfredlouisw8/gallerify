@@ -503,13 +503,84 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
             {/* ── LAYOUT: photo layout + spacing ── */}
             {selectedPanel === 'layout' && (<>
               <Section label="Grid">
-                <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      { value: 'masonry'   as const, label: 'Masonry',   desc: 'Variable heights' },
-                      { value: 'grid'      as const, label: 'Grid',      desc: 'Square crop' },
-                      { value: 'editorial' as const, label: 'Editorial', desc: 'First photo hero' },
-                      { value: 'blog'      as const, label: 'Blog',      desc: 'Story-driven flow' },
+                      {
+                        value: 'masonry' as const,
+                        label: 'Masonry',
+                        preview: (active: boolean) => {
+                          const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
+                          return (
+                            <div style={{ display: 'flex', gap: '3px', padding: '10px 12px', alignItems: 'flex-start', width: '100%' }}>
+                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <div style={{ height: '22px', borderRadius: '2px', background: c }} />
+                                <div style={{ height: '14px', borderRadius: '2px', background: c }} />
+                                <div style={{ height: '18px', borderRadius: '2px', background: c }} />
+                              </div>
+                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <div style={{ height: '14px', borderRadius: '2px', background: c }} />
+                                <div style={{ height: '24px', borderRadius: '2px', background: c }} />
+                                <div style={{ height: '12px', borderRadius: '2px', background: c }} />
+                              </div>
+                            </div>
+                          )
+                        },
+                      },
+                      {
+                        value: 'grid' as const,
+                        label: 'Grid',
+                        preview: (active: boolean) => {
+                          const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
+                          return (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', padding: '10px 12px', width: '100%' }}>
+                              {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} style={{ height: '20px', borderRadius: '2px', background: c }} />
+                              ))}
+                            </div>
+                          )
+                        },
+                      },
+                      {
+                        value: 'editorial' as const,
+                        label: 'Editorial',
+                        preview: (active: boolean) => {
+                          const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '10px 12px', width: '100%' }}>
+                              <div style={{ height: '22px', borderRadius: '2px', background: c }} />
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '3px' }}>
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                  <div key={i} style={{ height: '16px', borderRadius: '2px', background: c }} />
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        },
+                      },
+                      {
+                        value: 'blog' as const,
+                        label: 'Blog',
+                        preview: (active: boolean) => {
+                          const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
+                          const cd = active ? 'oklch(0.78 0.09 80 / 0.25)' : 'hsl(var(--border) / 0.5)'
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '10px 12px', width: '100%' }}>
+                              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
+                                <div style={{ flex: '0 0 60%', height: '18px', borderRadius: '2px', background: c }} />
+                                <div style={{ flex: 1, height: '13px', marginTop: '3px', borderRadius: '2px', background: cd }} />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ width: '65%', height: '15px', borderRadius: '2px', background: c }} />
+                              </div>
+                              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
+                                <div style={{ flex: '0 0 38%', height: '13px', marginTop: '3px', borderRadius: '2px', background: cd }} />
+                                <div style={{ flex: 1, height: '18px', borderRadius: '2px', background: c }} />
+                              </div>
+                            </div>
+                          )
+                        },
+                      },
                     ]
                   ).map((opt) => {
                     const active = prefs.photoLayout === opt.value
@@ -517,18 +588,22 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                       <button
                         key={opt.value}
                         onClick={() => update('photoLayout', opt.value)}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                        className="flex flex-col overflow-hidden rounded-xl border transition-all text-left"
                         style={{
                           borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.05)' : 'transparent',
+                          boxShadow:   active ? '0 0 0 1px oklch(0.78 0.09 80 / 0.25)' : 'none',
                         }}
                       >
-                        <span className="flex flex-col items-start gap-0.5">
-                          <span className="font-medium">{opt.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
-                        </span>
-                        {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                        <div style={{ borderBottom: `1px solid ${active ? 'oklch(0.78 0.09 80 / 0.25)' : 'hsl(var(--border))'}`, height: '76px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {opt.preview(active)}
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-1.5">
+                          <span className="text-[11px] font-semibold" style={{ color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
+                            {opt.label}
+                          </span>
+                          {active && <CheckIcon className="size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                        </div>
                       </button>
                     )
                   })}
@@ -536,31 +611,35 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
               </Section>
 
               <Section label="Spacing">
-                <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-3 gap-2">
                   {(
                     [
-                      { value: 'tight'   as const, label: 'Tight',   desc: '2px gap & margin' },
-                      { value: 'relaxed' as const, label: 'Relaxed', desc: '12px gap & margin' },
-                      { value: 'airy'    as const, label: 'Airy',    desc: '24px gap & margin' },
+                      { value: 'tight'   as const, label: 'Tight',   gap: '2px'  },
+                      { value: 'relaxed' as const, label: 'Relaxed', gap: '5px'  },
+                      { value: 'airy'    as const, label: 'Airy',    gap: '10px' },
                     ]
                   ).map((opt) => {
                     const active = prefs.photoSpacing === opt.value
+                    const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
                     return (
                       <button
                         key={opt.value}
                         onClick={() => update('photoSpacing', opt.value)}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all"
+                        className="flex flex-col items-center gap-2 rounded-xl border py-3 transition-all"
                         style={{
                           borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                          background:  active ? 'oklch(0.78 0.09 80 / 0.07)' : 'transparent',
+                          boxShadow:   active ? '0 0 0 1px oklch(0.78 0.09 80 / 0.25)' : 'none',
                         }}
                       >
-                        <span className="flex flex-col items-start gap-0.5">
-                          <span className="font-medium">{opt.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                        <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: opt.gap, padding: '2px' }}>
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <span key={i} style={{ display: 'block', width: '13px', height: '13px', borderRadius: '2px', background: c }} />
+                          ))}
                         </span>
-                        {active && <CheckIcon className="size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                        <span className="text-[11px] font-medium" style={{ color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--muted-foreground))' }}>
+                          {opt.label}
+                        </span>
                       </button>
                     )
                   })}

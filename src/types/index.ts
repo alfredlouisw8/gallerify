@@ -62,6 +62,9 @@ export type UserMetadata = {
   currentPeriodEnd: string | null
   homepagePreferences: HomepagePreferences
   customDomain: string | null
+  businessName: string | null
+  location: string | null
+  onboardingCompleted: boolean
 }
 
 export type HomepagePreferences = {
@@ -196,6 +199,9 @@ export type UserMetadataRow = {
   current_period_end: string | null
   homepage_preferences: Record<string, unknown> | null
   custom_domain: string | null
+  business_name: string | null
+  location: string | null
+  onboarding_completed: boolean
 }
 
 export type GalleryRow = {
@@ -369,5 +375,8 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
     currentPeriodEnd: row.current_period_end ?? null,
     homepagePreferences: parseHomepagePreferences(row.homepage_preferences),
     customDomain: row.custom_domain ?? null,
+    businessName: row.business_name ?? null,
+    location: row.location ?? null,
+    onboardingCompleted: row.onboarding_completed ?? false,
   }
 }

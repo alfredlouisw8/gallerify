@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 /**
  * Supabase OAuth callback handler.
@@ -38,9 +45,20 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
+    if (!error && sessionData.user) {
+      // Check whether this user has completed onboarding
+      const { data: meta } = await supabaseAdmin
+        .from('user_metadata')
+        .select('onboarding_completed')
+        .eq('user_id', sessionData.user.id)
+        .single()
+
+      if (!meta?.onboarding_completed) {
+        return NextResponse.redirect(`${origin}/onboarding`)
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
