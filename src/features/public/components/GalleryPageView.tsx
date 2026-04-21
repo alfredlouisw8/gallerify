@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type React from 'react'
 
 import { getStorageUrl } from '@/lib/utils'
-import { THEMES, ACCENTS, FONT_PAIRS, SPACING } from '@/features/gallery/constants/preferences'
+import { THEMES, ACCENTS, FONT_PAIRS, SPACING, generateCustomTheme } from '@/features/gallery/constants/preferences'
 import { toggleClientFavorite } from '@/features/public/actions/toggleClientFavorite'
 import { toggleClientHidden } from '@/features/public/actions/toggleClientHidden'
 import { verifyDownloadPin } from '@/features/public/actions/verifyDownloadPin'
@@ -22,6 +22,8 @@ interface GalleryPageViewProps {
   preferences?: GalleryPreferences
   /** When true, photo layouts use at most 2 columns */
   narrowPhotoGrid?: boolean
+  /** When true, hero is shortened so banner + grid both appear in one viewport (design preview) */
+  previewMode?: boolean
   /** Enables client-mode UI (heart + hide buttons) */
   isClient?: boolean
   clientInteractions?: { favoritedIds: string[]; hiddenIds: string[] }
@@ -29,23 +31,39 @@ interface GalleryPageViewProps {
 
 const ALL_CATEGORY = '__all__'
 
+const GRAIN_SVG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E\")"
+
 export default function GalleryPageView({
   gallery,
   username,
   profilePath,
   preferences,
   narrowPhotoGrid = false,
+  previewMode = false,
   isClient = false,
   clientInteractions,
 }: GalleryPageViewProps) {
+  useEffect(() => {
+    if (!previewMode) return
+    document.documentElement.style.overflow = 'hidden'
+    return () => { document.documentElement.style.overflow = '' }
+  }, [previewMode])
+
   const downloadEnabled = gallery.downloadEnabled
   const downloadPinRequired = gallery.downloadPinRequired
   const prefs = preferences ?? gallery.preferences ?? DEFAULT_GALLERY_PREFERENCES
-  const theme = THEMES[prefs.colorTheme]
-  const accent = ACCENTS[prefs.accentColor]
+  const theme = prefs.colorTheme === 'custom' && prefs.customColorTheme
+    ? generateCustomTheme(prefs.customColorTheme)
+    : THEMES[prefs.colorTheme]
+  const accent = prefs.accentColor === 'custom' && prefs.customAccentColor
+    ? prefs.customAccentColor
+    : ACCENTS[prefs.accentColor]
   const fontPair = FONT_PAIRS[prefs.fontPairing]
   const spacing = SPACING[prefs.photoSpacing]
   const overlayAlpha = { subtle: 0.05, medium: 0.28, strong: 0.58 }[prefs.overlayIntensity]
+  const coverDesign = prefs.coverDesign ?? 'classic'
+  const focalPoint = prefs.bannerFocalPoint ?? { x: 50, y: 50 }
+  const objectPosition = `${focalPoint.x}% ${focalPoint.y}%`
   const isLarge = prefs.thumbnailSize === 'large'
   // narrowPhotoGrid = design preview pane (always narrow, no responsive needed)
   // full gallery = use sm: breakpoint so mobile gets 2/1 and desktop gets 4/3
@@ -219,13 +237,26 @@ export default function GalleryPageView({
 
   const hasCategories = gallery.GalleryCategory.length > 0
 
-  // Title position based on alignment
-  const titlePositionClass =
-    prefs.titleAlign === 'center'
-      ? 'absolute bottom-12 left-0 right-0 flex flex-col items-center text-center px-8'
-      : prefs.titleAlign === 'right'
-        ? 'absolute bottom-12 right-8 text-right sm:right-12 lg:right-16'
-        : 'absolute bottom-12 left-8 sm:left-12 lg:left-16'
+  const BackLink = (
+    <motion.div
+      className="absolute left-6 top-6 sm:left-10 sm:top-8 z-10"
+      style={narrowPhotoGrid ? { left: '1.5rem', top: '1.5rem' } : {}}
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <Link
+        href={profilePath}
+        className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+        style={{ color: theme.textMuted }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        {username}
+      </Link>
+    </motion.div>
+  )
 
   return (
     <div
@@ -239,97 +270,371 @@ export default function GalleryPageView({
       } as React.CSSProperties}
     >
       {/* ── HERO ── */}
-      <section className="relative h-screen overflow-hidden">
-        {bannerImage ? (
-          <Image
-            src={bannerImage}
-            alt={gallery.title}
-            fill
-            priority
-            className="object-cover"
-            sizes="100vw"
-          />
-        ) : (
-          <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
-        )}
+      {coverDesign === 'classic' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+            {bannerImage ? (
+              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
+            ) : (
+              <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+            )}
+            <div className="absolute inset-x-0 bottom-0" style={{ height: '60%', background: `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}cc 25%, transparent 100%)` }} />
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
+            {BackLink}
+            <motion.div
+              className="absolute bottom-12 left-8 sm:left-12 lg:left-16"
+              style={narrowPhotoGrid ? { left: '2rem' } : {}}
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
+              <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>{formattedDate}</p>
+              <h1 className="max-w-2xl text-5xl leading-[1.05] sm:text-6xl lg:text-7xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', textShadow: prefs.colorTheme !== 'light' ? '0 2px 40px oklch(0 0 0 / 0.4)' : 'none', ...(narrowPhotoGrid ? { fontSize: '3rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
+              {galleryUrl && <div className="mt-4"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
+        </>
+      )}
 
-        {/* Bottom seam — transitions hero into gallery bg */}
-        <div
-          className="absolute inset-x-0 bottom-0"
-          style={{
-            height: '60%',
-            background: `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}cc 25%, transparent 100%)`,
-          }}
-        />
-        {/* Intensity overlay — controls how much the photo shows */}
-        <div
-          className="absolute inset-0"
-          style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }}
-        />
+      {coverDesign === 'centered' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+            {bannerImage ? (
+              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
+            ) : (
+              <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+            )}
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: Math.max(overlayAlpha, 0.45) }} />
+            <div className="absolute inset-x-0 bottom-0" style={{ height: '30%', background: `linear-gradient(to top, ${theme.bg} 0%, transparent 100%)` }} />
+            {BackLink}
+            <motion.div
+              className="absolute inset-0 flex flex-col items-center justify-center text-center px-8"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
+              <p className="mb-4 text-xs uppercase tracking-[0.3em]" style={{ color: accent }}>{formattedDate}</p>
+              <div className="mb-4 w-12 border-t" style={{ borderColor: accent }} />
+              <h1 className="max-w-3xl text-4xl leading-[1.05] sm:text-5xl lg:text-6xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', ...(narrowPhotoGrid ? { fontSize: '2.25rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <div className="mt-4 w-12 border-t" style={{ borderColor: accent }} />
+              <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
+              {galleryUrl && <div className="mt-5"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
+        </>
+      )}
 
-        {/* Back link */}
-        <motion.div
-          className="absolute left-6 top-6 sm:left-10 sm:top-8"
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <Link
-            href={profilePath}
-            className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-            style={{ color: theme.textMuted }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            {username}
-          </Link>
-        </motion.div>
+      {coverDesign === 'minimal' && (
+        <>
+          <section className="relative" style={{ paddingTop: '72px' }}>
+            {BackLink}
+            {bannerImage && (
+              <div className="relative overflow-hidden" style={{ height: previewMode ? '32vh' : '52vh' }}>
+                <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
+                <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.6 }} />
+              </div>
+            )}
+            <motion.div
+              className="mx-auto max-w-5xl px-8 pt-10 pb-2 sm:px-12 lg:px-16"
+              style={narrowPhotoGrid ? { paddingLeft: '2rem', paddingRight: '2rem' } : {}}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            >
+              <div className="mb-3 flex items-center gap-4">
+                <div className="h-px flex-1" style={{ backgroundColor: theme.border }} />
+                <p className="text-xs uppercase tracking-[0.25em]" style={{ color: accent }}>{formattedDate}</p>
+                <div className="h-px flex-1" style={{ backgroundColor: theme.border }} />
+              </div>
+              <h1 className="text-4xl leading-[1.08] sm:text-5xl lg:text-6xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.015em', ...(narrowPhotoGrid ? { fontSize: '2.25rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <div className="mt-4 flex items-center gap-4">
+                <p className="text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
+                {galleryUrl && <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />}
+              </div>
+            </motion.div>
+          </section>
+        </>
+      )}
 
-        {/* Title */}
-        <motion.div
-          className={titlePositionClass}
-          initial={{ opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-        >
-          <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>
-            {formattedDate}
-          </p>
-          <h1
-            className="max-w-2xl text-5xl leading-[1.05] sm:text-6xl lg:text-7xl"
+      {coverDesign === 'bold' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+            {bannerImage ? (
+              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover object-center" sizes="100vw" />
+            ) : (
+              <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+            )}
+            {/* Strong left-side gradient panel */}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${theme.bg} 0%, ${theme.bg}e6 28%, ${theme.bg}80 55%, transparent 80%)` }} />
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.5 }} />
+            {BackLink}
+            <motion.div
+              className="absolute inset-y-0 left-0 flex flex-col justify-center px-8 sm:px-12 lg:px-20"
+              style={{ maxWidth: '62%', ...(narrowPhotoGrid ? { paddingLeft: '2rem', paddingRight: '2rem' } : {}) }}
+              initial={{ opacity: 0, x: -32 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            >
+              <p className="mb-3 text-xs uppercase tracking-[0.3em]" style={{ color: accent }}>{formattedDate}</p>
+              <h1 className="text-5xl leading-[0.95] sm:text-6xl lg:text-7xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.03em', ...(narrowPhotoGrid ? { fontSize: '2.75rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <div className="mt-6 w-16 border-t-2" style={{ borderColor: accent }} />
+              <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
+              {galleryUrl && <div className="mt-5"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
+        </>
+      )}
+
+      {coverDesign === 'framed' && (
+        <>
+          <section
+            className="relative flex flex-col items-center justify-center"
             style={{
-              fontFamily: 'var(--font-display, serif)',
-              fontWeight: 400,
-              letterSpacing: '-0.02em',
-              textShadow: prefs.colorTheme !== 'light' ? '0 2px 40px oklch(0 0 0 / 0.4)' : 'none',
+              minHeight: previewMode ? '55vh' : '100vh',
+              backgroundColor: theme.bg,
+              padding: previewMode ? '3vh 5vw' : '6vh 6vw',
             }}
           >
-            {gallery.title}
-          </h1>
-          <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>
-            {allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}
-          </p>
-          {galleryUrl && (
-            <div className="mt-4">
-              <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />
-            </div>
-          )}
-        </motion.div>
-      </section>
+            {BackLink}
+            {/* Title row above the frame */}
+            <motion.div
+              className="mb-6 flex w-full max-w-5xl flex-col items-center gap-2 text-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            >
+              <h1
+                className="text-4xl leading-tight sm:text-5xl lg:text-6xl"
+                style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', ...(narrowPhotoGrid ? { fontSize: '2.25rem' } : {}) }}
+              >
+                {gallery.title}
+              </h1>
+              <div className="mt-1 flex items-center gap-3 text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>
+                <span>{formattedDate}</span>
+                <span style={{ opacity: 0.5 }}>|</span>
+                <span>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</span>
+              </div>
+              {galleryUrl && <div className="mt-2"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
 
-      {/* ── GRADIENT BRIDGE: hero → gallery ── */}
-      <div
-        aria-hidden
-        style={{
-          marginTop: '-96px',
-          height: '96px',
-          position: 'relative',
-          zIndex: 1,
-          background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`,
-          pointerEvents: 'none',
-        }}
-      />
+            {/* Framed banner */}
+            <motion.div
+              className="w-full max-w-5xl overflow-hidden"
+              style={{ borderRadius: '6px', aspectRatio: previewMode ? '21/9' : '16/8', position: 'relative', border: `1px solid ${theme.border}` }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            >
+              {bannerImage ? (
+                <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="90vw" style={{ objectPosition }} />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+              )}
+              <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.5 }} />
+            </motion.div>
+          </section>
+        </>
+      )}
+
+      {coverDesign === 'journal' && (
+        <>
+          <section
+            className="flex flex-col sm:flex-row"
+            style={{ height: previewMode ? '55vh' : '100svh', backgroundColor: theme.bg }}
+          >
+            {/* Photo — top 50% on mobile, left 50% on desktop */}
+            <div className="relative h-1/2 w-full overflow-hidden sm:h-full sm:w-1/2">
+              {bannerImage ? (
+                <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="(max-width: 640px) 100vw, 50vw" style={{ objectPosition }} />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+              )}
+              <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.4 }} />
+            </div>
+
+            {/* Text — bottom 50% on mobile, right 50% on desktop */}
+            <div
+              className="flex h-1/2 w-full flex-col items-start justify-center sm:h-full sm:flex-1"
+              style={{ padding: narrowPhotoGrid ? '2rem' : 'clamp(1.5rem, 6%, 6rem)' }}
+            >
+              {BackLink}
+              <motion.div
+                className="flex flex-col gap-4"
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+              >
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>
+                  <span>{formattedDate}</span>
+                  <span style={{ color: theme.border }}>|</span>
+                  <span style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</span>
+                </div>
+                <div className="w-8 border-t" style={{ borderColor: accent }} />
+                <h1
+                  className="text-4xl leading-[1.05] sm:text-5xl lg:text-6xl"
+                  style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', ...(narrowPhotoGrid ? { fontSize: '2.25rem' } : {}) }}
+                >
+                  {gallery.title}
+                </h1>
+                {galleryUrl && <div className="mt-2"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+              </motion.div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {coverDesign === 'vintage' && (
+        <>
+          <section style={{ backgroundColor: theme.bg }}>
+            {/* Banner — 80vh */}
+            <div className="relative overflow-hidden" style={{ height: previewMode ? '44vh' : '80vh' }}>
+              {bannerImage ? (
+                <Image
+                  src={bannerImage} alt={gallery.title} fill priority
+                  className="object-cover"
+                  sizes="100vw"
+                  style={{ objectPosition, filter: 'sepia(0.4) contrast(1.06) brightness(0.9)' }}
+                />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: '#2a1f14' }} />
+              )}
+              {/* vignette */}
+              <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 35%, rgba(8,5,2,0.55) 100%)' }} />
+              {/* bottom fade into page bg */}
+              <div className="absolute inset-x-0 bottom-0" style={{ height: '35%', background: `linear-gradient(to bottom, transparent, ${theme.bg})` }} />
+              {BackLink}
+            </div>
+
+            {/* Title block — below banner */}
+            <motion.div
+              className="mx-auto flex flex-col items-center text-center"
+              style={{
+                maxWidth: narrowPhotoGrid ? '100%' : '760px',
+                padding: narrowPhotoGrid ? '1.5rem 2rem 3rem' : '2.5rem 2rem 5rem',
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            >
+              {/* ornamental rule */}
+              <div className="flex items-center gap-3 mb-5" style={{ color: 'rgba(200,165,90,0.65)' }}>
+                <div style={{ width: 36, height: '0.5px', background: 'currentColor' }} />
+                <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor">
+                  <path d="M4 0 L4.8 3.2 L8 4 L4.8 4.8 L4 8 L3.2 4.8 L0 4 L3.2 3.2 Z" />
+                </svg>
+                <div style={{ width: 36, height: '0.5px', background: 'currentColor' }} />
+              </div>
+
+              <h1
+                style={{
+                  fontFamily: 'var(--font-display, serif)',
+                  fontWeight: 400,
+                  letterSpacing: '0.03em',
+                  lineHeight: 1.06,
+                  fontSize: narrowPhotoGrid ? '2.25rem' : 'clamp(2.5rem, 5vw, 5rem)',
+                  color: theme.text,
+                }}
+              >
+                {gallery.title}
+              </h1>
+
+              <p
+                className="mt-4 uppercase tracking-[0.28em] text-[11px]"
+                style={{ color: 'rgba(200,165,90,0.8)' }}
+              >
+                {formattedDate}
+              </p>
+
+              <p className="mt-2 text-xs tracking-[0.16em] uppercase" style={{ color: theme.textMuted }}>
+                {allImages.length} {allImages.length === 1 ? 'photograph' : 'photographs'}
+              </p>
+
+              {galleryUrl && <div className="mt-5"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
+          </section>
+        </>
+      )}
+
+      {coverDesign === 'cinematic' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh', backgroundColor: '#050403' }}>
+            {/* Photo strip — middle 52% of viewport */}
+            <div
+              className="absolute left-0 right-0 overflow-hidden"
+              style={{ top: '22%', bottom: '18%' }}
+            >
+              {bannerImage ? (
+                <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+              )}
+              <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.6 }} />
+            </div>
+
+            {/* Top letterbox bar */}
+            <div
+              className="absolute left-0 right-0 top-0 flex flex-col justify-end"
+              style={{ height: '22%', background: '#050403', paddingBottom: '1.5%', paddingLeft: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', paddingRight: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)' }}
+            >
+              {BackLink}
+              <motion.div
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+              >
+                <h1
+                  style={{
+                    fontFamily: 'var(--font-display, serif)',
+                    fontWeight: 400,
+                    letterSpacing: '-0.025em',
+                    lineHeight: 0.95,
+                    fontSize: narrowPhotoGrid ? '1.75rem' : 'clamp(1.75rem, 4vw, 3.75rem)',
+                    color: '#f0ede8',
+                  }}
+                >
+                  {gallery.title}
+                </h1>
+              </motion.div>
+            </div>
+
+            {/* Bottom letterbox bar */}
+            <div
+              className="absolute bottom-0 left-0 right-0 flex items-center"
+              style={{ height: '18%', background: '#050403', paddingLeft: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', paddingRight: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', gap: '1.5rem' }}
+            >
+              <motion.div
+                className="flex items-center gap-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+              >
+                <span className="text-xs uppercase tracking-[0.24em]" style={{ color: accent }}>{formattedDate}</span>
+                <span style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
+                <span className="text-xs uppercase tracking-[0.18em]" style={{ color: theme.textMuted }}>
+                  {allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}
+                </span>
+                {galleryUrl && (
+                  <span style={{ marginLeft: '0.5rem' }}>
+                    <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />
+                  </span>
+                )}
+              </motion.div>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* ── CLIENT MODE BANNER ── */}
       {isClient && (
@@ -367,6 +672,7 @@ export default function GalleryPageView({
               onClick={() => setActiveCategory(ALL_CATEGORY)}
               theme={theme}
               accent={accent}
+              barStyle={prefs.categoryBarStyle}
             />
             {gallery.GalleryCategory.map((cat) => (
               <CategoryPill
@@ -377,6 +683,7 @@ export default function GalleryPageView({
                 onClick={() => setActiveCategory(cat.id)}
                 theme={theme}
                 accent={accent}
+                barStyle={prefs.categoryBarStyle}
               />
             ))}
           </div>
@@ -384,7 +691,10 @@ export default function GalleryPageView({
       )}
 
       {/* ── PHOTO GRID ── */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-8 lg:px-1">
+      <section
+        className="mx-auto max-w-7xl pb-24 pt-10"
+        style={{ paddingLeft: spacing.padding, paddingRight: spacing.padding }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={`${activeCategory}-${prefs.photoLayout}`}
@@ -463,6 +773,21 @@ export default function GalleryPageView({
                   </div>
                 )}
               </div>
+            ) : prefs.photoLayout === 'blog' ? (
+              <BlogLayout
+                images={visibleImages}
+                gap={spacing.gap}
+                onClick={(i) => openLightbox(visibleImages, i)}
+                isClient={isClient}
+                favoritedIds={favoritedIds}
+                hiddenIds={hiddenIds}
+                onToggleFavorite={handleToggleFavorite}
+                onToggleHidden={handleToggleHidden}
+                downloadEnabled={downloadEnabled}
+                onDownload={handleDownload}
+                galleryUrl={galleryUrl}
+                galleryTitle={gallery.title}
+              />
             ) : (
               /* masonry (default) */
               <div
@@ -493,6 +818,21 @@ export default function GalleryPageView({
         </AnimatePresence>
       </section>
 
+      {/* ── GRAIN TEXTURE OVERLAY ── */}
+      {prefs.grainIntensity !== 'none' && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-[45]"
+          style={{
+            backgroundImage: GRAIN_SVG,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '200px 200px',
+            opacity: prefs.grainIntensity === 'subtle' ? 0.22 : 0.48,
+            mixBlendMode: 'overlay',
+          }}
+        />
+      )}
+
       {/* ── DOWNLOAD PIN MODAL ── */}
       {showPinModal && (
         <DownloadPinModal
@@ -522,6 +862,145 @@ export default function GalleryPageView({
   )
 }
 
+/* ── Blog Layout ── */
+const BLOG_PATTERN = [
+  'left-large', // 1 — 60% left + 38% right
+  'right-solo', // 2 — 65% right-aligned solo
+  'right-large',// 3 — 38% left + 60% right
+  'left-solo',  // 4 — 65% left-aligned solo
+] as const
+
+type BlogBlock = typeof BLOG_PATTERN[number]
+
+function BlogLayout({
+  images, gap, onClick,
+  isClient, favoritedIds, hiddenIds,
+  onToggleFavorite, onToggleHidden,
+  downloadEnabled, onDownload,
+  galleryUrl, galleryTitle,
+}: {
+  images: GalleryCategoryImage[]
+  gap: string
+  onClick: (i: number) => void
+  isClient: boolean
+  favoritedIds: Set<string>
+  hiddenIds: Set<string>
+  onToggleFavorite: (id: string) => void
+  onToggleHidden: (id: string) => void
+  downloadEnabled: boolean
+  onDownload: (url: string, name: string) => void
+  galleryUrl: string
+  galleryTitle: string
+}) {
+  const blocks: { type: BlogBlock; indices: number[] }[] = []
+  let i = 0
+  let patternIdx = 0
+
+  while (i < images.length) {
+    const type = BLOG_PATTERN[patternIdx % BLOG_PATTERN.length]
+    const need = type === 'left-large' || type === 'right-large' ? 2 : 1
+    const remaining = images.length - i
+
+    if (remaining === 0) break
+    if (need === 2 && remaining === 1) {
+      // not enough for a pair — render as solo
+      blocks.push({ type: 'left-solo', indices: [i] })
+      i += 1
+    } else {
+      blocks.push({ type, indices: need === 2 ? [i, i + 1] : [i] })
+      i += need
+    }
+    patternIdx++
+  }
+
+  return (
+    <div className="flex flex-col" style={{ gap }}>
+      {blocks.map((block, bi) => {
+        const img0 = images[block.indices[0]]
+        const img1 = block.indices[1] !== undefined ? images[block.indices[1]] : undefined
+        const globalIdx0 = block.indices[0]
+        const globalIdx1 = block.indices[1]
+
+        const imgEl = (img: GalleryCategoryImage, gi: number, aspectRatio: string, delay = 0) => (
+          <motion.div
+            key={img.id}
+            className="group relative cursor-pointer overflow-hidden"
+            style={{ aspectRatio, borderRadius: '2px', flexShrink: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: Math.min(bi * 0.05 + delay, 0.5) }}
+            onClick={() => onClick(gi)}
+            whileHover="hover"
+          >
+            <motion.img
+              src={getStorageUrl(img.imageUrl)}
+              alt=""
+              loading="lazy"
+              className="size-full object-cover"
+              style={{ opacity: hiddenIds.has(img.id) ? 0.4 : 1 }}
+              variants={{ hover: { scale: 1.03 } }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+            <ImageActionOverlay
+              isClient={isClient}
+              isFavorited={favoritedIds.has(img.id)}
+              isHidden={hiddenIds.has(img.id)}
+              onToggleFavorite={() => onToggleFavorite(img.id)}
+              onToggleHidden={() => onToggleHidden(img.id)}
+              downloadEnabled={downloadEnabled}
+              onDownload={() => onDownload(getStorageUrl(img.imageUrl), img.id)}
+              shareUrl={galleryUrl ? `${galleryUrl}?image=${img.id}` : ''}
+              shareTitle={galleryTitle}
+            />
+          </motion.div>
+        )
+
+        if (block.type === 'left-large' && img1) {
+          return (
+            <div key={bi} className="flex items-start" style={{ gap }}>
+              <div style={{ flex: '0 0 60%' }}>{imgEl(img0, globalIdx0, '4/3')}</div>
+              <div style={{ flex: '0 0 calc(40% - ' + gap + ')', marginTop: '8%' }}>
+                {imgEl(img1, globalIdx1!, '3/4', 0.08)}
+              </div>
+            </div>
+          )
+        }
+
+        if (block.type === 'right-large' && img1) {
+          return (
+            <div key={bi} className="flex items-start" style={{ gap }}>
+              <div style={{ flex: '0 0 calc(40% - ' + gap + ')', marginTop: '10%' }}>
+                {imgEl(img0, globalIdx0, '3/4')}
+              </div>
+              <div style={{ flex: '0 0 60%' }}>{imgEl(img1, globalIdx1!, '4/3', 0.08)}</div>
+            </div>
+          )
+        }
+
+        if (block.type === 'right-solo') {
+          return (
+            <div key={bi} className="flex justify-end">
+              <div style={{ width: '65%' }}>{imgEl(img0, globalIdx0, '3/2')}</div>
+            </div>
+          )
+        }
+
+        if (block.type === 'left-solo') {
+          return (
+            <div key={bi} className="flex justify-start">
+              <div style={{ width: '65%' }}>{imgEl(img0, globalIdx0, '3/2')}</div>
+            </div>
+          )
+        }
+
+        return null
+      })}
+    </div>
+  )
+}
+
 /* ── Category Pill ── */
 function CategoryPill({
   label,
@@ -530,6 +1009,7 @@ function CategoryPill({
   onClick,
   theme,
   accent,
+  barStyle = 'pills',
 }: {
   label: string
   count: number
@@ -537,7 +1017,45 @@ function CategoryPill({
   onClick: () => void
   theme: (typeof THEMES)[keyof typeof THEMES]
   accent: string
+  barStyle?: 'pills' | 'underline' | 'text'
 }) {
+  if (barStyle === 'underline') {
+    return (
+      <button
+        onClick={onClick}
+        data-active={active ? 'true' : 'false'}
+        className="relative shrink-0 px-3 py-2 text-xs font-medium transition-colors duration-200"
+        style={{
+          color: active ? accent : theme.textDim,
+          letterSpacing: '0.04em',
+          borderBottom: `2px solid ${active ? accent : 'transparent'}`,
+          paddingBottom: '6px',
+        }}
+      >
+        {label}
+        <span className="ml-1.5 text-[10px]" style={{ opacity: 0.6 }}>{count}</span>
+      </button>
+    )
+  }
+
+  if (barStyle === 'text') {
+    return (
+      <button
+        onClick={onClick}
+        data-active={active ? 'true' : 'false'}
+        className="relative shrink-0 px-2 py-2 text-xs font-medium transition-colors duration-200"
+        style={{
+          color: active ? theme.text : theme.textDim,
+          letterSpacing: '0.04em',
+          opacity: active ? 1 : 0.55,
+        }}
+      >
+        {label}
+        <span className="ml-1.5 text-[10px]">{count}</span>
+      </button>
+    )
+  }
+
   return (
     <button
       onClick={onClick}

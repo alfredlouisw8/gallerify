@@ -12,6 +12,45 @@ export type ThemeTokens = {
   gradient: string
 }
 
+function hexMix(base: string, target: string, t: number): string {
+  const br = parseInt(base.slice(1, 3), 16), bg_ = parseInt(base.slice(3, 5), 16), bb = parseInt(base.slice(5, 7), 16)
+  const tr = parseInt(target.slice(1, 3), 16), tg = parseInt(target.slice(3, 5), 16), tb = parseInt(target.slice(5, 7), 16)
+  const r = Math.round(br + (tr - br) * t)
+  const g = Math.round(bg_ + (tg - bg_) * t)
+  const b = Math.round(bb + (tb - bb) * t)
+  return `rgb(${r},${g},${b})`
+}
+
+export function generateCustomTheme(hex: string): ThemeTokens {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  const isDark = lum < 0.45
+
+  return isDark ? {
+    bg:        hex,
+    bgDim:     hexMix(hex, '#ffffff', 0.10),
+    surface:   hex + 'eb',
+    border:    hexMix(hex, '#ffffff', 0.16),
+    text:      'oklch(0.95 0.008 80)',
+    textMuted: 'oklch(0.60 0.008 80)',
+    textDim:   'oklch(0.48 0.010 80)',
+    pillBg:    hexMix(hex, '#ffffff', 0.12),
+    gradient:  `linear-gradient(to top, ${hex} 0%, ${hex}cc 30%, transparent 70%)`,
+  } : {
+    bg:        hex,
+    bgDim:     hexMix(hex, '#000000', 0.07),
+    surface:   hex + 'eb',
+    border:    hexMix(hex, '#000000', 0.13),
+    text:      'oklch(0.16 0.010 70)',
+    textMuted: 'oklch(0.42 0.010 70)',
+    textDim:   'oklch(0.56 0.008 70)',
+    pillBg:    hexMix(hex, '#000000', 0.09),
+    gradient:  `linear-gradient(to top, ${hex} 0%, ${hex}cc 30%, transparent 70%)`,
+  }
+}
+
 export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
   dark: {
     bg:        'oklch(0.11 0.008 60)',
@@ -68,6 +107,17 @@ export const THEMES: Record<GalleryPreferences['colorTheme'], ThemeTokens> = {
     pillBg:    'oklch(0.28 0.060 130)',
     gradient:  'linear-gradient(to top, oklch(0.20 0.060 130) 0%, oklch(0.20 0.060 130 / 0.5) 40%, transparent 70%)',
   },
+  custom: {
+    bg:        'oklch(0.11 0.008 60)',
+    bgDim:     'oklch(0.18 0.012 60)',
+    surface:   'oklch(0.11 0.008 60 / 0.92)',
+    border:    'oklch(0.22 0.006 60)',
+    text:      'oklch(0.95 0.008 80)',
+    textMuted: 'oklch(0.60 0.008 80)',
+    textDim:   'oklch(0.50 0.010 80)',
+    pillBg:    'oklch(0.20 0.008 60)',
+    gradient:  'linear-gradient(to top, oklch(0.11 0.008 60) 0%, oklch(0.11 0.008 60 / 0.5) 40%, transparent 70%)',
+  },
 }
 
 export const FONT_PAIRS: Record<
@@ -79,16 +129,17 @@ export const FONT_PAIRS: Record<
   'cormorant-outfit': { display: 'var(--font-cormorant)', body: 'var(--font-outfit)',   displayLabel: 'Cormorant Garamond', bodyLabel: 'Outfit' },
 }
 
-export const SPACING: Record<GalleryPreferences['photoSpacing'], { gap: string }> = {
-  tight:   { gap: '2px'  },
-  relaxed: { gap: '12px' },
-  airy:    { gap: '24px' },
+export const SPACING: Record<GalleryPreferences['photoSpacing'], { gap: string; padding: string }> = {
+  tight:   { gap: '2px',  padding: '2px'  },
+  relaxed: { gap: '12px', padding: '12px' },
+  airy:    { gap: '24px', padding: '24px' },
 }
 
 export const ACCENTS: Record<GalleryPreferences['accentColor'], string> = {
-  gold:  'oklch(0.78 0.09 80)',
-  ivory: 'oklch(0.90 0.03 88)',
-  sage:  'oklch(0.72 0.08 145)',
-  rose:  'oklch(0.72 0.09 10)',
-  slate: 'oklch(0.68 0.05 230)',
+  gold:   'oklch(0.78 0.09 80)',
+  ivory:  'oklch(0.90 0.03 88)',
+  sage:   'oklch(0.72 0.08 145)',
+  rose:   'oklch(0.72 0.09 10)',
+  slate:  'oklch(0.68 0.05 230)',
+  custom: 'oklch(0.78 0.09 80)',
 }
