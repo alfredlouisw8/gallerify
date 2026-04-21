@@ -81,18 +81,23 @@ export const DEFAULT_HOMEPAGE_PREFERENCES: HomepagePreferences = {
 }
 
 export type GalleryPreferences = {
-  titleAlign: 'left' | 'center' | 'right'
-  colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive'
-  photoLayout: 'masonry' | 'grid' | 'editorial'
-  accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate'
+  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic'
+  colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive' | 'custom'
+  customColorTheme?: string
+  photoLayout: 'masonry' | 'grid' | 'editorial' | 'blog'
+  accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate' | 'custom'
+  customAccentColor?: string
   fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit'
   photoSpacing: 'tight' | 'relaxed' | 'airy'
   overlayIntensity: 'subtle' | 'medium' | 'strong'
   thumbnailSize: 'regular' | 'large'
+  grainIntensity: 'none' | 'subtle' | 'strong'
+  categoryBarStyle: 'pills' | 'underline' | 'text'
+  bannerFocalPoint: { x: number; y: number }
 }
 
 export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
-  titleAlign: 'left',
+  coverDesign: 'classic',
   colorTheme: 'dark',
   photoLayout: 'masonry',
   accentColor: 'gold',
@@ -100,6 +105,9 @@ export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
   photoSpacing: 'relaxed',
   overlayIntensity: 'medium',
   thumbnailSize: 'regular',
+  grainIntensity: 'none',
+  categoryBarStyle: 'pills',
+  bannerFocalPoint: { x: 50, y: 50 },
 }
 
 export type Gallery = {
@@ -251,18 +259,24 @@ function parseHomepagePreferences(raw: Record<string, unknown> | null | undefine
 
 function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
   return {
-    titleAlign: (['left', 'center', 'right'].includes(raw?.titleAlign as string)
-      ? raw!.titleAlign
-      : DEFAULT_GALLERY_PREFERENCES.titleAlign) as GalleryPreferences['titleAlign'],
-    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive'].includes(raw?.colorTheme as string)
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic'].includes(raw?.coverDesign as string)
+      ? raw!.coverDesign
+      : (['left', 'center', 'right'].includes(raw?.titleAlign as string) ? 'classic' : DEFAULT_GALLERY_PREFERENCES.coverDesign)) as GalleryPreferences['coverDesign'],
+    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(raw?.colorTheme as string)
       ? raw!.colorTheme
       : DEFAULT_GALLERY_PREFERENCES.colorTheme) as GalleryPreferences['colorTheme'],
-    photoLayout: (['masonry', 'grid', 'editorial'].includes(raw?.photoLayout as string)
+    customColorTheme: typeof raw?.customColorTheme === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.customColorTheme)
+      ? raw.customColorTheme
+      : undefined,
+    photoLayout: (['masonry', 'grid', 'editorial', 'blog'].includes(raw?.photoLayout as string)
       ? raw!.photoLayout
       : DEFAULT_GALLERY_PREFERENCES.photoLayout) as GalleryPreferences['photoLayout'],
-    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate'].includes(raw?.accentColor as string)
+    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate', 'custom'].includes(raw?.accentColor as string)
       ? raw!.accentColor
       : DEFAULT_GALLERY_PREFERENCES.accentColor) as GalleryPreferences['accentColor'],
+    customAccentColor: typeof raw?.customAccentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.customAccentColor)
+      ? raw.customAccentColor
+      : undefined,
     fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(raw?.fontPairing as string)
       ? raw!.fontPairing
       : DEFAULT_GALLERY_PREFERENCES.fontPairing) as GalleryPreferences['fontPairing'],
@@ -275,6 +289,19 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
     thumbnailSize: (['regular', 'large'].includes(raw?.thumbnailSize as string)
       ? raw!.thumbnailSize
       : DEFAULT_GALLERY_PREFERENCES.thumbnailSize) as GalleryPreferences['thumbnailSize'],
+    grainIntensity: (['none', 'subtle', 'strong'].includes(raw?.grainIntensity as string)
+      ? raw!.grainIntensity
+      : DEFAULT_GALLERY_PREFERENCES.grainIntensity) as GalleryPreferences['grainIntensity'],
+    categoryBarStyle: (['pills', 'underline', 'text'].includes(raw?.categoryBarStyle as string)
+      ? raw!.categoryBarStyle
+      : DEFAULT_GALLERY_PREFERENCES.categoryBarStyle) as GalleryPreferences['categoryBarStyle'],
+    bannerFocalPoint: (
+      raw?.bannerFocalPoint !== null &&
+      typeof raw?.bannerFocalPoint === 'object' &&
+      typeof (raw.bannerFocalPoint as Record<string, unknown>).x === 'number' &&
+      typeof (raw.bannerFocalPoint as Record<string, unknown>).y === 'number'
+    ) ? raw!.bannerFocalPoint as { x: number; y: number }
+      : DEFAULT_GALLERY_PREFERENCES.bannerFocalPoint,
   }
 }
 

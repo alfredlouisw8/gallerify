@@ -1,6 +1,7 @@
 import { cookies, headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import type { GalleryPreferences } from '@/types'
 import GalleryClientPasswordGate from '@/features/public/components/GalleryClientPasswordGate'
 import GalleryPageView from '@/features/public/components/GalleryPageView'
 import GalleryRoleSelector from '@/features/public/components/GalleryRoleSelector'
@@ -11,6 +12,7 @@ import { getClientFavoritedImages } from '@/features/public/actions/getOwnerClie
 import { getClientInteractions } from '@/features/public/actions/getClientInteractions'
 import { getPublicGalleryBySlug } from '@/features/public/actions/getPublicGalleryBySlug'
 import { createClient } from '@/lib/supabase-server'
+import { getStorageUrl } from '@/lib/utils'
 import { computeGalleryToken, galleryTokenCookieName } from '@/utils/gallery-password-token'
 import {
   clientTokenCookieName,
@@ -20,11 +22,51 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-interface Props {
-  params: Promise<{ username: string; slug: string }>
+function prefsFromParams(
+  stored: GalleryPreferences,
+  p: Record<string, string | string[] | undefined>,
+): GalleryPreferences {
+  const s = (k: string) => (typeof p[k] === 'string' ? (p[k] as string) : undefined)
+  return {
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic'].includes(s('coverDesign') ?? '')
+      ? s('coverDesign')! : stored.coverDesign) as GalleryPreferences['coverDesign'],
+    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(s('colorTheme') ?? '')
+      ? s('colorTheme')! : stored.colorTheme) as GalleryPreferences['colorTheme'],
+    customColorTheme: s('customColorTheme') && /^#[0-9a-fA-F]{6}$/.test(s('customColorTheme')!)
+      ? s('customColorTheme')!
+      : stored.customColorTheme,
+    photoLayout: (['masonry', 'grid', 'editorial', 'blog'].includes(s('photoLayout') ?? '')
+      ? s('photoLayout')! : stored.photoLayout) as GalleryPreferences['photoLayout'],
+    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate', 'custom'].includes(s('accentColor') ?? '')
+      ? s('accentColor')! : stored.accentColor) as GalleryPreferences['accentColor'],
+    customAccentColor: s('customAccentColor') && /^#[0-9a-fA-F]{6}$/.test(s('customAccentColor')!)
+      ? s('customAccentColor')!
+      : stored.customAccentColor,
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(s('fontPairing') ?? '')
+      ? s('fontPairing')! : stored.fontPairing) as GalleryPreferences['fontPairing'],
+    photoSpacing: (['tight', 'relaxed', 'airy'].includes(s('photoSpacing') ?? '')
+      ? s('photoSpacing')! : stored.photoSpacing) as GalleryPreferences['photoSpacing'],
+    overlayIntensity: (['subtle', 'medium', 'strong'].includes(s('overlayIntensity') ?? '')
+      ? s('overlayIntensity')! : stored.overlayIntensity) as GalleryPreferences['overlayIntensity'],
+    thumbnailSize: (['regular', 'large'].includes(s('thumbnailSize') ?? '')
+      ? s('thumbnailSize')! : stored.thumbnailSize) as GalleryPreferences['thumbnailSize'],
+    grainIntensity: (['none', 'subtle', 'strong'].includes(s('grainIntensity') ?? '')
+      ? s('grainIntensity')! : stored.grainIntensity) as GalleryPreferences['grainIntensity'],
+    categoryBarStyle: (['pills', 'underline', 'text'].includes(s('categoryBarStyle') ?? '')
+      ? s('categoryBarStyle')! : stored.categoryBarStyle) as GalleryPreferences['categoryBarStyle'],
+    bannerFocalPoint: {
+      x: s('focalX') !== undefined ? Math.min(100, Math.max(0, Number(s('focalX')))) : stored.bannerFocalPoint.x,
+      y: s('focalY') !== undefined ? Math.min(100, Math.max(0, Number(s('focalY')))) : stored.bannerFocalPoint.y,
+    },
+  }
 }
 
-export async function generateMetadata({ params }: Props) {
+interface Props {
+  params: Promise<{ username: string; slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export async function generateMetadata({ params }: Omit<Props, 'searchParams'>) {
   const { username, slug } = await params
   const result = await getPublicGalleryBySlug(username, slug)
   if (!result) return { title: 'Not Found' }
@@ -36,8 +78,9 @@ export async function generateMetadata({ params }: Props) {
   }
 }
 
-export default async function PublicGalleryPage({ params }: Props) {
+export default async function PublicGalleryPage({ params, searchParams }: Props) {
   const { username, slug } = await params
+  const resolvedSearch = await searchParams
 
   const headersList = await headers()
   const isSubdomain = headersList.get('x-username') !== null
@@ -47,7 +90,26 @@ export default async function PublicGalleryPage({ params }: Props) {
 
   const { gallery, passwordHash } = result
 
-  const redirectPath = isSubdomain ? `/${slug}` : `/${username}/${slug}`
+  // ── Design preview bypass (owner only) ──────────────────────────────────────
+  if (resolvedSearch._preview === '1') {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user || user.id !== gallery.userId) notFound()
+    const previewPrefs = prefsFromParams(gallery.preferences, resolvedSearch)
+    return (
+      <GalleryPageView
+        gallery={gallery}
+        username={username}
+        profilePath={isSubdomain ? '/' : `/${username}`}
+        preferences={previewPrefs}
+        previewMode
+      />
+    )
+  }
+
+  const imageParam = typeof resolvedSearch?.image === 'string' ? `?image=${resolvedSearch.image}` : ''
+  const redirectPath = (isSubdomain ? `/${slug}` : `/${username}/${slug}`) + imageParam
+  const backgroundImage = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : undefined
   const profilePath = isSubdomain ? '/' : `/${username}`
 
   // ── Owner preview bypass ─────────────────────────────────────────────────────
@@ -77,6 +139,7 @@ export default async function PublicGalleryPage({ params }: Props) {
           hasClientPassword={gallery.isClientPasswordProtected}
           hasClientAccess={gallery.clientAccessEnabled}
           hasGalleryPassword={gallery.isPasswordProtected}
+          backgroundImage={backgroundImage}
         />
       )
     }
@@ -94,6 +157,7 @@ export default async function PublicGalleryPage({ params }: Props) {
             hasClientPassword={gallery.isClientPasswordProtected}
             hasClientAccess={gallery.clientAccessEnabled}
             hasGalleryPassword={gallery.isPasswordProtected}
+            backgroundImage={backgroundImage}
           />
         )
       }
@@ -124,6 +188,7 @@ export default async function PublicGalleryPage({ params }: Props) {
             galleryId={gallery.id}
             galleryTitle={gallery.title}
             redirectPath={redirectPath}
+            backgroundImage={backgroundImage}
           />
         )
       }
