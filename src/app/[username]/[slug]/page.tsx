@@ -1,6 +1,7 @@
 import { cookies, headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import type { GalleryPreferences } from '@/types'
 import GalleryClientPasswordGate from '@/features/public/components/GalleryClientPasswordGate'
 import GalleryPageView from '@/features/public/components/GalleryPageView'
 import GalleryRoleSelector from '@/features/public/components/GalleryRoleSelector'
@@ -20,6 +21,45 @@ import {
 } from '@/utils/gallery-client-token'
 
 export const dynamic = 'force-dynamic'
+
+function prefsFromParams(
+  stored: GalleryPreferences,
+  p: Record<string, string | string[] | undefined>,
+): GalleryPreferences {
+  const s = (k: string) => (typeof p[k] === 'string' ? (p[k] as string) : undefined)
+  return {
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic'].includes(s('coverDesign') ?? '')
+      ? s('coverDesign')! : stored.coverDesign) as GalleryPreferences['coverDesign'],
+    colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(s('colorTheme') ?? '')
+      ? s('colorTheme')! : stored.colorTheme) as GalleryPreferences['colorTheme'],
+    customColorTheme: s('customColorTheme') && /^#[0-9a-fA-F]{6}$/.test(s('customColorTheme')!)
+      ? s('customColorTheme')!
+      : stored.customColorTheme,
+    photoLayout: (['masonry', 'grid', 'editorial', 'blog'].includes(s('photoLayout') ?? '')
+      ? s('photoLayout')! : stored.photoLayout) as GalleryPreferences['photoLayout'],
+    accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate', 'custom'].includes(s('accentColor') ?? '')
+      ? s('accentColor')! : stored.accentColor) as GalleryPreferences['accentColor'],
+    customAccentColor: s('customAccentColor') && /^#[0-9a-fA-F]{6}$/.test(s('customAccentColor')!)
+      ? s('customAccentColor')!
+      : stored.customAccentColor,
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(s('fontPairing') ?? '')
+      ? s('fontPairing')! : stored.fontPairing) as GalleryPreferences['fontPairing'],
+    photoSpacing: (['tight', 'relaxed', 'airy'].includes(s('photoSpacing') ?? '')
+      ? s('photoSpacing')! : stored.photoSpacing) as GalleryPreferences['photoSpacing'],
+    overlayIntensity: (['subtle', 'medium', 'strong'].includes(s('overlayIntensity') ?? '')
+      ? s('overlayIntensity')! : stored.overlayIntensity) as GalleryPreferences['overlayIntensity'],
+    thumbnailSize: (['regular', 'large'].includes(s('thumbnailSize') ?? '')
+      ? s('thumbnailSize')! : stored.thumbnailSize) as GalleryPreferences['thumbnailSize'],
+    grainIntensity: (['none', 'subtle', 'strong'].includes(s('grainIntensity') ?? '')
+      ? s('grainIntensity')! : stored.grainIntensity) as GalleryPreferences['grainIntensity'],
+    categoryBarStyle: (['pills', 'underline', 'text'].includes(s('categoryBarStyle') ?? '')
+      ? s('categoryBarStyle')! : stored.categoryBarStyle) as GalleryPreferences['categoryBarStyle'],
+    bannerFocalPoint: {
+      x: s('focalX') !== undefined ? Math.min(100, Math.max(0, Number(s('focalX')))) : stored.bannerFocalPoint.x,
+      y: s('focalY') !== undefined ? Math.min(100, Math.max(0, Number(s('focalY')))) : stored.bannerFocalPoint.y,
+    },
+  }
+}
 
 interface Props {
   params: Promise<{ username: string; slug: string }>
@@ -49,6 +89,23 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
   if (!result) notFound()
 
   const { gallery, passwordHash } = result
+
+  // ── Design preview bypass (owner only) ──────────────────────────────────────
+  if (resolvedSearch._preview === '1') {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user || user.id !== gallery.userId) notFound()
+    const previewPrefs = prefsFromParams(gallery.preferences, resolvedSearch)
+    return (
+      <GalleryPageView
+        gallery={gallery}
+        username={username}
+        profilePath={isSubdomain ? '/' : `/${username}`}
+        preferences={previewPrefs}
+        previewMode
+      />
+    )
+  }
 
   const imageParam = typeof resolvedSearch?.image === 'string' ? `?image=${resolvedSearch.image}` : ''
   const redirectPath = (isSubdomain ? `/${slug}` : `/${username}/${slug}`) + imageParam

@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  FrameIcon,
   GridIcon,
   ImageIcon,
   ListIcon,
@@ -33,6 +34,7 @@ type GallerySidebarProps = {
 }
 
 const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
+  { id: 'cover',  label: 'Cover',  icon: <FrameIcon className="size-3.5" /> },
   { id: 'style',  label: 'Style',  icon: <SlidersHorizontalIcon className="size-3.5" /> },
   { id: 'color',  label: 'Color',  icon: <PaletteIcon className="size-3.5" /> },
   { id: 'layout', label: 'Layout', icon: <GridIcon className="size-3.5" /> },
@@ -57,8 +59,13 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const activeTab = useActiveTab(galleryData.id)
+  const [displayTab, setDisplayTab] = useState(activeTab)
+
+  // Sync back once navigation completes
+  React.useEffect(() => { setDisplayTab(activeTab) }, [activeTab])
 
   const handleTabChange = (value: string) => {
+    setDisplayTab(value)
     if (value === 'category') {
       if (galleryData.GalleryCategory[0]) {
         router.push(
@@ -135,7 +142,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
       </div>
 
       <Tabs
-        value={activeTab}
+        value={displayTab}
         className="w-full"
         onValueChange={handleTabChange}
       >
@@ -201,7 +208,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
                 {point.icon}
                 <span className="font-medium">{point.label}</span>
                 <span className="ml-auto text-xs capitalize opacity-50">
-                  {point.id === 'style'  && prefs.titleAlign}
+                  {point.id === 'cover'  && prefs.coverDesign}
                   {point.id === 'color'  && prefs.colorTheme}
                   {point.id === 'layout' && prefs.photoLayout}
                 </span>
