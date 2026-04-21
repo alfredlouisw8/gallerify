@@ -15,6 +15,14 @@ const stats = [
   { value: '4.9 / 5', label: 'Average rating' },
 ]
 
+// Replace these with real photography images when available
+const heroImages = [
+  { id: '1005', alt: 'Portrait photography', aspect: 'aspect-[3/4]' },
+  { id: '1058', alt: 'Wedding photography', aspect: 'aspect-[4/3]' },
+  { id: '1011', alt: 'Landscape photography', aspect: 'aspect-[4/3]' },
+  { id: '1060', alt: 'Studio photography', aspect: 'aspect-[3/4]' },
+]
+
 export default function Intro() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -67,8 +75,8 @@ export default function Intro() {
               transition={{ duration: 0.6, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
               className="max-w-[46ch] text-base leading-relaxed text-muted-foreground"
             >
-              Build stunning client galleries in minutes. Share beautiful
-              portfolio pages that leave a lasting impression.
+              Stop sending Drive links. Give clients a gallery they&apos;ll
+              love opening — and a portfolio page that wins your next shoot.
             </motion.p>
 
             <motion.div
@@ -79,7 +87,7 @@ export default function Intro() {
             >
               <Button size="lg" asChild className="group rounded-full px-6">
                 <Link href={isAuthenticated ? '/dashboard' : '/login'}>
-                  {isAuthenticated ? 'Go to Dashboard' : 'Start for free'}
+                  {isAuthenticated ? 'Go to Dashboard' : 'Start free — no card needed'}
                   <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>
@@ -120,19 +128,19 @@ export default function Intro() {
             className="relative hidden lg:grid lg:grid-cols-2 lg:gap-3"
           >
             <div className="flex flex-col gap-3">
-              <div className="aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
+              <div className={`${heroImages[0].aspect} overflow-hidden rounded-2xl bg-muted`}>
                 <Image
-                  src="https://picsum.photos/seed/glrfy1/400/533"
-                  alt="Portrait photography"
+                  src={`https://picsum.photos/id/${heroImages[0].id}/400/533`}
+                  alt={heroImages[0].alt}
                   width={400}
                   height={533}
                   className="size-full object-cover"
                 />
               </div>
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+              <div className={`${heroImages[1].aspect} overflow-hidden rounded-2xl bg-muted`}>
                 <Image
-                  src="https://picsum.photos/seed/glrfy3/400/300"
-                  alt="Landscape photography"
+                  src={`https://picsum.photos/id/${heroImages[1].id}/400/300`}
+                  alt={heroImages[1].alt}
                   width={400}
                   height={300}
                   className="size-full object-cover"
@@ -140,19 +148,19 @@ export default function Intro() {
               </div>
             </div>
             <div className="flex flex-col gap-3 pt-10">
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+              <div className={`${heroImages[2].aspect} overflow-hidden rounded-2xl bg-muted`}>
                 <Image
-                  src="https://picsum.photos/seed/glrfy2/400/300"
-                  alt="Wedding photography"
+                  src={`https://picsum.photos/id/${heroImages[2].id}/400/300`}
+                  alt={heroImages[2].alt}
                   width={400}
                   height={300}
                   className="size-full object-cover"
                 />
               </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
+              <div className={`${heroImages[3].aspect} overflow-hidden rounded-2xl bg-muted`}>
                 <Image
-                  src="https://picsum.photos/seed/glrfy4/400/533"
-                  alt="Studio photography"
+                  src={`https://picsum.photos/id/${heroImages[3].id}/400/533`}
+                  alt={heroImages[3].alt}
                   width={400}
                   height={533}
                   className="size-full object-cover"
@@ -164,12 +172,7 @@ export default function Intro() {
             <div className="absolute -bottom-3 -left-6 rounded-2xl border border-border bg-white p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9)]">
               <div className="flex items-center gap-3">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                  >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
                       d="M8 2L9.8 6.2L14 7L11 9.9L11.7 14L8 11.8L4.3 14L5 9.9L2 7L6.2 6.2L8 2Z"
                       fill="#d97706"

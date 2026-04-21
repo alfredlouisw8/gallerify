@@ -5,6 +5,7 @@ export const PLANS = {
     maxStorageBytes: 1 * 1024 * 1024 * 1024, // 1 GB
     maxStorageLabel: '1 GB',
     videoAllowed: false,
+    customDomainAllowed: false,
     trialDays: 14,
     price: 0,
   },
@@ -14,6 +15,7 @@ export const PLANS = {
     maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     maxStorageLabel: '10 GB',
     videoAllowed: false,
+    customDomainAllowed: true,
     trialDays: 0,
     price: 10,
   },
@@ -23,6 +25,7 @@ export const PLANS = {
     maxStorageBytes: 100 * 1024 * 1024 * 1024, // 100 GB
     maxStorageLabel: '100 GB',
     videoAllowed: true,
+    customDomainAllowed: true,
     trialDays: 0,
     price: 20,
   },

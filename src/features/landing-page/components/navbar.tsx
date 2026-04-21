@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
@@ -39,16 +40,15 @@ export default function Navbar() {
         }`}
         style={{ width: 'min(700px, calc(100vw - 2rem))' }}
       >
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-foreground">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <rect x="1" y="1" width="4.5" height="4.5" rx="1" fill="white" />
-              <rect x="7.5" y="1" width="4.5" height="4.5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="1" y="7.5" width="4.5" height="4.5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1" fill="white" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold tracking-tight">Gallerify</span>
+        <Link href="/" className="flex shrink-0 items-center">
+          <Image
+            src="/gallery/Logo.svg"
+            alt="Gallerify"
+            width={105}
+            height={32}
+            unoptimized
+            priority
+          />
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">

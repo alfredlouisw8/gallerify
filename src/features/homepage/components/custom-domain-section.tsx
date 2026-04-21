@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { CheckCircle2Icon, Copy, GlobeIcon, Loader2Icon, XCircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, Copy, GlobeIcon, Loader2Icon, LockIcon, XCircleIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,7 @@ import { updateCustomDomain } from '../actions/updateCustomDomain'
 
 type Props = {
   currentDomain: string | null
+  allowed?: boolean
 }
 
 type DnsRecords = {
@@ -16,7 +18,7 @@ type DnsRecords = {
   aRecord: { name: string; value: string }
 }
 
-export default function CustomDomainSection({ currentDomain }: Props) {
+export default function CustomDomainSection({ currentDomain, allowed = true }: Props) {
   const [domain, setDomain] = useState(currentDomain ?? '')
   const [savedDomain, setSavedDomain] = useState(currentDomain)
   const [dnsRecords, setDnsRecords] = useState<DnsRecords | null>(null)
@@ -57,6 +59,28 @@ export default function CustomDomainSection({ currentDomain }: Props) {
     navigator.clipboard.writeText(text)
     setCopied(text)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  if (!allowed) {
+    return (
+      <div className="rounded-2xl border bg-card p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <GlobeIcon className="size-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Custom Domain</span>
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            <LockIcon className="size-2.5" />
+            Pro
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Connect your own domain (e.g.{' '}
+          <span className="font-mono">photos.yoursite.com</span>). Available on Pro and Pro Max.
+        </p>
+        <Button size="sm" className="w-full rounded-xl" asChild>
+          <Link href="/billing">Upgrade to unlock</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (

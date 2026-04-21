@@ -8,11 +8,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { getPricing } from '@/lib/pricing'
 
+type BillingPeriod = 'monthly' | 'annual'
+
 type Plan = {
   id: 'free_trial' | 'pro' | 'pro_max'
   name: string
   price: string
   priceNote: string
+  billedAs?: string
   description: string
   features: { label: string; included: boolean }[]
   cta: string
@@ -20,7 +23,7 @@ type Plan = {
   highlight: boolean
 }
 
-function buildPlans(isIndonesia: boolean): Plan[] {
+function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
   const pricing = getPricing(isIndonesia)
   return [
     {
@@ -33,8 +36,8 @@ function buildPlans(isIndonesia: boolean): Plan[] {
         { label: 'Up to 3 galleries', included: true },
         { label: '1 GB total storage', included: true },
         { label: 'Public portfolio page', included: true },
+        { label: 'Custom domain', included: false },
         { label: 'Video uploads', included: false },
-        { label: 'Unlimited galleries', included: false },
       ],
       cta: 'Start free trial',
       ctaVariant: 'outline',
@@ -43,14 +46,15 @@ function buildPlans(isIndonesia: boolean): Plan[] {
     {
       id: 'pro',
       name: 'Pro',
-      price: pricing.pro.amount,
-      priceNote: pricing.pro.note,
+      price: billing === 'annual' ? pricing.pro.annual.perMonth : pricing.pro.monthly.amount,
+      priceNote: '/month',
+      billedAs: billing === 'annual' ? `Billed ${pricing.pro.annual.amount}/year` : undefined,
       description: 'For photographers ready to grow.',
       features: [
         { label: 'Unlimited galleries', included: true },
         { label: '10 GB total storage', included: true },
         { label: 'Public portfolio page', included: true },
-        { label: 'Priority support', included: true },
+        { label: 'Custom domain', included: true },
         { label: 'Video uploads', included: false },
       ],
       cta: 'Upgrade to Pro',
@@ -60,14 +64,15 @@ function buildPlans(isIndonesia: boolean): Plan[] {
     {
       id: 'pro_max',
       name: 'Pro Max',
-      price: pricing.pro_max.amount,
-      priceNote: pricing.pro_max.note,
+      price: billing === 'annual' ? pricing.pro_max.annual.perMonth : pricing.pro_max.monthly.amount,
+      priceNote: '/month',
+      billedAs: billing === 'annual' ? `Billed ${pricing.pro_max.annual.amount}/year` : undefined,
       description: 'For full-service studios and videographers.',
       features: [
         { label: 'Unlimited galleries', included: true },
         { label: '100 GB total storage', included: true },
         { label: 'Public portfolio page', included: true },
-        { label: 'Priority support', included: true },
+        { label: 'Custom domain', included: true },
         { label: 'Video uploads', included: true },
       ],
       cta: 'Upgrade to Pro Max',
@@ -77,23 +82,33 @@ function buildPlans(isIndonesia: boolean): Plan[] {
   ]
 }
 
-function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
+function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing: BillingPeriod }) {
   const [loading, setLoading] = useState(false)
+  const [hint, setHint] = useState<string | null>(null)
 
   const handleUpgrade = async () => {
     if (plan.id === 'free_trial') return
+    setHint(null)
     setLoading(true)
     try {
       const res = await fetch('/api/lemonsqueezy/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: plan.id }),
+        body: JSON.stringify({ plan: plan.id, billingPeriod: billing }),
       })
       if (res.status === 401) {
         window.location.href = `/login?next=/billing&plan=${plan.id}`
         return
       }
       const { url, error } = await res.json()
+      if (error === 'already_subscribed') {
+        setHint("You're already on this plan.")
+        return
+      }
+      if (error === 'downgrade_via_portal') {
+        setHint('To downgrade, manage your plan in the billing portal.')
+        return
+      }
       if (error || !url) return
       window.location.href = url
     } catch {
@@ -124,29 +139,28 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       )}
 
       <div className="space-y-1">
-        <h3
-          className={`text-lg font-semibold ${isFeatured ? 'text-background' : ''}`}
-        >
+        <h3 className={`text-lg font-semibold ${isFeatured ? 'text-background' : ''}`}>
           {plan.name}
         </h3>
-        <p
-          className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}
-        >
+        <p className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}>
           {plan.description}
         </p>
       </div>
 
-      <div className="mt-5 flex items-baseline gap-1">
-        <span
-          className={`text-4xl font-semibold tracking-tighter ${isFeatured ? 'text-background' : ''}`}
-        >
-          {plan.price}
-        </span>
-        <span
-          className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}
-        >
-          {plan.priceNote}
-        </span>
+      <div className="mt-5">
+        <div className="flex items-baseline gap-1">
+          <span className={`text-4xl font-semibold tracking-tighter ${isFeatured ? 'text-background' : ''}`}>
+            {plan.price}
+          </span>
+          <span className={`text-sm ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}>
+            {plan.priceNote}
+          </span>
+        </div>
+        {plan.billedAs && (
+          <p className={`mt-1 text-xs ${isFeatured ? 'text-background/50' : 'text-muted-foreground'}`}>
+            {plan.billedAs}
+          </p>
+        )}
       </div>
 
       <ul className="mt-6 flex-1 space-y-2.5">
@@ -164,9 +178,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
             }`}
           >
             {f.included ? (
-              <CheckIcon
-                className={`size-4 shrink-0 ${isFeatured ? 'text-amber-400' : 'text-green-500'}`}
-              />
+              <CheckIcon className={`size-4 shrink-0 ${isFeatured ? 'text-amber-400' : 'text-green-500'}`} />
             ) : (
               <XIcon className="size-4 shrink-0 opacity-40" />
             )}
@@ -175,7 +187,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         ))}
       </ul>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-2">
         {plan.id === 'free_trial' ? (
           <Button
             className={`w-full rounded-full ${isFeatured ? 'bg-background text-foreground hover:bg-background/90' : ''}`}
@@ -201,13 +213,19 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
             )}
           </Button>
         )}
+        {hint && (
+          <p className={`text-center text-xs ${isFeatured ? 'text-background/60' : 'text-muted-foreground'}`}>
+            {hint}
+          </p>
+        )}
       </div>
     </motion.div>
   )
 }
 
 export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean }) {
-  const plans = buildPlans(isIndonesia)
+  const [billing, setBilling] = useState<BillingPeriod>('monthly')
+  const plans = buildPlans(isIndonesia, billing)
 
   return (
     <section id="pricing" className="bg-secondary/40 py-24 md:py-32">
@@ -230,11 +248,40 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
             Start free for 14 days — no credit card required. Upgrade when
             you&apos;re ready.
           </p>
+
+          {/* Billing toggle */}
+          <div className="mt-8 inline-flex items-center rounded-full border border-border bg-card p-1">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`rounded-full px-5 py-2 text-sm font-medium transition-all ${
+                billing === 'monthly'
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('annual')}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all ${
+                billing === 'annual'
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Annual
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                billing === 'annual' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
+              }`}>
+                Save 17%
+              </span>
+            </button>
+          </div>
         </motion.div>
 
         <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3">
           {plans.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} delay={0.08 + i * 0.08} />
+            <PlanCard key={plan.id} plan={plan} delay={0.08 + i * 0.08} billing={billing} />
           ))}
         </div>
 

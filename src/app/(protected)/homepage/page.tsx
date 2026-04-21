@@ -9,6 +9,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import getProfile from '@/features/homepage/actions/getProfile'
 import CustomDomainSection from '@/features/homepage/components/custom-domain-section'
 import HomepageForm from '@/features/homepage/components/homepage-form'
+import { getPlanLimits } from '@/lib/plans'
 import { createClient } from '@/lib/supabase-server'
 
 export default async function PublicPageEditor() {
@@ -42,10 +43,11 @@ export default async function PublicPageEditor() {
       : `/${profile.username}`
     : null
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const publicUrlDisplay = profile.username
     ? isProd && rootDomain
       ? `${profile.username}.${rootDomain}`
-      : `localhost:3000/${profile.username}`
+      : `${appUrl.replace(/^https?:\/\//, '')}/${profile.username}`
     : null
 
   return (
@@ -112,8 +114,11 @@ export default async function PublicPageEditor() {
                 )}
               </div>
 
-              {/* Custom Domain */}
-              <CustomDomainSection currentDomain={profile.customDomain} />
+              {/* Custom Domain — paid plans only */}
+              <CustomDomainSection
+                currentDomain={profile.customDomain}
+                allowed={getPlanLimits(profile.plan).customDomainAllowed}
+              />
 
               {/* What clients see */}
               <div className="rounded-2xl border bg-card p-5 space-y-4">

@@ -81,16 +81,14 @@ export default async function LoginPage({
       {/* Right panel — form */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
         {/* Mobile logo */}
-        <Link href="/" className="mb-10 flex items-center gap-2 lg:hidden">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-foreground">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <rect x="1" y="1" width="4.5" height="4.5" rx="1" fill="white" />
-              <rect x="7.5" y="1" width="4.5" height="4.5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="1" y="7.5" width="4.5" height="4.5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1" fill="white" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold">Gallerify</span>
+        <Link href="/" className="mb-10 lg:hidden">
+          <Image
+            src="/gallery/Logo.svg"
+            alt="Gallerify"
+            width={132}
+            height={40}
+            unoptimized
+          />
         </Link>
 
         <div className="w-full max-w-sm">

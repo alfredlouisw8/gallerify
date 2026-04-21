@@ -6,7 +6,13 @@ import supabase from '@/lib/supabase'
 
 // Map Lemon Squeezy subscription statuses to our internal plan
 function getPlanFromVariantId(variantId: string): 'pro' | 'pro_max' {
-  if (variantId === process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID) return 'pro_max'
+  const proMaxIds = [
+    process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID,
+    process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID_ID,
+    process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID,
+    process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID_ID,
+  ].filter(Boolean)
+  if (proMaxIds.includes(variantId)) return 'pro_max'
   return 'pro'
 }
 

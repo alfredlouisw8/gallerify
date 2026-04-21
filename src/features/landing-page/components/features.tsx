@@ -8,28 +8,28 @@ const features = [
     icon: Layers,
     title: 'Organized galleries',
     description:
-      'Create multiple galleries with nested collections. Group photos by event, client, or theme — everything stays beautifully organized.',
+      'Create unlimited galleries with nested collections. Group shoots by client, event, or theme — every project exactly where you expect it.',
     stat: '3× faster delivery',
   },
   {
     icon: Globe,
-    title: 'A public page that means it',
+    title: 'A portfolio that wins bookings',
     description:
-      'Your portfolio at yourname.gallerify.com. Designed to impress, not just exist. Clients will feel the difference the moment they arrive.',
+      'Your work lives at yourname.gallerify.com. Clean, fast, and designed to convert visitors into clients. They notice the difference the moment they land.',
     stat: '94% client approval',
   },
   {
     icon: Lock,
     title: 'Privacy you control',
     description:
-      "Publish when you're ready. Keep galleries in draft until the moment is right. Your work, your timing, your rules.",
+      'Keep galleries in draft until the moment is right. Publish in one click when you\'re ready. Your work, your timing, your rules.',
     stat: '100% in your hands',
   },
   {
     icon: Zap,
     title: 'Built for speed',
     description:
-      'Galleries that load in under a second on any device. No compromises on mobile. No excuses for slow delivery.',
+      'Galleries load in under a second on any device. Clients on mobile get the same flawless experience as desktop. No excuses.',
     stat: '<1s load time',
   },
 ]

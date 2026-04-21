@@ -84,7 +84,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
         body: JSON.stringify({ plan }),
       })
       const { url, error } = await res.json()
-      if (error || !url) {
+      // For upgrades the checkout route swaps the variant and returns a dashboard URL,
+      // so `url` is always present on success — including the upgrade path.
+      if (res.status === 409 || error || !url) {
         setLoadingPlan(null)
         return
       }
@@ -232,8 +234,8 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   Most popular
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-semibold tracking-tight">{pricing.pro.amount}</span>
-                  <span className="text-xs text-muted-foreground">{pricing.pro.note}</span>
+                  <span className="text-2xl font-semibold tracking-tight">{pricing.pro.monthly.amount}</span>
+                  <span className="text-xs text-muted-foreground">{pricing.pro.monthly.note}</span>
                 </div>
                 <p className="mt-0.5 font-medium">Pro</p>
                 <ul className="mt-4 space-y-1.5 text-sm">
@@ -242,6 +244,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
                     <CheckIcon className="size-3.5 text-green-500" /> 10 GB storage
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckIcon className="size-3.5 text-green-500" /> Custom domain
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground/50">
                     <XIcon className="size-3.5 opacity-40" /> Video uploads
@@ -264,8 +269,8 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
 
             <div className="rounded-2xl border bg-card p-5">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-semibold tracking-tight">{pricing.pro_max.amount}</span>
-                <span className="text-xs text-muted-foreground">{pricing.pro_max.note}</span>
+                <span className="text-2xl font-semibold tracking-tight">{pricing.pro_max.monthly.amount}</span>
+                <span className="text-xs text-muted-foreground">{pricing.pro_max.monthly.note}</span>
               </div>
               <p className="mt-0.5 font-medium">Pro Max</p>
               <ul className="mt-4 space-y-1.5 text-sm">
@@ -274,6 +279,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
                   <CheckIcon className="size-3.5 text-green-500" /> 100 GB storage
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <CheckIcon className="size-3.5 text-green-500" /> Custom domain
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
                   <CheckIcon className="size-3.5 text-green-500" /> Video uploads
