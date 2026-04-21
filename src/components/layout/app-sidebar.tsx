@@ -39,7 +39,7 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
                 <Image
-                  src="/gallery/Logo.svg"
+                  src="/gallery/Logo_white.svg"
                   alt="Gallerify"
                   width={105}
                   height={32}
