@@ -452,10 +452,10 @@ export default function GalleryPageView({
         <>
           <section
             className="flex flex-col sm:flex-row"
-            style={{ minHeight: previewMode ? '55vh' : '100svh', backgroundColor: theme.bg }}
+            style={{ height: previewMode ? '55vh' : '100svh', backgroundColor: theme.bg }}
           >
-            {/* Photo — 4/3 on mobile (top), fills full height on desktop (left 50%) */}
-            <div className="relative w-full overflow-hidden sm:w-1/2 sm:self-stretch" style={{ aspectRatio: '4/3' }}>
+            {/* Photo — top 50% on mobile, left 50% on desktop */}
+            <div className="relative h-1/2 w-full overflow-hidden sm:h-full sm:w-1/2">
               {bannerImage ? (
                 <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="(max-width: 640px) 100vw, 50vw" style={{ objectPosition }} />
               ) : (
@@ -464,10 +464,10 @@ export default function GalleryPageView({
               <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.4 }} />
             </div>
 
-            {/* Text — below on mobile, right 50% vertically centered on desktop */}
+            {/* Text — bottom 50% on mobile, right 50% on desktop */}
             <div
-              className="flex flex-1 flex-col items-start justify-center"
-              style={{ padding: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 7%, 6rem)' }}
+              className="flex h-1/2 w-full flex-col items-start justify-center sm:h-full sm:flex-1"
+              style={{ padding: narrowPhotoGrid ? '2rem' : 'clamp(1.5rem, 6%, 6rem)' }}
             >
               {BackLink}
               <motion.div

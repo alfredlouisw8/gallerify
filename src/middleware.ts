@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { type NextRequest, NextResponse } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/gallery', '/homepage']
+const PROTECTED_PATHS = ['/dashboard', '/gallery', '/homepage', '/onboarding']
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'app', 'api', 'mail', 'smtp', 'ftp', 'admin'])
 
