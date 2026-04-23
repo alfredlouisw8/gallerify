@@ -14,4 +14,5 @@ export const GallerySchema = z.object({
   isPublished: z.boolean(),
   slug: z.string(),
   galleryId: z.string().optional(),
+  watermarkId: z.string().uuid().nullable().optional(),
 })

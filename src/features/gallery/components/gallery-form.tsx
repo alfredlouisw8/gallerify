@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useController } from 'react-hook-form'
 
 import { CheckboxFormField } from '@/components/forms/checkbox-form-field'
 import { DatePickerFormField } from '@/components/forms/date-picker-form-field'
@@ -8,6 +9,9 @@ import { MultiImageUpload } from '@/components/forms/multi-image-upload'
 import { TextFormField } from '@/components/forms/text-form-field'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
+import { Label } from '@/components/ui/label'
+import type { Watermark } from '@/types'
+import { WatermarkPicker } from './WatermarkPicker'
 
 import useGalleryForm from '../hooks/use-gallery-form'
 
@@ -15,12 +19,19 @@ type GalleryFormProps = {
   form: ReturnType<typeof useGalleryForm>['form']
   handleSubmit: ReturnType<typeof useGalleryForm>['handleSubmit']
   noCard?: boolean
+  hideBanner?: boolean
+  watermarks?: Watermark[]
 }
 
-export default function GalleryForm({ form, handleSubmit, noCard }: GalleryFormProps) {
+export default function GalleryForm({ form, handleSubmit, noCard, hideBanner, watermarks }: GalleryFormProps) {
   const onTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('slug', event.target.value.replace(/\s+/g, '-').toLowerCase())
   }
+
+  const { field: watermarkField } = useController({
+    name: 'watermarkId',
+    control: form.control,
+  })
 
   return (
     <div className={noCard ? undefined : 'mx-auto max-w-xl'}>
@@ -40,13 +51,29 @@ export default function GalleryForm({ form, handleSubmit, noCard }: GalleryFormP
 
           <DatePickerFormField name="date" label="Event Date" required />
 
-          <MultiImageUpload
-            name="bannerImage"
-            label="Banner Image"
-            accept="image/*"
-            required
-            imagePreview
-          />
+          {!hideBanner && (
+            <MultiImageUpload
+              name="bannerImage"
+              label="Banner Image"
+              accept="image/*"
+              required
+              imagePreview
+            />
+          )}
+
+          {hideBanner && watermarks !== undefined && (
+            <div className="space-y-2">
+              <Label className="text-sm">Watermark</Label>
+              <p className="text-xs text-muted-foreground">
+                Select a watermark to apply to photos in this gallery.
+              </p>
+              <WatermarkPicker
+                watermarks={watermarks}
+                value={watermarkField.value}
+                onChange={watermarkField.onChange}
+              />
+            </div>
+          )}
 
           <CheckboxFormField name="isPublished" label="Published" />
 

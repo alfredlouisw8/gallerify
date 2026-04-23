@@ -6,26 +6,29 @@ import {
   AlignRightIcon,
   ArrowLeftIcon,
   CheckIcon,
+  ExternalLinkIcon,
+  ImageIcon,
   LoaderIcon,
   MonitorIcon,
   PaletteIcon,
+  Share2Icon,
   SlidersHorizontalIcon,
   SmartphoneIcon,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import Link from 'next/link'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { ACCENTS, FONT_PAIRS } from '@/features/gallery/constants/preferences'
 import { updateHomepagePreferences } from '@/features/homepage/actions/updateHomepagePreferences'
+import { updateProfileContent } from '@/features/homepage/actions/updateProfileContent'
 import {
-  HomepageDesignShell,
   useHomepageDesign,
   type HomepageDesignPanel,
 } from '@/features/homepage/context/homepage-design-context'
-import CustomerPageView from '@/features/public/components/CustomerPageView'
+import ContentImageUploader from '@/features/homepage/components/ContentImageUploader'
 
 import type { Gallery, HomepagePreferences, UserMetadata } from '@/types'
 import type React from 'react'
@@ -51,6 +54,7 @@ const NAV_ITEMS: {
   label: string
   icon: React.ReactNode
 }[] = [
+  { id: 'content', label: 'Content', icon: <ImageIcon className="size-3.5" /> },
   { id: 'color', label: 'Color', icon: <PaletteIcon className="size-3.5" /> },
   {
     id: 'style',
@@ -60,10 +64,13 @@ const NAV_ITEMS: {
 ]
 
 /* ── Options panel ── */
-function OptionsPanel() {
-  const { prefs, setPrefs, selectedPanel, isDirty, setIsDirty } =
-    useHomepageDesign()
-  const [isPending, startTransition] = useTransition()
+function OptionsPanel({ profile }: { profile: UserMetadata }) {
+  const { prefs, setPrefs, selectedPanel } = useHomepageDesign()
+  const [contentPending, startContentTransition] = useTransition()
+  const [name, setName] = useState(profile.name ?? '')
+  const [aboutText, setAboutText] = useState(profile.aboutText ?? '')
+  const [whatsapp, setWhatsapp] = useState(profile.whatsapp ?? '')
+  const [instagram, setInstagram] = useState(profile.instagram ?? '')
 
   const update = <K extends keyof HomepagePreferences>(
     key: K,
@@ -72,20 +79,26 @@ function OptionsPanel() {
     setPrefs({ ...prefs, [key]: value })
   }
 
-  const handleSave = () => {
-    startTransition(async () => {
-      await updateHomepagePreferences(prefs)
-      setIsDirty(false)
-      toast({
-        title: 'Design saved',
-        description: 'Your public page design has been updated.',
-      })
-    })
-  }
-
   const titles: Record<HomepageDesignPanel, string> = {
+    content: 'Content',
     color: 'Color',
     style: 'Style',
+  }
+
+  const handleContentSave = () => {
+    startContentTransition(async () => {
+      const result = await updateProfileContent({
+        name: name || null,
+        aboutText: aboutText || null,
+        whatsapp: whatsapp || null,
+        instagram: instagram || null,
+      })
+      if (!result.success) {
+        toast({ title: result.error, variant: 'destructive' })
+        return
+      }
+      toast({ title: 'Content saved' })
+    })
   }
 
   return (
@@ -95,14 +108,103 @@ function OptionsPanel() {
           key={selectedPanel}
           className="shrink-0 overflow-hidden border-r"
           initial={{ width: 0 }}
-          animate={{ width: 240 }}
+          animate={{ width: 360 }}
           exit={{ width: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex h-full w-[240px] flex-col gap-4 overflow-y-auto p-4">
+          <div className="flex h-full w-[360px] flex-col gap-4 overflow-y-auto p-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {titles[selectedPanel]}
             </p>
+
+            {/* ── CONTENT: name, about, social ── */}
+            {selectedPanel === 'content' && (
+              <>
+                <Section label="Display name">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name or studio"
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </Section>
+
+                <Section label="About text">
+                  <textarea
+                    value={aboutText}
+                    onChange={(e) => setAboutText(e.target.value)}
+                    placeholder="A short intro for clients…"
+                    rows={4}
+                    className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </Section>
+
+                <Section label="Social links">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="mb-1 text-[10px] text-muted-foreground">WhatsApp URL</p>
+                      <input
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="https://wa.me/..."
+                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[10px] text-muted-foreground">Instagram URL</p>
+                      <input
+                        value={instagram}
+                        onChange={(e) => setInstagram(e.target.value)}
+                        placeholder="https://instagram.com/..."
+                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                  </div>
+                </Section>
+
+                <Section label="Images">
+                  <div className="space-y-3">
+                    <ContentImageUploader
+                      field="logo"
+                      currentUrl={profile.logo}
+                      label="Logo"
+                      aspect="3/1"
+                    />
+                    <ContentImageUploader
+                      field="bannerImage"
+                      currentUrl={profile.bannerImage}
+                      label="Banner"
+                      aspect="16/5"
+                    />
+                    <ContentImageUploader
+                      field="aboutImage"
+                      currentUrl={profile.aboutImage}
+                      label="About photo"
+                      aspect="4/3"
+                    />
+                  </div>
+                </Section>
+
+                <Button
+                  onClick={handleContentSave}
+                  disabled={contentPending}
+                  size="sm"
+                  className="mt-auto w-full"
+                >
+                  {contentPending ? (
+                    <>
+                      <LoaderIcon className="mr-2 size-3.5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="mr-2 size-3.5" />
+                      Save content
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
 
             {/* ── COLOR: theme + accent ── */}
             {selectedPanel === 'color' && (
@@ -374,26 +476,6 @@ function OptionsPanel() {
               </>
             )}
 
-            {isDirty && (
-              <Button
-                onClick={handleSave}
-                disabled={isPending}
-                size="sm"
-                className="mt-auto w-full"
-              >
-                {isPending ? (
-                  <>
-                    <LoaderIcon className="mr-2 size-3.5 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  <>
-                    <CheckIcon className="mr-2 size-3.5" />
-                    Save changes
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </motion.div>
       )}
@@ -401,160 +483,182 @@ function OptionsPanel() {
   )
 }
 
-/* ── Nav sidebar ── */
-function NavSidebar({ username }: { username: string }) {
-  const { prefs, selectedPanel, setSelectedPanel } = useHomepageDesign()
-  const accentDotColor = ACCENTS[prefs.accentColor]
+/* ── Top navbar ── */
+function TopNavbar({ username, publicUrl }: { username: string; publicUrl: string }) {
+  const { isDirty, prefs, setIsDirty } = useHomepageDesign()
+  const [isPending, startTransition] = useTransition()
+
+  function handleSave() {
+    startTransition(async () => {
+      await updateHomepagePreferences(prefs)
+      setIsDirty(false)
+      toast({ title: 'Design saved', description: 'Your public page design has been updated.' })
+    })
+  }
+
+  function handleShare() {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}${publicUrl}` : publicUrl
+    navigator.clipboard.writeText(url)
+    toast({ title: 'Link copied to clipboard' })
+  }
 
   return (
-    <div className="flex w-[200px] shrink-0 flex-col border-r bg-background">
-      {/* Back link */}
-      <div className="border-b px-4 py-3">
-        <Link
-          href="/homepage"
-          className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          Edit content
-        </Link>
-        <p className="mt-1.5 truncate text-sm font-semibold">{username}</p>
-        <p className="text-[11px] text-muted-foreground">Public page</p>
-      </div>
-
-      {/* Nav items */}
-      <div className="flex flex-col pt-1">
-        {NAV_ITEMS.map((item) => {
-          const active = selectedPanel === item.id
-          const dotColor = item.id === 'color' ? accentDotColor : undefined
-          return (
-            <button
-              key={item.id}
-              onClick={() => setSelectedPanel(active ? null : item.id)}
-              className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
-                active
-                  ? 'border-foreground bg-accent text-accent-foreground'
-                  : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-              }`}
+    <div className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
+      <Link
+        href="/homepage"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground shrink-0"
+      >
+        <ArrowLeftIcon className="size-3.5" />
+        <span className="font-medium">Public page</span>
+      </Link>
+      <div className="h-4 w-px bg-border" />
+      <p className="truncate text-sm font-semibold">{username}</p>
+      <div className="flex flex-1 items-center justify-end gap-2">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" asChild>
+          <Link href={publicUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLinkIcon className="size-3.5" />
+            Preview
+          </Link>
+        </Button>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={handleShare}>
+          <Share2Icon className="size-3.5" />
+          Share
+        </Button>
+        <AnimatePresence>
+          {isDirty && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.15 }}
             >
-              <span
-                className="size-1.5 shrink-0 rounded-full"
-                style={{
-                  background:
-                    dotColor ??
-                    (active ? 'currentColor' : 'hsl(var(--border))'),
-                }}
-              />
-              {item.icon}
-              <span className="font-medium">{item.label}</span>
-              <span className="ml-auto text-xs capitalize opacity-50">
-                {item.id === 'color' && prefs.colorTheme}
-                {item.id === 'style' && prefs.fontPairing.split('-')[0]}
-              </span>
-            </button>
-          )
-        })}
+              <Button size="sm" onClick={handleSave} disabled={isPending} className="gap-1.5">
+                {isPending
+                  ? <LoaderIcon className="size-3.5 animate-spin" />
+                  : <CheckIcon className="size-3.5" />}
+                Save
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
 }
 
-/* ── Preview card ── */
+/* ── Icon nav rail ── */
+function IconNav() {
+  const { prefs, selectedPanel, setSelectedPanel } = useHomepageDesign()
+  const accentColor = ACCENTS[prefs.accentColor]
+
+  return (
+    <div className="flex w-14 shrink-0 flex-col border-r bg-background">
+      {NAV_ITEMS.map((item) => {
+        const active = selectedPanel === item.id
+        return (
+          <button
+            key={item.id}
+            title={item.label}
+            onClick={() => setSelectedPanel(active ? null : item.id)}
+            className={`flex flex-col items-center gap-1 py-3.5 text-[10px] font-medium transition-colors ${
+              active
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+            }`}
+            style={active && item.id === 'color' ? { color: accentColor } : undefined}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── Preview card (iframe) ── */
 function PreviewCard({
-  profile,
-  galleries,
   username,
   device,
+  previewUrl,
 }: {
-  profile: UserMetadata
-  galleries: Gallery[]
   username: string
   device: Device
+  previewUrl: string
 }) {
-  const { prefs } = useHomepageDesign()
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0)
-  const [winHeight, setWinHeight] = useState(900)
-  const { virtualWidth } = DEVICE_CONFIG[device]
+  const screenRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const scaleRef = useRef(0)
+  const [dims, setDims] = useState({ w: 0, h: 0 })
 
   useEffect(() => {
-    setWinHeight(window.innerHeight)
-  }, [])
-
-  useEffect(() => {
-    const el = contentRef.current
+    const el = screenRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) => {
-      setScale(entry.contentRect.width / virtualWidth)
+      setDims({ w: entry.contentRect.width, h: entry.contentRect.height })
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [virtualWidth])
+  }, [])
 
-  const topOffset =
-    scale > 0
-      ? device === 'mobile'
-        ? -(winHeight * 0.45 * scale)
-        : -(winHeight * 0.38 * scale)
-      : 0
+  // Wheel → proxy scroll into iframe, compensating for the CSS scale factor
+  useEffect(() => {
+    const el = screenRef.current
+    if (!el) return
+    function onWheel(e: WheelEvent) {
+      e.preventDefault()
+      iframeRef.current?.contentWindow?.scrollBy({
+        top: e.deltaY / scaleRef.current,
+        behavior: 'instant',
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  const VIRTUAL_W = device === 'mobile' ? 390 : 1280
+  const scale = dims.w > 0 ? dims.w / VIRTUAL_W : 0
+  scaleRef.current = scale
+  const iframeH = scale > 0 ? Math.ceil(dims.h / scale) : 1200
+
+  const iframeEl = scale > 0 ? (
+    <iframe
+      ref={iframeRef}
+      key={previewUrl}
+      src={previewUrl}
+      title="Page preview"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: `${VIRTUAL_W}px`,
+        height: `${iframeH}px`,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        border: 'none',
+        pointerEvents: 'none',
+      }}
+    />
+  ) : null
 
   if (device === 'mobile') {
     return (
       <div
         className="flex flex-col overflow-hidden shadow-2xl"
-        style={{
-          height: '100%',
-          aspectRatio: '9 / 30',
-          borderRadius: 32,
-          border: '6px solid #222',
-          background: '#222',
-        }}
+        style={{ height: '100%', aspectRatio: '9 / 30', borderRadius: 32, border: '6px solid #222', background: '#222' }}
       >
-        <div
-          className="flex shrink-0 items-center justify-center py-2"
-          style={{ background: '#222' }}
-        >
-          <div
-            className="h-1.5 w-16 rounded-full"
-            style={{ background: '#444' }}
-          />
+        <div className="flex shrink-0 items-center justify-center py-2" style={{ background: '#222' }}>
+          <div className="h-1.5 w-16 rounded-full" style={{ background: '#444' }} />
         </div>
         <div
-          ref={contentRef}
+          ref={screenRef}
           className="relative flex-1 overflow-hidden"
-          style={{ borderRadius: '0 0 26px 26px', background: '#fff' }}
+          style={{ borderRadius: '0 0 26px 26px', cursor: 'ns-resize' }}
         >
-          {scale > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: topOffset,
-                left: 0,
-                width: `${virtualWidth}px`,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-                pointerEvents: 'none',
-              }}
-            >
-              <CustomerPageView
-                profile={profile}
-                galleries={galleries}
-                username={username}
-                galleryBasePath={`/${username}/`}
-                preferences={prefs}
-                preview
-                mobileLayout
-              />
-            </div>
-          )}
+          {iframeEl}
         </div>
-        <div
-          className="flex shrink-0 items-center justify-center py-2.5"
-          style={{ background: '#222' }}
-        >
-          <div
-            className="h-1 w-20 rounded-full"
-            style={{ background: '#555' }}
-          />
+        <div className="flex shrink-0 items-center justify-center py-2.5" style={{ background: '#222' }}>
+          <div className="h-1 w-20 rounded-full" style={{ background: '#555' }} />
         </div>
       </div>
     )
@@ -563,62 +667,23 @@ function PreviewCard({
   return (
     <div
       className="flex w-full flex-col overflow-hidden shadow-2xl"
-      style={{
-        maxWidth: DEVICE_CONFIG.desktop.maxCardWidth,
-        height: '100%',
-        borderRadius: 10,
-        border: '1px solid #d0d0d0',
-        background: '#fff',
-      }}
+      style={{ maxWidth: DEVICE_CONFIG.desktop.maxCardWidth, height: '100%', borderRadius: 10, border: '1px solid #d0d0d0', background: '#fff' }}
     >
       <div
         className="flex shrink-0 items-center gap-2 px-4 py-2.5"
         style={{ background: '#f3f3f3', borderBottom: '1px solid #e0e0e0' }}
       >
         <div className="flex gap-1.5">
-          <div
-            className="size-2.5 rounded-full"
-            style={{ background: '#ff5f57' }}
-          />
-          <div
-            className="size-2.5 rounded-full"
-            style={{ background: '#febc2e' }}
-          />
-          <div
-            className="size-2.5 rounded-full"
-            style={{ background: '#28c840' }}
-          />
+          <div className="size-2.5 rounded-full" style={{ background: '#ff5f57' }} />
+          <div className="size-2.5 rounded-full" style={{ background: '#febc2e' }} />
+          <div className="size-2.5 rounded-full" style={{ background: '#28c840' }} />
         </div>
-        <div
-          className="flex-1 rounded px-3 py-0.5 font-mono text-[10px]"
-          style={{ background: '#e5e5e5', color: '#888' }}
-        >
+        <div className="flex-1 rounded px-3 py-0.5 font-mono text-[10px]" style={{ background: '#e5e5e5', color: '#888' }}>
           /{username}
         </div>
       </div>
-      <div ref={contentRef} className="relative flex-1 overflow-hidden">
-        {scale > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              top: topOffset,
-              left: 0,
-              width: `${virtualWidth}px`,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              pointerEvents: 'none',
-            }}
-          >
-            <CustomerPageView
-              profile={profile}
-              galleries={galleries}
-              username={username}
-              galleryBasePath={`/${username}/`}
-              preferences={prefs}
-              preview
-            />
-          </div>
-        )}
+      <div ref={screenRef} className="relative flex-1 overflow-hidden" style={{ cursor: 'ns-resize' }}>
+        {iframeEl}
       </div>
     </div>
   )
@@ -645,16 +710,33 @@ function Section({
 /* ── Root ── */
 export default function HomepageDesignPreview({
   profile,
-  galleries,
+  galleries: _galleries,
   username,
 }: Props) {
+  const { prefs } = useHomepageDesign()
   const [device, setDevice] = useState<Device>('desktop')
 
+  const previewUrl = useMemo(() => {
+    const params = new URLSearchParams({
+      _preview: '1',
+      colorTheme: prefs.colorTheme,
+      accentColor: prefs.accentColor,
+      fontPairing: prefs.fontPairing,
+      overlayIntensity: prefs.overlayIntensity,
+      coverPosition: prefs.coverPosition,
+    })
+    return `/${username}?${params.toString()}`
+  }, [prefs, username])
+
+  const publicUrl = `/${username}`
+
   return (
-    <HomepageDesignShell initialPrefs={profile.homepagePreferences}>
-      <div className="flex h-full">
-        <NavSidebar username={username} />
-        <OptionsPanel />
+    <div className="flex h-full flex-col">
+      <TopNavbar username={username} publicUrl={publicUrl} />
+
+      <div className="flex flex-1 overflow-hidden">
+        <IconNav />
+        <OptionsPanel profile={profile} />
 
         {/* Canvas */}
         <div
@@ -663,21 +745,10 @@ export default function HomepageDesignPreview({
         >
           {/* Device toggle */}
           <div className="mb-2 flex shrink-0 justify-center">
-            <div
-              className="flex rounded-lg p-0.5"
-              style={{ background: '#e0e0e0' }}
-            >
+            <div className="flex rounded-lg p-0.5" style={{ background: '#e0e0e0' }}>
               {[
-                {
-                  id: 'desktop' as const,
-                  icon: <MonitorIcon className="size-3.5" />,
-                  label: 'Desktop',
-                },
-                {
-                  id: 'mobile' as const,
-                  icon: <SmartphoneIcon className="size-3.5" />,
-                  label: 'Mobile',
-                },
+                { id: 'desktop' as const, icon: <MonitorIcon className="size-3.5" />, label: 'Desktop' },
+                { id: 'mobile' as const, icon: <SmartphoneIcon className="size-3.5" />, label: 'Mobile' },
               ].map((d) => (
                 <button
                   key={d.id}
@@ -686,8 +757,7 @@ export default function HomepageDesignPreview({
                   style={{
                     background: device === d.id ? '#fff' : 'transparent',
                     color: device === d.id ? '#111' : '#888',
-                    boxShadow:
-                      device === d.id ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                    boxShadow: device === d.id ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
                   }}
                 >
                   {d.icon}
@@ -709,17 +779,12 @@ export default function HomepageDesignPreview({
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
-                <PreviewCard
-                  profile={profile}
-                  galleries={galleries}
-                  username={username}
-                  device={device}
-                />
+                <PreviewCard username={username} device={device} previewUrl={previewUrl} />
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
       </div>
-    </HomepageDesignShell>
+    </div>
   )
 }

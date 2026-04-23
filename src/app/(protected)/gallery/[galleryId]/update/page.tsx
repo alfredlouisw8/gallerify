@@ -1,4 +1,5 @@
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
+import { getWatermarks } from '@/features/homepage/actions/watermarks'
 import GalleryUpdateLayout from '@/features/gallery/components/gallery-update-layout'
 
 export default async function GalleryUpdatePage({
@@ -7,7 +8,10 @@ export default async function GalleryUpdatePage({
   params: Promise<{ galleryId: string }>
 }) {
   const { galleryId } = await params
-  const gallery = await getGalleryById(galleryId)
+  const [gallery, watermarks] = await Promise.all([
+    getGalleryById(galleryId),
+    getWatermarks(),
+  ])
 
   if (!gallery) {
     return (
@@ -17,5 +21,5 @@ export default async function GalleryUpdatePage({
     )
   }
 
-  return <GalleryUpdateLayout gallery={gallery} />
+  return <GalleryUpdateLayout gallery={gallery} watermarks={watermarks} />
 }

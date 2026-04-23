@@ -5,6 +5,7 @@ import {
   GridIcon,
   ImageIcon,
   ListIcon,
+  MessageSquareIcon,
   PaletteIcon,
   Settings2Icon,
   SettingsIcon,
@@ -41,14 +42,19 @@ const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = 
 ]
 
 const SETTINGS_ITEMS = [
-  { id: 'general',  label: 'General',  icon: <Settings2Icon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/update` },
-  { id: 'security', label: 'Security', icon: <ShieldIcon className="size-3.5" />,    href: (galleryId: string) => `/gallery/${galleryId}/security` },
+  { id: 'general',  label: 'General',  icon: <Settings2Icon className="size-3.5" />,    href: (galleryId: string) => `/gallery/${galleryId}/update` },
+  { id: 'security', label: 'Security', icon: <ShieldIcon className="size-3.5" />,        href: (galleryId: string) => `/gallery/${galleryId}/security` },
+  { id: 'comments', label: 'Feedback', icon: <MessageSquareIcon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/comments` },
 ]
 
 function useActiveTab(galleryId: string) {
   const pathname = usePathname()
   if (pathname.includes(`/gallery/${galleryId}/design`)) return 'image'
-  if (pathname.includes(`/gallery/${galleryId}/update`) || pathname.includes(`/gallery/${galleryId}/security`)) return 'settings'
+  if (
+    pathname.includes(`/gallery/${galleryId}/update`) ||
+    pathname.includes(`/gallery/${galleryId}/security`) ||
+    pathname.includes(`/gallery/${galleryId}/comments`)
+  ) return 'settings'
   return 'category'
 }
 

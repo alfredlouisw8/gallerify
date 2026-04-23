@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import getProfile from '@/features/homepage/actions/getProfile'
 import getGalleries from '@/features/gallery/actions/getGalleries'
 import { createClient } from '@/lib/supabase-server'
+import { HomepageDesignShell } from '@/features/homepage/context/homepage-design-context'
 import HomepageDesignPreview from './HomepageDesignPreview'
 
 export const dynamic = 'force-dynamic'
@@ -30,8 +31,10 @@ export default async function HomepageDesignPage() {
   const username = profile.username ?? ''
 
   return (
-    <div className={`${bodoniModa.variable} ${jost.variable} ${playfair.variable} ${inter.variable} ${cormorant.variable} ${outfit.variable} h-screen overflow-hidden`}>
-      <HomepageDesignPreview profile={profile} galleries={galleries} username={username} />
-    </div>
+    <HomepageDesignShell initialPrefs={profile.homepagePreferences}>
+      <div className={`${bodoniModa.variable} ${jost.variable} ${playfair.variable} ${inter.variable} ${cormorant.variable} ${outfit.variable} h-screen overflow-hidden`}>
+        <HomepageDesignPreview profile={profile} galleries={galleries} username={username} />
+      </div>
+    </HomepageDesignShell>
   )
 }

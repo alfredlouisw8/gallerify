@@ -129,6 +129,7 @@ export type Gallery = {
   isClientPasswordProtected: boolean
   clientPasswordPlain: string | null
   showClientSelects: boolean
+  watermarkId: string | null
   preferences: GalleryPreferences
   createdAt: Date
   updatedAt: Date
@@ -220,6 +221,7 @@ export type GalleryRow = {
   client_password_hash: string | null
   client_password_plain: string | null
   show_client_selects: boolean | null
+  watermark_id: string | null
   preferences: Record<string, unknown> | null
   created_at: string
   updated_at: string
@@ -237,6 +239,126 @@ export type GalleryCategoryImageRow = {
   image_url: string
   category_id: string
   display_order: number
+}
+
+// =============================================
+// Image comment types
+// =============================================
+
+export type ImageCommentType = 'comment' | 'feedback' | 'request'
+
+export type ImageComment = {
+  id: string
+  galleryId: string
+  imageId: string
+  clientName: string | null
+  type: ImageCommentType
+  comment: string
+  createdAt: string
+  ownerReply: string | null
+  ownerRepliedAt: string | null
+  isDone: boolean
+  doneAt: string | null
+}
+
+export type ImageCommentRow = {
+  id: string
+  gallery_id: string
+  image_id: string
+  client_name: string | null
+  type: 'comment' | 'feedback' | 'request'
+  comment: string
+  created_at: string
+  owner_reply: string | null
+  owner_replied_at: string | null
+  is_done: boolean
+  done_at: string | null
+}
+
+export function mapImageComment(row: ImageCommentRow): ImageComment {
+  return {
+    id: row.id,
+    galleryId: row.gallery_id,
+    imageId: row.image_id,
+    clientName: row.client_name,
+    type: row.type,
+    comment: row.comment,
+    createdAt: row.created_at,
+    ownerReply: row.owner_reply ?? null,
+    ownerRepliedAt: row.owner_replied_at ?? null,
+    isDone: row.is_done ?? false,
+    doneAt: row.done_at ?? null,
+  }
+}
+
+// =============================================
+// Watermark types
+// =============================================
+
+export type WatermarkPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center-left'
+  | 'center'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right'
+
+export type Watermark = {
+  id: string
+  userId: string
+  name: string
+  type: 'text' | 'image'
+  text: string | null
+  textColor: 'white' | 'black'
+  imageUrl: string | null
+  scale: number
+  opacity: number
+  position: WatermarkPosition
+  createdAt: string
+  updatedAt: string
+}
+
+export type WatermarkRow = {
+  id: string
+  user_id: string
+  name: string
+  type: 'text' | 'image'
+  text: string | null
+  text_color: 'white' | 'black'
+  image_url: string | null
+  scale: number
+  opacity: number
+  position: string
+  created_at: string
+  updated_at: string
+}
+
+const VALID_WATERMARK_POSITIONS: WatermarkPosition[] = [
+  'top-left', 'top-center', 'top-right',
+  'center-left', 'center', 'center-right',
+  'bottom-left', 'bottom-center', 'bottom-right',
+]
+
+export function mapWatermark(row: WatermarkRow): Watermark {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    type: row.type,
+    text: row.text,
+    textColor: row.text_color,
+    imageUrl: row.image_url,
+    scale: row.scale,
+    opacity: row.opacity,
+    position: VALID_WATERMARK_POSITIONS.includes(row.position as WatermarkPosition)
+      ? (row.position as WatermarkPosition)
+      : 'bottom-center',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
 }
 
 // =============================================
@@ -328,6 +450,7 @@ export function mapGallery(row: GalleryRow): Gallery {
     isClientPasswordProtected: !!row.client_password_hash,
     clientPasswordPlain: row.client_password_plain ?? null,
     showClientSelects: !!row.show_client_selects,
+    watermarkId: row.watermark_id ?? null,
     preferences: parsePreferences(row.preferences),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

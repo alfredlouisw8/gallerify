@@ -11,7 +11,8 @@ import { THEMES, ACCENTS, FONT_PAIRS, SPACING, generateCustomTheme } from '@/fea
 import { toggleClientFavorite } from '@/features/public/actions/toggleClientFavorite'
 import { toggleClientHidden } from '@/features/public/actions/toggleClientHidden'
 import { verifyDownloadPin } from '@/features/public/actions/verifyDownloadPin'
-import type { GalleryCategoryImage, GalleryWithCategory, GalleryPreferences } from '@/types'
+import { ImageCommentPanel } from './ImageCommentPanel'
+import type { GalleryCategoryImage, GalleryWithCategory, GalleryPreferences, Watermark } from '@/types'
 import { DEFAULT_GALLERY_PREFERENCES } from '@/types'
 
 interface GalleryPageViewProps {
@@ -27,6 +28,7 @@ interface GalleryPageViewProps {
   /** Enables client-mode UI (heart + hide buttons) */
   isClient?: boolean
   clientInteractions?: { favoritedIds: string[]; hiddenIds: string[] }
+  watermark?: Watermark | null
 }
 
 const ALL_CATEGORY = '__all__'
@@ -42,6 +44,7 @@ export default function GalleryPageView({
   previewMode = false,
   isClient = false,
   clientInteractions,
+  watermark,
 }: GalleryPageViewProps) {
   useEffect(() => {
     if (!previewMode) return
@@ -725,6 +728,7 @@ export default function GalleryPageView({
                     onDownload={() => handleDownload(img.imageUrl, img.id)}
                     shareUrl={galleryUrl ? `${galleryUrl}?image=${img.id}` : ''}
                     shareTitle={gallery.title}
+                    watermark={watermark}
                   />
                 ))}
               </div>
@@ -768,6 +772,7 @@ export default function GalleryPageView({
                         onToggleHidden={() => void handleToggleHidden(img.id)}
                         downloadEnabled={downloadEnabled}
                         onDownload={() => handleDownload(img.imageUrl, img.id)}
+                        watermark={watermark}
                       />
                     ))}
                   </div>
@@ -787,6 +792,7 @@ export default function GalleryPageView({
                 onDownload={handleDownload}
                 galleryUrl={galleryUrl}
                 galleryTitle={gallery.title}
+                watermark={watermark}
               />
             ) : (
               /* masonry (default) */
@@ -810,6 +816,7 @@ export default function GalleryPageView({
                     onDownload={() => handleDownload(img.imageUrl, img.id)}
                     shareUrl={galleryUrl ? `${galleryUrl}?image=${img.id}` : ''}
                     shareTitle={gallery.title}
+                    watermark={watermark}
                   />
                 ))}
               </div>
@@ -849,15 +856,70 @@ export default function GalleryPageView({
           <Lightbox
             images={lightbox.images}
             index={lightbox.index}
+            galleryId={gallery.id}
             onClose={closeLightbox}
             onNext={goNext}
             onPrev={goPrev}
             theme={theme}
             shareUrl={galleryUrl ? `${galleryUrl}?image=${lightbox.images[lightbox.index]?.id}` : ''}
             shareTitle={gallery.title}
+            watermark={watermark}
+            isClient={isClient}
+            downloadEnabled={downloadEnabled}
+            onDownload={handleDownload}
+            favoritedIds={favoritedIds}
+            hiddenIds={hiddenIds}
+            onToggleFavorite={(id) => void handleToggleFavorite(id)}
+            onToggleHidden={(id) => void handleToggleHidden(id)}
           />
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+/* ── Watermark Overlay ── */
+const WM_POSITION_STYLES: Record<string, React.CSSProperties> = {
+  'top-left':      { top: '5%', left: '5%' },
+  'top-center':    { top: '5%', left: '50%', transform: 'translateX(-50%)' },
+  'top-right':     { top: '5%', right: '5%' },
+  'center-left':   { top: '50%', left: '5%', transform: 'translateY(-50%)' },
+  'center':        { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
+  'center-right':  { top: '50%', right: '5%', transform: 'translateY(-50%)' },
+  'bottom-left':   { bottom: '5%', left: '5%' },
+  'bottom-center': { bottom: '5%', left: '50%', transform: 'translateX(-50%)' },
+  'bottom-right':  { bottom: '5%', right: '5%' },
+}
+
+function WatermarkOverlay({ watermark }: { watermark: Watermark }) {
+  const posStyle = WM_POSITION_STYLES[watermark.position] ?? WM_POSITION_STYLES['bottom-center']
+  const imgUrl = watermark.imageUrl ? getStorageUrl(watermark.imageUrl) : null
+  return (
+    <div
+      className="absolute pointer-events-none select-none z-10"
+      style={{ ...posStyle, opacity: watermark.opacity / 100 }}
+    >
+      {watermark.type === 'text' ? (
+        <span
+          className="whitespace-nowrap font-medium tracking-widest drop-shadow-md"
+          style={{
+            fontSize: `${Math.max(10, watermark.scale * 0.28)}px`,
+            color: watermark.textColor === 'white' ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.9)',
+          }}
+        >
+          {watermark.text ?? ''}
+        </span>
+      ) : imgUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imgUrl}
+          alt=""
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          className="object-contain"
+          style={{ width: `${watermark.scale * 2}px`, maxWidth: '80%' }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -878,6 +940,7 @@ function BlogLayout({
   onToggleFavorite, onToggleHidden,
   downloadEnabled, onDownload,
   galleryUrl, galleryTitle,
+  watermark,
 }: {
   images: GalleryCategoryImage[]
   gap: string
@@ -891,6 +954,7 @@ function BlogLayout({
   onDownload: (url: string, name: string) => void
   galleryUrl: string
   galleryTitle: string
+  watermark?: Watermark | null
 }) {
   const blocks: { type: BlogBlock; indices: number[] }[] = []
   let i = 0
@@ -943,6 +1007,7 @@ function BlogLayout({
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
             />
+            {watermark && <WatermarkOverlay watermark={watermark} />}
             <ImageActionOverlay
               isClient={isClient}
               isFavorited={favoritedIds.has(img.id)}
@@ -1085,6 +1150,7 @@ type ClientImageProps = {
   onDownload?: () => void
   shareUrl?: string
   shareTitle?: string
+  watermark?: Watermark | null
 }
 
 /* ── Masonry Item ── */
@@ -1102,6 +1168,7 @@ function MasonryItem({
   onDownload,
   shareUrl,
   shareTitle,
+  watermark,
 }: {
   image: GalleryCategoryImage
   index: number
@@ -1132,6 +1199,7 @@ function MasonryItem({
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
         />
+        {watermark && <WatermarkOverlay watermark={watermark} />}
         <motion.div
           className="absolute inset-0 select-none"
           style={{ backgroundColor: 'oklch(1 0 0 / 0)' }}
@@ -1169,6 +1237,7 @@ function GridItem({
   onDownload,
   shareUrl,
   shareTitle,
+  watermark,
 }: {
   image: GalleryCategoryImage
   index: number
@@ -1194,6 +1263,7 @@ function GridItem({
         onContextMenu={(e) => e.preventDefault()}
         onClick={onClick}
       />
+      {watermark && <WatermarkOverlay watermark={watermark} />}
       <ImageActionOverlay
         isClient={!!isClient}
         isFavorited={!!isFavorited}
@@ -1515,104 +1585,228 @@ function DownloadPinModal({
 function Lightbox({
   images,
   index,
+  galleryId,
   onClose,
   onNext,
   onPrev,
   theme,
   shareUrl,
   shareTitle,
+  watermark,
+  isClient,
+  downloadEnabled,
+  onDownload,
+  favoritedIds,
+  hiddenIds,
+  onToggleFavorite,
+  onToggleHidden,
 }: {
   images: GalleryCategoryImage[]
   index: number
+  galleryId: string
   onClose: () => void
   onNext: () => void
   onPrev: () => void
   theme: (typeof THEMES)[keyof typeof THEMES]
   shareUrl?: string
   shareTitle?: string
+  watermark?: Watermark | null
+  isClient?: boolean
+  downloadEnabled?: boolean
+  onDownload?: (imageUrl: string, imageName: string) => void
+  favoritedIds?: Set<string>
+  hiddenIds?: Set<string>
+  onToggleFavorite?: (id: string) => void
+  onToggleHidden?: (id: string) => void
 }) {
+  const [commentOpen, setCommentOpen] = useState(false)
+
   const current = images[index]
+  const isFavorited = favoritedIds?.has(current.id) ?? false
+  const isHidden = hiddenIds?.has(current.id) ?? false
+
+  const PANEL_W = 320
+  const btnClass = 'flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10'
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'oklch(0.05 0.005 60 / 0.96)' }}
+      className="fixed inset-0 z-50 flex overflow-hidden"
+      style={{ backgroundColor: theme.bg }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      onClick={onClose}
+      onClick={() => commentOpen ? setCommentOpen(false) : onClose()}
     >
-      {/* Top-right: share + close */}
-      <div className="absolute right-5 top-5 z-10 flex items-center gap-2">
-        {shareUrl && (
-          <div onClick={(e) => e.stopPropagation()}>
+      {/* ── Image area ── */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+        {/* Top-right: actions + close */}
+        <div className="absolute right-5 top-5 z-10 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {/* Share */}
+          {shareUrl && (
             <SharePopover url={shareUrl} title={shareTitle ?? ''} theme={theme} size="md" lightbox />
-          </div>
+          )}
+
+          {/* Download */}
+          {downloadEnabled && onDownload && (
+            <button
+              className={btnClass}
+              style={{ color: theme.text }}
+              onClick={() => onDownload(getStorageUrl(current.imageUrl), current.id)}
+              title="Download"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+          )}
+
+          {/* Favorite — client only */}
+          {isClient && onToggleFavorite && (
+            <button
+              className={`${btnClass} ${isFavorited ? 'bg-rose-500 hover:bg-rose-400' : ''}`}
+              style={{ color: isFavorited ? '#fff' : theme.text }}
+              onClick={() => onToggleFavorite(current.id)}
+              title={isFavorited ? 'Remove from favourites' : 'Add to favourites'}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Hide — client only */}
+          {isClient && onToggleHidden && (
+            <button
+              className={`${btnClass} ${isHidden ? 'bg-white/20' : ''}`}
+              style={{ color: theme.text }}
+              onClick={() => onToggleHidden(current.id)}
+              title={isHidden ? 'Unhide this photo' : 'Hide this photo'}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isHidden ? 2 : 1.5}>
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          )}
+
+          {/* Comment — client only */}
+          {isClient && (
+            <button
+              className={`${btnClass} ${commentOpen ? 'bg-white/15' : ''}`}
+              style={{ color: theme.text }}
+              onClick={() => setCommentOpen((v) => !v)}
+              title="Comments"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Divider */}
+          <div className="mx-1 h-5 w-px bg-white/15" />
+
+          {/* Close */}
+          <button
+            className={btnClass}
+            style={{ color: theme.text }}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Counter */}
+        <div
+          className="absolute left-5 top-5 text-xs tracking-[0.15em]"
+          style={{ color: theme.textDim }}
+        >
+          {index + 1} / {images.length}
+        </div>
+
+        {/* Prev arrow */}
+        {images.length > 1 && (
+          <button
+            className="absolute left-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10 sm:left-8"
+            style={{ color: theme.text }}
+            onClick={(e) => { e.stopPropagation(); onPrev() }}
+            aria-label="Previous"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
         )}
-        <button
-          className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10"
-          style={{ color: theme.text }}
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
+
+        {/* Image */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current.id}
+            className="relative flex max-h-[88dvh] max-w-[88dvw] items-center justify-center sm:max-w-[76dvw]"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={getStorageUrl(current.imageUrl)}
+              alt=""
+              className="block max-h-[88dvh] max-w-full object-contain"
+              style={{ borderRadius: '2px' }}
+            />
+            {watermark && <WatermarkOverlay watermark={watermark} />}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Next arrow */}
+        {images.length > 1 && (
+          <button
+            className="absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+            style={{ color: theme.text, right: commentOpen ? `calc(${PANEL_W}px + 1rem)` : '1rem' }}
+            onClick={(e) => { e.stopPropagation(); onNext() }}
+            aria-label="Next"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      <div
-        className="absolute left-5 top-5 text-xs tracking-[0.15em]"
-        style={{ color: theme.textDim }}
-      >
-        {index + 1} / {images.length}
-      </div>
-
-      {images.length > 1 && (
-        <button
-          className="absolute left-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10 sm:left-8"
-          style={{ color: theme.text }}
-          onClick={(e) => { e.stopPropagation(); onPrev() }}
-          aria-label="Previous"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-      )}
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current.id}
-          className="relative flex max-h-[88dvh] max-w-[90dvw] items-center justify-center sm:max-w-[80dvw]"
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.97 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={getStorageUrl(current.imageUrl)}
-            alt=""
-            className="block max-h-[88dvh] max-w-full object-contain"
-            style={{ borderRadius: '2px' }}
-          />
-        </motion.div>
+      {/* ── Comment panel ── */}
+      <AnimatePresence>
+        {commentOpen && (
+          <motion.div
+            className="h-full shrink-0 overflow-hidden"
+            style={{
+              width: PANEL_W,
+              backgroundColor: theme.surface,
+              borderLeft: `1px solid ${theme.border}`,
+            }}
+            initial={{ x: PANEL_W, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: PANEL_W, opacity: 0 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 380 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ImageCommentPanel
+              key={current.id}
+              galleryId={galleryId}
+              imageId={current.id}
+              isClient={!!isClient}
+              theme={theme}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
-
-      {images.length > 1 && (
-        <button
-          className="absolute right-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10 sm:right-8"
-          style={{ color: theme.text }}
-          onClick={(e) => { e.stopPropagation(); onNext() }}
-          aria-label="Next"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      )}
     </motion.div>
   )
 }
