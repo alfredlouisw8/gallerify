@@ -21,7 +21,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     return { error: 'Unauthorized' }
   }
 
-  const { title, bannerImage, date, isPublished, slug, galleryId } = data
+  const { title, bannerImage, date, isPublished, slug, galleryId, watermarkId } = data
 
   try {
     if (!galleryId) throw new Error('Gallery not found')
@@ -48,6 +48,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
         date: new Date(date).toISOString(),
         is_published: isPublished,
         slug,
+        watermark_id: watermarkId ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', galleryId)

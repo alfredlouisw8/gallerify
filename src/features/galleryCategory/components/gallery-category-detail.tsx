@@ -42,6 +42,7 @@ import { bulkDeleteGalleryCategoryImages } from '@/features/galleryCategoryImage
 import { bulkMoveGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/bulkMoveGalleryCategoryImages'
 import { createGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/createGalleryCategoryImage'
 import { deleteGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/deleteGalleryCategoryImage'
+import { replaceGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/replaceGalleryCategoryImage'
 import { reorderGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/reorderGalleryCategoryImages'
 import { onImagesUpload } from '@/utils/functions'
 import { Button } from '@/components/ui/button'
@@ -637,7 +638,27 @@ function DraggableImage({
 }) {
   const router = useRouter()
   const [moveOpen, setMoveOpen] = useState(false)
+  const [isReplacing, setIsReplacing] = useState(false)
+  const replaceInputRef = useRef<HTMLInputElement>(null)
   const didDragRef = useRef(false)
+
+  async function handleReplaceFile(file: File) {
+    setIsReplacing(true)
+    try {
+      const [newUrl] = await onImagesUpload([file], 'uploads')
+      const result = await replaceGalleryCategoryImage(item.id, newUrl)
+      if (!result.success) {
+        toast({ title: result.error, variant: 'destructive' })
+        return
+      }
+      await mutate()
+      toast({ title: 'Image replaced.' })
+    } catch {
+      toast({ title: 'Failed to replace image', variant: 'destructive' })
+    } finally {
+      setIsReplacing(false)
+    }
+  }
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
@@ -697,6 +718,19 @@ function DraggableImage({
         {isSelected && <CheckIcon className="size-3 text-white" strokeWidth={3} />}
       </div>
 
+      {/* Hidden replace file input */}
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) void handleReplaceFile(file)
+          e.target.value = ''
+        }}
+      />
+
       {/* Three-dot context menu */}
       <div
         className="absolute right-1 top-1 z-10 rounded p-1 opacity-0 transition group-hover:opacity-100"
@@ -743,6 +777,17 @@ function DraggableImage({
                   toast({ title: 'Photo moved.' })
                 }}
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-full justify-start py-6"
+                onPointerDown={(e) => e.stopPropagation()}
+                disabled={isReplacing}
+                onClick={() => replaceInputRef.current?.click()}
+              >
+                <ArrowRightFromLineIcon className="ml-2 mr-4 size-4 rotate-180" />
+                {isReplacing ? 'Replacing…' : 'Replace'}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"

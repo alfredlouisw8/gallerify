@@ -44,7 +44,9 @@ export default function useGalleryForm({
         title: actions[type].successMessage,
       })
       onSuccess?.()
-      router.replace('/gallery')
+      if (type === 'create') {
+        router.replace('/gallery')
+      }
     },
     onError: (error) => {
       toast({
@@ -67,6 +69,7 @@ export default function useGalleryForm({
       isPublished: galleryData?.isPublished || false,
       slug: galleryData?.slug || '',
       galleryId: galleryData?.id || '',
+      watermarkId: galleryData?.watermarkId ?? null,
     },
   })
 

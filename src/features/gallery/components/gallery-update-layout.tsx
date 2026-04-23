@@ -1,11 +1,12 @@
-import { Gallery } from '@/types'
+import { Gallery, Watermark } from '@/types'
 import GalleryUpdateForm from './gallery-update-form'
 
 type Props = {
   gallery: Gallery
+  watermarks: Watermark[]
 }
 
-export default function GalleryUpdateLayout({ gallery }: Props) {
+export default function GalleryUpdateLayout({ gallery, watermarks }: Props) {
   return (
     <div className="overflow-auto p-6 lg:p-8">
       <div className="max-w-lg">
@@ -15,7 +16,7 @@ export default function GalleryUpdateLayout({ gallery }: Props) {
             Basic information about this gallery.
           </p>
         </div>
-        <GalleryUpdateForm galleryData={gallery} />
+        <GalleryUpdateForm galleryData={gallery} watermarks={watermarks} />
       </div>
     </div>
   )

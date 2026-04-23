@@ -11,6 +11,7 @@ import { getAllHiddenImageIds } from '@/features/public/actions/getAllHiddenImag
 import { getClientFavoritedImages } from '@/features/public/actions/getOwnerClientSelects'
 import { getClientInteractions } from '@/features/public/actions/getClientInteractions'
 import { getPublicGalleryBySlug } from '@/features/public/actions/getPublicGalleryBySlug'
+import { getWatermarkById } from '@/features/public/actions/getWatermarkById'
 import { createClient } from '@/lib/supabase-server'
 import { getStorageUrl } from '@/lib/utils'
 import { computeGalleryToken, galleryTokenCookieName } from '@/utils/gallery-password-token'
@@ -90,6 +91,10 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
 
   const { gallery, passwordHash } = result
 
+  const watermark = gallery.watermarkId
+    ? await getWatermarkById(gallery.watermarkId)
+    : null
+
   // ── Design preview bypass (owner only) ──────────────────────────────────────
   if (resolvedSearch._preview === '1') {
     const authClient = await createClient()
@@ -103,6 +108,7 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
         profilePath={isSubdomain ? '/' : `/${username}`}
         preferences={previewPrefs}
         previewMode
+        watermark={watermark}
       />
     )
   }
@@ -205,6 +211,7 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
             profilePath={profilePath}
             isClient
             clientInteractions={clientInteractions}
+            watermark={watermark}
           />
           <GallerySwitchRoleButton galleryId={gallery.id} redirectPath={redirectPath} />
         </>
@@ -255,7 +262,7 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
   return (
     <>
       {isOwnerPreview && <OwnerBanner galleryId={gallery.id} />}
-      <GalleryPageView gallery={viewerGallery} username={username} profilePath={profilePath} />
+      <GalleryPageView gallery={viewerGallery} username={username} profilePath={profilePath} watermark={watermark} />
       {showSwitchRole && <GallerySwitchRoleButton galleryId={gallery.id} redirectPath={redirectPath} />}
     </>
   )

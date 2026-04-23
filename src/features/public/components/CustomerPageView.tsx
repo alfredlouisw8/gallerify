@@ -93,7 +93,7 @@ export default function CustomerPageView({
       }
     >
       {/* ── HERO ── */}
-      <section ref={heroRef} className="relative h-screen overflow-hidden">
+      <section ref={heroRef} className={`relative overflow-hidden ${preview ? 'h-[50vh]' : 'h-screen'}`}>
         {profile.bannerImage ? (
           <motion.div
             className="absolute inset-0"

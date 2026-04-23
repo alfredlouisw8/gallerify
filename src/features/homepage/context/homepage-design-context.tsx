@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 import { type HomepagePreferences, DEFAULT_HOMEPAGE_PREFERENCES } from '@/types'
 
-export type HomepageDesignPanel = 'color' | 'style'
+export type HomepageDesignPanel = 'color' | 'style' | 'content'
 
 type HomepageDesignContextValue = {
   prefs: HomepagePreferences
