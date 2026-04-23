@@ -46,13 +46,17 @@ export default function Footer() {
             />
 
             <nav className="flex flex-wrap gap-5">
-              {['Terms', 'Privacy', 'Contact'].map((item) => (
+              {[
+                { label: 'Terms', href: '#' },
+                { label: 'Privacy', href: '#' },
+                { label: 'Contact', href: '/contact' },
+              ].map((item) => (
                 <Link
-                  key={item}
-                  href="#"
+                  key={item.label}
+                  href={item.href}
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {item}
+                  {item.label}
                 </Link>
               ))}
             </nav>

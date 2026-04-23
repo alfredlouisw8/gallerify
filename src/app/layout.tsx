@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+
 import { Outfit } from 'next/font/google'
 
 import './globals.css'
@@ -12,7 +13,8 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Gallerify — Client Gallery & Portfolio Software for Photographers',
+    default:
+      'Gallerify — Client Gallery & Portfolio Software for Photographers',
     template: '%s | Gallerify',
   },
   description:
