@@ -36,6 +36,7 @@ import { GalleryCategoryWithImages, GalleryWithCategory } from '@/types'
 
 type GalleryCategoryListProps = {
   galleryData: GalleryWithCategory
+  onClose?: () => void
 }
 
 type ItemProps = {
@@ -44,9 +45,10 @@ type ItemProps = {
   isActive: boolean
   isDragOverlay?: boolean
   onDelete?: () => Promise<void>
+  onClose?: () => void
 }
 
-function CategoryItem({ category, galleryId, isActive, isDragOverlay, onDelete }: ItemProps) {
+function CategoryItem({ category, galleryId, isActive, isDragOverlay, onDelete, onClose }: ItemProps) {
   const href = `/gallery/${galleryId}/collection/${category.id}`
   const imageCount = category.GalleryCategoryImage?.length ?? 0
 
@@ -86,7 +88,8 @@ function CategoryItem({ category, galleryId, isActive, isDragOverlay, onDelete }
       {/* Category link */}
       <Link
         href={href}
-        className="flex flex-1 items-center gap-2 px-2 py-2.5"
+        className="flex flex-1 items-center gap-2 px-2 py-4"
+        onClick={onClose}
       >
         <span className="truncate text-sm">{category.name}</span>
         <span className="ml-auto shrink-0 text-xs text-muted-foreground">
@@ -131,7 +134,7 @@ function CategoryItem({ category, galleryId, isActive, isDragOverlay, onDelete }
   )
 }
 
-export default function GalleryCategoryList({ galleryData }: GalleryCategoryListProps) {
+export default function GalleryCategoryList({ galleryData, onClose }: GalleryCategoryListProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -185,7 +188,8 @@ export default function GalleryCategoryList({ galleryData }: GalleryCategoryList
           {galleryData.clientAccessEnabled && (
             <Link
               href={`/gallery/${galleryData.id}/selects`}
-              className={`flex items-center gap-2 border-b border-border px-4 py-2.5 text-sm transition-colors ${
+              onClick={onClose}
+              className={`flex items-center gap-2 border-b border-border px-4 py-4 text-sm transition-colors ${
                 pathname === `/gallery/${galleryData.id}/selects`
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -219,6 +223,7 @@ export default function GalleryCategoryList({ galleryData }: GalleryCategoryList
                 galleryId={galleryData.id}
                 isActive={pathname === href}
                 onDelete={handleDelete}
+                onClose={onClose}
               />
             )
           })}

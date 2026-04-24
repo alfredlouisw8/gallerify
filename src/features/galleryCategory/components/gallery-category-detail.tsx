@@ -5,6 +5,7 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
@@ -20,6 +21,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
+  ArrowLeftRightIcon,
   ArrowRightFromLineIcon,
   CheckIcon,
   DownloadIcon,
@@ -78,11 +80,32 @@ type GalleryDetailProps = {
 function CategoryDropZone({
   category,
   dragCount,
+  compact,
 }: {
   category: GalleryCategory
   dragCount: number
+  compact?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `${CAT_DROP_PREFIX}${category.id}` })
+
+  if (compact) {
+    return (
+      <div
+        ref={setNodeRef}
+        className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 transition-all duration-150 ${
+          isOver
+            ? 'border-primary bg-primary/10 text-primary'
+            : 'border-dashed border-border bg-muted/20 text-muted-foreground'
+        }`}
+      >
+        <FolderInputIcon className="size-3.5 shrink-0" />
+        <span className="truncate text-xs font-medium leading-tight">{category.name}</span>
+        {isOver && dragCount > 1 && (
+          <span className="ml-auto shrink-0 text-xs opacity-70">+{dragCount}</span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -121,6 +144,17 @@ export default function GalleryCategoryDetail({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
+  // Use pointer position first (for the fixed category panel), fall back to
+  // center-distance for image grid reordering.
+  const collisionDetection = useCallback(
+    (...args: Parameters<typeof pointerWithin>) => {
+      const pointerHits = pointerWithin(...args)
+      if (pointerHits.length > 0) return pointerHits
+      return closestCenter(...args)
+    },
+    []
   )
 
   const [images, setImages] = useState<GalleryCategoryImage[]>([])
@@ -372,18 +406,18 @@ export default function GalleryCategoryDetail({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col gap-4">
+      <div className={`flex flex-col gap-4 ${selectionActive ? 'pb-28' : ''}`}>
         {/* ── Header ── */}
         <div className="flex items-center justify-between gap-5">
           <h1 className="text-xl">{categoryData?.name}</h1>
           <div className="flex items-center gap-2">
             {/* Grid size toggle */}
-            <div className="flex items-center rounded-lg border border-border p-0.5">
+            <div className="hidden sm:flex items-center rounded-lg border border-border p-0.5">
               <button
                 onClick={() => setGridSize('small')}
                 className={`rounded-md p-1.5 transition-colors ${
@@ -416,53 +450,68 @@ export default function GalleryCategoryDetail({
           </div>
         </div>
 
-        {/* ── Selection toolbar ── */}
+        {/* ── Selection toolbar — fixed floating bar at bottom ── */}
         {selectionActive && (
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-sm">
-            <span className="text-sm font-medium text-foreground">
-              {selectedIds.size} selected
-            </span>
-            <button
-              onClick={clearSelection}
-              className="ml-1 rounded p-0.5 text-muted-foreground hover:text-foreground"
-            >
-              <XIcon className="size-3.5" />
-            </button>
-            {selectedIds.size < images.length && (
+          <div className="pointer-events-none fixed bottom-6 left-0 right-0 z-40 flex justify-center px-4">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-neutral-900 px-4 py-3 shadow-2xl dark:bg-neutral-100">
+              {/* Count + clear */}
+              <span className="text-sm font-semibold tabular-nums text-white dark:text-neutral-900">{selectedIds.size}</span>
+              <span className="hidden text-sm text-neutral-400 sm:inline dark:text-neutral-600">selected</span>
               <button
-                onClick={() => setSelectedIds(new Set(images.map((img) => img.id)))}
-                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                onClick={clearSelection}
+                title="Clear selection"
+                className="ml-0.5 rounded-md p-1 text-neutral-400 hover:bg-white/10 hover:text-white dark:text-neutral-600 dark:hover:bg-black/10 dark:hover:text-neutral-900"
               >
-                Select all {images.length}
+                <XIcon className="size-3.5" />
               </button>
-            )}
-            <div className="ml-auto flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setVendorShareOpen(true)}
-              >
-                <Share2Icon className="mr-1.5 size-3.5" />
-                Create Vendor Link
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setBulkMoveOpen(true)}
-              >
-                <FolderInputIcon className="mr-1.5 size-3.5" />
-                Move to…
-              </Button>
-              <DeleteGalleryDialog
-                triggerComponent={
-                  <Button variant="destructive" size="sm" disabled={isBulkDeleting}>
-                    <TrashIcon className="mr-1.5 size-3.5" />
-                    {isBulkDeleting ? 'Deleting…' : `Delete ${selectedIds.size}`}
-                  </Button>
-                }
-                description={`${selectedIds.size} photo${selectedIds.size > 1 ? 's' : ''} will be permanently deleted.`}
-                onConfirm={handleBulkDelete}
-              />
+
+              {/* Select all */}
+              {selectedIds.size < images.length && (
+                <button
+                  onClick={() => setSelectedIds(new Set(images.map((img) => img.id)))}
+                  className="hidden text-xs text-neutral-400 underline-offset-2 hover:text-white hover:underline sm:block dark:text-neutral-600 dark:hover:text-neutral-900"
+                >
+                  Select all {images.length}
+                </button>
+              )}
+
+              <div className="mx-1 h-5 w-px bg-white/20 dark:bg-black/20" />
+
+              {/* Actions */}
+              <div className="flex items-center gap-1">
+                <button
+                  title="Create vendor link"
+                  onClick={() => setVendorShareOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-white transition-colors hover:bg-white/10 dark:text-neutral-900 dark:hover:bg-black/10"
+                >
+                  <Share2Icon className="size-3.5" />
+                  <span className="hidden sm:inline">Vendor link</span>
+                </button>
+                <button
+                  title="Move to…"
+                  onClick={() => setBulkMoveOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-white transition-colors hover:bg-white/10 dark:text-neutral-900 dark:hover:bg-black/10"
+                >
+                  <FolderInputIcon className="size-3.5" />
+                  <span className="hidden sm:inline">Move to…</span>
+                </button>
+                <DeleteGalleryDialog
+                  triggerComponent={
+                    <button
+                      disabled={isBulkDeleting}
+                      title="Delete selected"
+                      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-red-400 transition-colors hover:bg-white/10 disabled:opacity-50 dark:text-red-500 dark:hover:bg-black/10"
+                    >
+                      <TrashIcon className="size-3.5" />
+                      <span className="hidden sm:inline">
+                        {isBulkDeleting ? 'Deleting…' : 'Delete'}
+                      </span>
+                    </button>
+                  }
+                  description={`${selectedIds.size} photo${selectedIds.size > 1 ? 's' : ''} will be permanently deleted.`}
+                  onConfirm={handleBulkDelete}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -572,19 +621,6 @@ export default function GalleryCategoryDetail({
           )}
         </div>
 
-        {/* ── Category drop zones (shown while dragging) ── */}
-        {activeId && otherCategories.length > 0 && (
-          <div className="mt-2">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Move to collection
-            </p>
-            <div className="grid grid-cols-[repeat(auto-fill,_minmax(100px,1fr))] gap-2">
-              {otherCategories.map((cat) => (
-                <CategoryDropZone key={cat.id} category={cat} dragCount={dragCount} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Vendor share modal ── */}
@@ -598,6 +634,36 @@ export default function GalleryCategoryDetail({
         }))}
         preSelectedIds={Array.from(selectedIds)}
       />
+
+      {/* ── Move-to panel: fixed right, desktop only ── */}
+      {/* Always in DOM so useDroppable is registered before drag starts */}
+      {otherCategories.length > 0 && (
+        <div
+          className="hidden md:block"
+          style={{
+            position: 'fixed',
+            right: 16,
+            top: '50%',
+            transform: `translateY(-50%) translateX(${activeId ? 0 : 20}px)`,
+            zIndex: 50,
+            width: 192,
+            opacity: activeId ? 1 : 0,
+            pointerEvents: activeId ? 'auto' : 'none',
+            transition: 'opacity 0.18s ease, transform 0.18s ease',
+          }}
+        >
+          <div className="rounded-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur-md">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Move to
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {otherCategories.map((cat) => (
+                <CategoryDropZone key={cat.id} category={cat} dragCount={dragCount} compact />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Drag overlay ── */}
       <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>
@@ -754,9 +820,9 @@ function DraggableImage({
         }}
       />
 
-      {/* Three-dot context menu */}
+      {/* Three-dot context menu — hidden while selection is active */}
       <div
-        className="absolute right-1 top-1 z-10 rounded p-1 opacity-0 transition group-hover:opacity-100"
+        className={`absolute right-1 top-1 z-10 rounded p-1 opacity-0 transition group-hover:opacity-100 ${selectionActive ? 'hidden' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         <Popover>
@@ -806,9 +872,9 @@ function DraggableImage({
                 className="w-full justify-start py-6"
                 onPointerDown={(e) => e.stopPropagation()}
                 disabled={isReplacing}
-                onClick={() => replaceInputRef.current?.click()}
+                onClick={(e) => { e.stopPropagation(); replaceInputRef.current?.click() }}
               >
-                <ArrowRightFromLineIcon className="ml-2 mr-4 size-4 rotate-180" />
+                <ArrowLeftRightIcon className="ml-6 mr-4 size-4" />
                 {isReplacing ? 'Replacing…' : 'Replace'}
               </Button>
               <Button

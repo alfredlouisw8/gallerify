@@ -6,6 +6,7 @@ import {
   CheckIcon,
   ClipboardIcon,
   ExternalLinkIcon,
+  FolderIcon,
   ImageIcon,
   Loader2Icon,
   Share2Icon,
@@ -24,7 +25,7 @@ import { toast } from '@/components/ui/use-toast'
 import { createVendorShare } from '../actions/createVendorShare'
 
 type VendorType = 'florist' | 'mua' | 'venue' | 'planner' | 'other'
-type SelectionMode = 'all' | 'pick'
+type SelectionMode = 'all' | 'category' | 'pick'
 type Expiry = '7d' | '30d' | '90d' | 'never'
 
 const VENDOR_TYPES: { value: VendorType; label: string }[] = [
@@ -43,21 +44,26 @@ const EXPIRY_OPTIONS: { value: Expiry; label: string }[] = [
 ]
 
 export type VendorShareImage = { id: string; imageUrl: string }
+export type VendorCategory = { id: string; name: string; images: VendorShareImage[] }
 
 type Props = {
   open: boolean
   onClose: () => void
   galleryId: string
   allImages: VendorShareImage[]
+  categories?: VendorCategory[]
   preSelectedIds?: string[]
 }
 
-export function VendorShareModal({ open, onClose, galleryId, allImages, preSelectedIds }: Props) {
+export function VendorShareModal({ open, onClose, galleryId, allImages, categories, preSelectedIds }: Props) {
+  const hasCategories = (categories?.length ?? 0) > 0
+
   const [step, setStep] = useState<'form' | 'success'>('form')
   const [vendorName, setVendorName] = useState('')
   const [vendorType, setVendorType] = useState<VendorType>('florist')
   const [mode, setMode] = useState<SelectionMode>('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set())
   const [watermark, setWatermark] = useState(false)
   const [expiry, setExpiry] = useState<Expiry>('30d')
   const [generatedUrl, setGeneratedUrl] = useState('')
@@ -70,17 +76,32 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
       setVendorName('')
       setVendorType('florist')
       const hasPreSelected = preSelectedIds && preSelectedIds.length > 0
-      setMode(hasPreSelected ? 'pick' : 'all')
+      if (hasPreSelected) {
+        setMode('pick')
+      } else if (hasCategories) {
+        setMode('category')
+      } else {
+        setMode('all')
+      }
       setSelectedIds(new Set(preSelectedIds ?? []))
+      setSelectedCategoryIds(new Set())
       setWatermark(false)
       setExpiry('30d')
       setGeneratedUrl('')
       setCopied(false)
     }
-  }, [open, preSelectedIds])
+  }, [open, preSelectedIds, hasCategories])
 
   function toggleImage(id: string) {
     setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleCategory(id: string) {
+    setSelectedCategoryIds((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
@@ -96,7 +117,15 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
     return d.toISOString()
   }
 
-  const imageIds = mode === 'all' ? allImages.map((i) => i.id) : Array.from(selectedIds)
+  const imageIds =
+    mode === 'all'
+      ? allImages.map(i => i.id)
+      : mode === 'category'
+        ? Array.from(selectedCategoryIds).flatMap(
+            catId => categories?.find(c => c.id === catId)?.images.map(i => i.id) ?? []
+          )
+        : Array.from(selectedIds)
+
   const canSubmit = vendorName.trim().length > 0 && imageIds.length > 0
 
   function handleSubmit() {
@@ -126,10 +155,16 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const modeOptions: { value: SelectionMode; label: string }[] = [
+    { value: 'all',      label: `All photos (${allImages.length})` },
+    ...(hasCategories ? [{ value: 'category' as SelectionMode, label: 'By category' }] : []),
+    { value: 'pick',     label: 'Pick photos' },
+  ]
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden gap-0">
-        <DialogHeader className="px-6 pt-5 pb-4 border-b">
+      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b px-6 pb-4 pt-5">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Share2Icon className="size-4 text-muted-foreground" />
             Share with Vendor
@@ -137,10 +172,11 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
         </DialogHeader>
 
         {step === 'form' ? (
-          <div className="flex flex-col gap-0 overflow-hidden max-h-[75vh]">
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              {/* Vendor name */}
-              <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col overflow-hidden" style={{ maxHeight: '82vh' }}>
+            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+
+              {/* Vendor name + type */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Vendor name</Label>
                   <Input
@@ -150,8 +186,6 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                     className="h-9 text-sm"
                   />
                 </div>
-
-                {/* Vendor type */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Vendor type</Label>
                   <div className="flex flex-wrap gap-1.5">
@@ -174,34 +208,87 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                 </div>
               </div>
 
-              {/* Photo selection mode */}
-              <div className="space-y-2">
+              {/* Selection mode */}
+              <div className="space-y-3">
                 <Label className="text-xs">Photos to share</Label>
-                <div className="flex rounded-lg border overflow-hidden">
-                  {(['all', 'pick'] as SelectionMode[]).map((m) => (
+                <div className="flex overflow-hidden rounded-lg border">
+                  {modeOptions.map((m) => (
                     <button
-                      key={m}
+                      key={m.value}
                       type="button"
-                      onClick={() => setMode(m)}
+                      onClick={() => setMode(m.value)}
                       className={[
-                        'flex-1 py-1.5 text-xs font-medium capitalize transition-colors',
-                        mode === m
+                        'flex-1 py-2 text-xs font-medium capitalize transition-colors',
+                        mode === m.value
                           ? 'bg-foreground text-background'
                           : 'text-muted-foreground hover:text-foreground',
                       ].join(' ')}
                     >
-                      {m === 'all' ? `All photos (${allImages.length})` : 'Pick photos'}
+                      {m.label}
                     </button>
                   ))}
                 </div>
 
-                {/* Image picker grid */}
+                {/* Category picker */}
+                {mode === 'category' && categories && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      {selectedCategoryIds.size === 0
+                        ? 'Select one or more categories'
+                        : `${selectedCategoryIds.size} categor${selectedCategoryIds.size !== 1 ? 'ies' : 'y'} · ${imageIds.length} photos`}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {categories.map((cat) => {
+                        const selected = selectedCategoryIds.has(cat.id)
+                        const thumb = cat.images[0]?.imageUrl
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => toggleCategory(cat.id)}
+                            className={[
+                              'flex items-center gap-3 rounded-xl border p-3 text-left transition-all',
+                              selected
+                                ? 'border-foreground bg-foreground/5'
+                                : 'border-border hover:border-muted-foreground/50',
+                            ].join(' ')}
+                          >
+                            {/* Thumbnail */}
+                            <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                              {thumb ? (
+                                <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
+                              ) : (
+                                <div className="flex size-full items-center justify-center">
+                                  <FolderIcon className="size-5 text-muted-foreground/40" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{cat.name}</p>
+                              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <ImageIcon className="size-3" />
+                                {cat.images.length} photo{cat.images.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            {selected && (
+                              <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground">
+                                <CheckIcon className="size-3 text-background" />
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Individual photo picker */}
                 {mode === 'pick' && (
                   <div className="space-y-2">
                     <p className="text-[10px] text-muted-foreground">
                       {selectedIds.size} of {allImages.length} selected
                     </p>
-                    <div className="grid grid-cols-5 gap-1.5 max-h-44 overflow-y-auto rounded-lg border p-2">
+                    <div className="grid grid-cols-3 gap-2 overflow-y-auto rounded-lg border p-2 sm:grid-cols-4" style={{ maxHeight: '320px' }}>
                       {allImages.map((img) => {
                         const selected = selectedIds.has(img.id)
                         return (
@@ -210,8 +297,8 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                             type="button"
                             onClick={() => toggleImage(img.id)}
                             className={[
-                              'relative aspect-square overflow-hidden rounded-md transition-all',
-                              selected ? 'ring-2 ring-foreground' : 'opacity-60 hover:opacity-100',
+                              'relative aspect-square overflow-hidden rounded-lg transition-all',
+                              selected ? 'ring-2 ring-foreground' : 'opacity-70 hover:opacity-100',
                             ].join(' ')}
                           >
                             <Image
@@ -219,12 +306,12 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                               alt=""
                               fill
                               className="object-cover"
-                              sizes="80px"
+                              sizes="120px"
                             />
                             {selected && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <div className="flex size-5 items-center justify-center rounded-full bg-foreground">
-                                  <CheckIcon className="size-3 text-background" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                                <div className="flex size-6 items-center justify-center rounded-full bg-foreground">
+                                  <CheckIcon className="size-3.5 text-background" />
                                 </div>
                               </div>
                             )}
@@ -236,8 +323,8 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                 )}
               </div>
 
-              {/* Watermark + expiry row */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Watermark + expiry */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Watermark toggle */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Watermark</Label>
@@ -250,23 +337,11 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
                     ].join(' ')}
                   >
                     <span>{watermark ? 'Enabled' : 'Disabled'}</span>
-                    <div
-                      className={[
-                        'relative h-4 w-7 rounded-full transition-colors',
-                        watermark ? 'bg-foreground' : 'bg-muted-foreground/30',
-                      ].join(' ')}
-                    >
-                      <span
-                        className={[
-                          'absolute top-0.5 size-3 rounded-full bg-white shadow transition-transform',
-                          watermark ? 'translate-x-3.5' : 'translate-x-0.5',
-                        ].join(' ')}
-                      />
+                    <div className={['relative h-4 w-7 rounded-full transition-colors', watermark ? 'bg-foreground' : 'bg-muted-foreground/30'].join(' ')}>
+                      <span className={['absolute top-0.5 size-3 rounded-full bg-white shadow transition-transform', watermark ? 'translate-x-3.5' : 'translate-x-0.5'].join(' ')} />
                     </div>
                   </button>
-                  <p className="text-[10px] text-muted-foreground">
-                    Uses the gallery's assigned watermark
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">Uses the gallery&apos;s assigned watermark</p>
                 </div>
 
                 {/* Expiry */}
@@ -300,12 +375,7 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
               </p>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-                <Button
-                  size="sm"
-                  onClick={handleSubmit}
-                  disabled={!canSubmit || isPending}
-                  className="gap-1.5"
-                >
+                <Button size="sm" onClick={handleSubmit} disabled={!canSubmit || isPending} className="gap-1.5">
                   {isPending && <Loader2Icon className="size-3.5 animate-spin" />}
                   Generate link
                 </Button>
@@ -314,8 +384,8 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
           </div>
         ) : (
           /* Success step */
-          <div className="px-6 py-8 space-y-5 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-green-500/15 mx-auto">
+          <div className="space-y-5 px-6 py-8 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-500/15">
               <CheckIcon className="size-5 text-green-600" />
             </div>
             <div className="space-y-1">
@@ -325,41 +395,24 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, preSelec
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-left">
-              <span className="flex-1 truncate text-xs font-mono text-foreground">{generatedUrl}</span>
-              <button
-                type="button"
-                onClick={() => void handleCopy()}
-                className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {copied
-                  ? <CheckIcon className="size-3.5 text-green-500" />
-                  : <ClipboardIcon className="size-3.5" />}
+              <span className="flex-1 truncate font-mono text-xs text-foreground">{generatedUrl}</span>
+              <button type="button" onClick={() => void handleCopy()} className="shrink-0 text-muted-foreground transition-colors hover:text-foreground">
+                {copied ? <CheckIcon className="size-3.5 text-green-500" /> : <ClipboardIcon className="size-3.5" />}
               </button>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={() => void handleCopy()}
-              >
+              <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => void handleCopy()}>
                 {copied ? <CheckIcon className="size-3.5" /> : <ClipboardIcon className="size-3.5" />}
                 {copied ? 'Copied!' : 'Copy link'}
               </Button>
-              <Button
-                size="sm"
-                className="flex-1 gap-1.5"
-                asChild
-              >
+              <Button size="sm" className="flex-1 gap-1.5" asChild>
                 <a href={generatedUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLinkIcon className="size-3.5" />
                   Open link
                 </a>
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>
-              Done
-            </Button>
+            <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>Done</Button>
           </div>
         )}
       </DialogContent>

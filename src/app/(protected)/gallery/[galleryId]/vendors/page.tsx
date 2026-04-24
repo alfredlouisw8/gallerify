@@ -1,5 +1,7 @@
+import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import { getGalleryVendorShares } from '@/features/gallery/actions/getGalleryVendorShares'
 import { VendorSharesView } from '@/features/gallery/components/VendorSharesView'
+import { getStorageUrl } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +11,28 @@ export default async function GalleryVendorsPage({
   params: Promise<{ galleryId: string }>
 }) {
   const { galleryId } = await params
-  const shares = await getGalleryVendorShares(galleryId)
+  const [shares, gallery] = await Promise.all([
+    getGalleryVendorShares(galleryId),
+    getGalleryById(galleryId),
+  ])
+
+  const galleryCategories = gallery?.GalleryCategory ?? []
+
+  const allImages = galleryCategories.flatMap((cat) =>
+    cat.GalleryCategoryImage.map((img) => ({
+      id: img.id,
+      imageUrl: getStorageUrl(img.imageUrl),
+    }))
+  )
+
+  const categories = galleryCategories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    images: cat.GalleryCategoryImage.map((img) => ({
+      id: img.id,
+      imageUrl: getStorageUrl(img.imageUrl),
+    })),
+  }))
 
   return (
     <div className="overflow-auto p-6 lg:p-8">
@@ -20,7 +43,12 @@ export default async function GalleryVendorsPage({
             Links shared with vendors such as florists, MUAs, venues, and planners.
           </p>
         </div>
-        <VendorSharesView galleryId={galleryId} initialShares={shares} />
+        <VendorSharesView
+          galleryId={galleryId}
+          initialShares={shares}
+          allImages={allImages}
+          categories={categories}
+        />
       </div>
     </div>
   )

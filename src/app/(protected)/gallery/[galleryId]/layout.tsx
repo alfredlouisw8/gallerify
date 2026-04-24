@@ -3,8 +3,7 @@ import React from 'react'
 
 import { GalleryDesignShell } from '@/features/gallery/context/gallery-design-context'
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
-import GallerySidebar from '@/features/gallery/components/layout/gallery-sidebar'
-import GalleryTopNavigationBar from '@/features/gallery/components/layout/gallery-top-navigationbar'
+import { GalleryLayoutShell } from '@/features/gallery/components/layout/gallery-layout-shell'
 import supabaseAdmin from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 
@@ -37,17 +36,9 @@ export default async function GalleryLayout({
 
   return (
     <GalleryDesignShell initialPrefs={gallery.preferences}>
-      <div className="flex h-screen flex-col">
-        <GalleryTopNavigationBar galleryData={gallery} username={username} />
-
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-[250px] overflow-y-auto border-r lg:w-[330px]">
-            <GallerySidebar galleryData={gallery} />
-          </div>
-
-          <div className="flex-1 overflow-auto">{children}</div>
-        </div>
-      </div>
+      <GalleryLayoutShell galleryData={gallery} username={username}>
+        {children}
+      </GalleryLayoutShell>
     </GalleryDesignShell>
   )
 }
