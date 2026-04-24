@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState, useTransition } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import {
   CheckCircle2Icon,
   CheckIcon,
@@ -10,11 +11,23 @@ import {
   MessageSquareIcon,
   MessageSquareTextIcon,
   RotateCcwIcon,
+  XIcon,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/use-toast'
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isMobile
+}
 import type { ImageCommentType } from '@/types'
 import { replaceGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/replaceGalleryCategoryImage'
 import { onImagesUpload } from '@/utils/functions'
@@ -163,6 +176,7 @@ function ImageGroup({
   const [modalOpen, setModalOpen] = useState(false)
   const [displayUrl, setDisplayUrl] = useState(initialImageUrl)
   const replaceInputRef = useRef<HTMLInputElement>(null)
+  const isMobile = useIsMobile()
 
   const doneCount = comments.filter((c) => c.isDone).length
   const donePercent = Math.round((doneCount / comments.length) * 100)
@@ -265,46 +279,108 @@ function ImageGroup({
         </div>
       </div>
 
-      {/* Detail modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
-          <div className="flex h-[80vh]">
-            {/* Left — image */}
-            <div className="flex w-2/5 shrink-0 items-center justify-center bg-neutral-950 p-4">
-              {displayUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={displayUrl}
-                  alt=""
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                <ImageIcon className="size-12 text-neutral-600" />
-              )}
-            </div>
-
-            {/* Right — comments */}
-            <div className="flex flex-1 flex-col overflow-hidden border-l">
-              {/* Modal header */}
-              <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold">Feedback</p>
-                  <p className="text-[10px] text-muted-foreground font-mono">{imageId.slice(0, 8)}…</p>
+      {/* Desktop: side-by-side dialog */}
+      {!isMobile && (
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
+            <div className="flex h-[80vh]">
+              <div className="flex w-2/5 shrink-0 items-center justify-center bg-neutral-950 p-4">
+                {displayUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={displayUrl} alt="" className="max-h-full max-w-full object-contain" />
+                ) : (
+                  <ImageIcon className="size-12 text-neutral-600" />
+                )}
+              </div>
+              <div className="flex flex-1 flex-col overflow-hidden border-l">
+                <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold">Feedback</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">{imageId.slice(0, 8)}…</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: `${donePercent}%` }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{doneCount}/{comments.length}</span>
+                  </div>
                 </div>
+                <div className="flex-1 overflow-y-auto divide-y">
+                  {comments.map((comment) => (
+                    <CommentRow
+                      key={comment.id}
+                      comment={comment}
+                      galleryId={galleryId}
+                      onReplied={(reply) => onReplied(comment.id, reply)}
+                      onDone={(done) => onDone(comment.id, done)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Mobile: bottom drawer with image on top */}
+      <AnimatePresence>
+        {isMobile && modalOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setModalOpen(false)}
+            />
+
+            {/* Drawer */}
+            <motion.div
+              className="fixed bottom-0 left-0 right-0 z-50 flex h-[65dvh] flex-col overflow-hidden rounded-t-2xl bg-background shadow-2xl"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {/* Drag handle + close */}
+              <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3">
+                <div className="mx-auto h-1 w-10 rounded-full bg-muted-foreground/25" />
+              </div>
+
+              {/* Image */}
+              <div className="relative shrink-0 w-full bg-neutral-950" style={{ height: '45vw', maxHeight: 240 }}>
+                {displayUrl ? (
+                  <Image src={displayUrl} alt="" fill className="object-contain" sizes="100vw" />
+                ) : (
+                  <div className="flex size-full items-center justify-center">
+                    <ImageIcon className="size-10 text-neutral-600" />
+                  </div>
+                )}
+                {/* Close button */}
+                <button
+                  className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+                  onClick={() => setModalOpen(false)}
+                >
+                  <XIcon className="size-4" />
+                </button>
+              </div>
+
+              {/* Header bar */}
+              <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                <p className="text-sm font-semibold">
+                  {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+                </p>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-green-500 transition-all duration-500"
-                      style={{ width: `${donePercent}%` }}
-                    />
+                    <div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: `${donePercent}%` }} />
                   </div>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">
-                    {doneCount}/{comments.length}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">{doneCount}/{comments.length}</span>
                 </div>
               </div>
 
-              {/* Scrollable comment list */}
+              {/* Scrollable comments */}
               <div className="flex-1 overflow-y-auto divide-y">
                 {comments.map((comment) => (
                   <CommentRow
@@ -316,10 +392,10 @@ function ImageGroup({
                   />
                 ))}
               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

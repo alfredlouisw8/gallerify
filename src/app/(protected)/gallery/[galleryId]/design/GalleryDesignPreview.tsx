@@ -740,7 +740,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
               </Section>
             </>)}
 
-            {isDirty && (
+            {isDirty && !isMobile && (
               <Button onClick={handleSave} disabled={isPending} size="sm" className="mt-auto w-full">
                 {isPending
                   ? <><LoaderIcon className="mr-2 size-3.5 animate-spin" />Saving…</>
@@ -927,7 +927,17 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 /* ── Root ── */
 export default function GalleryDesignPreview({ gallery, username }: Props) {
   const [device, setDevice] = useState<Device>('desktop')
-  const { prefs, selectedPanel } = useGalleryDesign()
+  const { prefs, selectedPanel, isDirty, setIsDirty } = useGalleryDesign()
+  const isMobile = useIsMobile()
+  const [isSaving, startSaveTransition] = useTransition()
+
+  const handleMobileSave = () => {
+    startSaveTransition(async () => {
+      await updateGalleryPreferences(gallery.id, prefs)
+      setIsDirty(false)
+      toast({ title: 'Design saved', description: 'Your gallery design has been updated.' })
+    })
+  }
 
   const bannerUrl = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : null
 
@@ -959,6 +969,21 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
   return (
     <div className="flex h-full overflow-hidden">
       <OptionsPanel galleryId={gallery.id} bannerUrl={bannerUrl} />
+
+      {/* Mobile floating save — outside motion.div so fixed positioning isn't broken by transforms */}
+      {isDirty && isMobile && selectedPanel && (
+        <div className="fixed bottom-6 left-4 right-4 z-50 md:hidden">
+          <Button
+            onClick={handleMobileSave}
+            disabled={isSaving}
+            className="w-full gap-1.5 shadow-2xl"
+          >
+            {isSaving
+              ? <><LoaderIcon className="size-3.5 animate-spin" />Saving…</>
+              : <><CheckIcon className="size-3.5" />Save changes</>}
+          </Button>
+        </div>
+      )}
 
       {/* Mobile: no panel selected → prompt */}
       {!selectedPanel && (
