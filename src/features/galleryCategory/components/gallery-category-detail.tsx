@@ -28,6 +28,7 @@ import {
   Grid2X2Icon,
   Grid3X3Icon,
   ImageIcon,
+  Share2Icon,
   TrashIcon,
   UploadCloudIcon,
   XIcon,
@@ -38,6 +39,7 @@ import { useDropzone } from 'react-dropzone'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 
+import { VendorShareModal } from '@/features/gallery/components/VendorShareModal'
 import { bulkDeleteGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/bulkDeleteGalleryCategoryImages'
 import { bulkMoveGalleryCategoryImages } from '@/features/galleryCategoryImage/actions/bulkMoveGalleryCategoryImages'
 import { createGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/createGalleryCategoryImage'
@@ -135,6 +137,7 @@ export default function GalleryCategoryDetail({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [vendorShareOpen, setVendorShareOpen] = useState(false)
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -437,6 +440,14 @@ export default function GalleryCategoryDetail({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setVendorShareOpen(true)}
+              >
+                <Share2Icon className="mr-1.5 size-3.5" />
+                Create Vendor Link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setBulkMoveOpen(true)}
               >
                 <FolderInputIcon className="mr-1.5 size-3.5" />
@@ -575,6 +586,18 @@ export default function GalleryCategoryDetail({
           </div>
         )}
       </div>
+
+      {/* ── Vendor share modal ── */}
+      <VendorShareModal
+        open={vendorShareOpen}
+        onClose={() => setVendorShareOpen(false)}
+        galleryId={galleryData.id}
+        allImages={(categoryData?.GalleryCategoryImage ?? []).map((img) => ({
+          id: img.id,
+          imageUrl: getStorageUrl(img.imageUrl),
+        }))}
+        preSelectedIds={Array.from(selectedIds)}
+      />
 
       {/* ── Drag overlay ── */}
       <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>

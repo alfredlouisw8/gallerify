@@ -2,9 +2,18 @@
 
 import Image from 'next/image'
 import { useRef, useState, useTransition } from 'react'
-import { CheckCircle2Icon, CheckIcon, ImageIcon, Loader2Icon, MessageSquareIcon, RotateCcwIcon } from 'lucide-react'
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  ImageIcon,
+  Loader2Icon,
+  MessageSquareIcon,
+  MessageSquareTextIcon,
+  RotateCcwIcon,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/use-toast'
 import type { ImageCommentType } from '@/types'
 import { replaceGalleryCategoryImage } from '@/features/galleryCategoryImage/actions/replaceGalleryCategoryImage'
@@ -38,7 +47,6 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
 
   const unansweredCount = comments.filter((c) => !c.ownerReply).length
 
-  // Group by imageId
   const grouped = filtered.reduce<Record<string, CommentWithImage[]>>((acc, c) => {
     if (!acc[c.imageId]) acc[c.imageId] = []
     acc[c.imageId].push(c)
@@ -65,13 +73,9 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
     )
   }
 
-  function handleImageReplaced(commentId: string, newImageUrl: string) {
+  function handleGroupImageReplaced(imageId: string, newImageUrl: string) {
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? { ...c, imageUrl: newImageUrl, isDone: true, doneAt: new Date().toISOString() }
-          : c
-      )
+      prev.map((c) => (c.imageId === imageId ? { ...c, imageUrl: newImageUrl } : c))
     )
   }
 
@@ -117,71 +121,226 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
         </span>
       </div>
 
-      {/* Groups */}
-      {Object.entries(grouped).map(([imageId, imageComments]) => {
-        const imageUrl = imageComments[0]?.imageUrl
-        return (
-          <div key={imageId} className="rounded-2xl border bg-card overflow-hidden">
-            {/* Image header */}
-            <div className="flex items-center gap-3 border-b px-4 py-3">
-              {imageUrl ? (
-                <div className="relative size-12 shrink-0 overflow-hidden rounded-md">
-                  <Image src={imageUrl} alt="" fill className="object-cover" sizes="48px" />
-                </div>
-              ) : (
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-muted">
-                  <MessageSquareIcon className="size-4 text-muted-foreground" />
-                </div>
-              )}
-              <div>
-                <p className="text-xs font-medium">
-                  {imageComments.length} {imageComments.length === 1 ? 'comment' : 'comments'}
-                </p>
-                <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[180px]">
-                  {imageId.slice(0, 8)}…
-                </p>
-              </div>
-            </div>
-
-            {/* Comments */}
-            <div className="divide-y">
-              {imageComments.map((comment) => (
-                <CommentRow
-                  key={comment.id}
-                  comment={comment}
-                  galleryId={galleryId}
-                  onReplied={(reply) => handleReplied(comment.id, reply)}
-                  onDone={(done) => handleDone(comment.id, done)}
-                  onImageReplaced={(url) => handleImageReplaced(comment.id, url)}
-                />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+      {/* Image groups masonry */}
+      <div className="columns-1 md:columns-2 gap-5">
+      {Object.entries(grouped).map(([imageId, imageComments]) => (
+        <ImageGroup
+          key={imageId}
+          imageId={imageId}
+          imageUrl={imageComments[0]?.imageUrl}
+          comments={imageComments}
+          galleryId={galleryId}
+          onReplied={handleReplied}
+          onDone={handleDone}
+          onImageReplaced={(newUrl) => handleGroupImageReplaced(imageId, newUrl)}
+        />
+      ))}
+      </div>
     </div>
   )
 }
+
+// ── Image group card ──────────────────────────────────────────────────────────
+
+function ImageGroup({
+  imageId,
+  imageUrl: initialImageUrl,
+  comments,
+  galleryId,
+  onReplied,
+  onDone,
+  onImageReplaced,
+}: {
+  imageId: string
+  imageUrl: string | null | undefined
+  comments: CommentWithImage[]
+  galleryId: string
+  onReplied: (commentId: string, reply: string) => void
+  onDone: (commentId: string, done: boolean) => void
+  onImageReplaced: (newUrl: string) => void
+}) {
+  const [isReplacing, setIsReplacing] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [displayUrl, setDisplayUrl] = useState(initialImageUrl)
+  const replaceInputRef = useRef<HTMLInputElement>(null)
+
+  const doneCount = comments.filter((c) => c.isDone).length
+  const donePercent = Math.round((doneCount / comments.length) * 100)
+
+  async function handleReplaceFile(file: File) {
+    setIsReplacing(true)
+    try {
+      const [newUrl] = await onImagesUpload([file], 'uploads')
+      const result = await replaceGalleryCategoryImage(imageId, newUrl)
+      if (!result.success) {
+        toast({ title: result.error, variant: 'destructive' })
+        return
+      }
+      try {
+        const parsed = JSON.parse(newUrl) as { url?: string }
+        if (parsed.url) setDisplayUrl(parsed.url)
+      } catch {
+        setDisplayUrl(newUrl)
+      }
+      onImageReplaced(newUrl)
+      toast({ title: 'Image replaced.' })
+    } catch {
+      toast({ title: 'Failed to replace image', variant: 'destructive' })
+    } finally {
+      setIsReplacing(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="break-inside-avoid mb-5 rounded-2xl border bg-card overflow-hidden">
+        {/* Clickable header */}
+        <div
+          className="flex cursor-pointer items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/40"
+          onClick={() => setModalOpen(true)}
+        >
+          {displayUrl ? (
+            <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
+              <Image src={displayUrl} alt="" fill className="object-cover" sizes="56px" />
+            </div>
+          ) : (
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <ImageIcon className="size-4 text-muted-foreground" />
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium">
+                {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+              </p>
+              <span className="text-[10px] text-muted-foreground tabular-nums">
+                {doneCount}/{comments.length} done
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-green-500 transition-all duration-500"
+                style={{ width: `${donePercent}%` }}
+              />
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 h-7 gap-1.5 px-2.5 text-xs"
+            disabled={isReplacing}
+            onClick={(e) => { e.stopPropagation(); replaceInputRef.current?.click() }}
+          >
+            {isReplacing
+              ? <Loader2Icon className="size-3 animate-spin" />
+              : <ImageIcon className="size-3" />}
+            {isReplacing ? 'Replacing…' : 'Replace image'}
+          </Button>
+          <input
+            ref={replaceInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) void handleReplaceFile(file)
+              e.target.value = ''
+            }}
+          />
+        </div>
+
+        {/* Comment rows */}
+        <div className="divide-y">
+          {comments.map((comment) => (
+            <CommentRow
+              key={comment.id}
+              comment={comment}
+              galleryId={galleryId}
+              onReplied={(reply) => onReplied(comment.id, reply)}
+              onDone={(done) => onDone(comment.id, done)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Detail modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
+          <div className="flex h-[80vh]">
+            {/* Left — image */}
+            <div className="flex w-2/5 shrink-0 items-center justify-center bg-neutral-950 p-4">
+              {displayUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={displayUrl}
+                  alt=""
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <ImageIcon className="size-12 text-neutral-600" />
+              )}
+            </div>
+
+            {/* Right — comments */}
+            <div className="flex flex-1 flex-col overflow-hidden border-l">
+              {/* Modal header */}
+              <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold">Feedback</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">{imageId.slice(0, 8)}…</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-green-500 transition-all duration-500"
+                      style={{ width: `${donePercent}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {doneCount}/{comments.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Scrollable comment list */}
+              <div className="flex-1 overflow-y-auto divide-y">
+                {comments.map((comment) => (
+                  <CommentRow
+                    key={comment.id}
+                    comment={comment}
+                    galleryId={galleryId}
+                    onReplied={(reply) => onReplied(comment.id, reply)}
+                    onDone={(done) => onDone(comment.id, done)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+// ── Comment row ───────────────────────────────────────────────────────────────
 
 function CommentRow({
   comment,
   galleryId,
   onReplied,
   onDone,
-  onImageReplaced,
 }: {
   comment: CommentWithImage
   galleryId: string
   onReplied: (reply: string) => void
   onDone: (done: boolean) => void
-  onImageReplaced: (newUrl: string) => void
 }) {
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState(comment.ownerReply ?? '')
   const [isReplying, startReplyTransition] = useTransition()
   const [isDoneLoading, startDoneTransition] = useTransition()
-  const [isReplacing, setIsReplacing] = useState(false)
-  const replaceInputRef = useRef<HTMLInputElement>(null)
   const badge = TYPE_BADGE[comment.type]
 
   function handleReply() {
@@ -202,26 +361,13 @@ function CommentRow({
     })
   }
 
-  async function handleReplaceFile(file: File) {
-    setIsReplacing(true)
-    try {
-      const [newUrl] = await onImagesUpload([file], 'uploads')
-      const replaceResult = await replaceGalleryCategoryImage(comment.imageId, newUrl)
-      if (!replaceResult.success) { toast({ title: replaceResult.error, variant: 'destructive' }); return }
-      const doneResult = await markCommentDone(comment.id, galleryId, true)
-      if (!doneResult.success) { toast({ title: doneResult.error, variant: 'destructive' }); return }
-      onImageReplaced(newUrl)
-      toast({ title: 'Image replaced and marked as done.' })
-    } catch {
-      toast({ title: 'Failed to replace image', variant: 'destructive' })
-    } finally {
-      setIsReplacing(false)
-    }
+  function handleCancelReply() {
+    setReplying(false)
+    setReplyText(comment.ownerReply ?? '')
   }
 
   return (
     <div className={`px-4 py-4 space-y-3 transition-colors ${comment.isDone ? 'bg-green-500/5' : ''}`}>
-      {/* Comment header */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>
@@ -243,38 +389,20 @@ function CommentRow({
         <p className="text-sm text-foreground leading-relaxed">{comment.comment}</p>
       </div>
 
-      {/* Action row */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Replace image */}
+        {!replying && (
+          <Button
+            variant="ghost" size="sm"
+            className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setReplying(true)}
+          >
+            <MessageSquareTextIcon className="size-3" />
+            {comment.ownerReply ? 'Edit reply' : 'Reply'}
+          </Button>
+        )}
         <Button
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5 px-2.5 text-xs"
-          disabled={isReplacing}
-          onClick={() => replaceInputRef.current?.click()}
-        >
-          {isReplacing
-            ? <Loader2Icon className="size-3 animate-spin" />
-            : <ImageIcon className="size-3" />}
-          Replace image
-        </Button>
-        <input
-          ref={replaceInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) void handleReplaceFile(file)
-            e.target.value = ''
-          }}
-        />
-
-        {/* Mark done / undo */}
-        <Button
-          variant={comment.isDone ? 'outline' : 'outline'}
-          size="sm"
-          className={`h-7 gap-1.5 px-2.5 text-xs ${comment.isDone ? 'border-green-500/40 text-green-600 hover:bg-green-500/10' : ''}`}
+          variant="ghost" size="sm"
+          className={`h-7 gap-1.5 px-2.5 text-xs ${comment.isDone ? 'text-green-600 hover:text-green-700 hover:bg-green-500/10' : 'text-muted-foreground hover:text-foreground'}`}
           disabled={isDoneLoading}
           onClick={handleToggleDone}
         >
@@ -287,8 +415,7 @@ function CommentRow({
         </Button>
       </div>
 
-      {/* Reply section */}
-      {comment.ownerReply && !replying ? (
+      {comment.ownerReply && !replying && (
         <div className="flex items-start gap-2 rounded-xl bg-muted/60 px-3 py-2.5">
           <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground">
             <CheckIcon className="size-2.5 text-background" />
@@ -297,45 +424,36 @@ function CommentRow({
             <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Your reply</p>
             <p className="text-xs leading-relaxed">{comment.ownerReply}</p>
           </div>
-          <button
-            onClick={() => setReplying(true)}
-            className="shrink-0 text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-          >
-            Edit
-          </button>
         </div>
-      ) : replying || !comment.ownerReply ? (
+      )}
+
+      {replying && (
         <div className="space-y-2">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply()
-              if (e.key === 'Escape') setReplying(false)
+              if (e.key === 'Escape') handleCancelReply()
             }}
             placeholder="Write a reply…"
             rows={2}
-            autoFocus={replying}
+            autoFocus
             className="w-full resize-none rounded-xl border bg-background px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
           />
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">⌘↵ to send</p>
+            <p className="text-[10px] text-muted-foreground">⌘↵ to send · Esc to cancel</p>
             <div className="flex gap-2">
-              {replying && (
-                <Button variant="ghost" size="sm" className="h-7 px-3 text-xs"
-                  onClick={() => { setReplying(false); setReplyText(comment.ownerReply ?? '') }}>
-                  Cancel
-                </Button>
-              )}
-              <Button size="sm" className="h-7 px-3 text-xs"
-                onClick={handleReply}
-                disabled={!replyText.trim() || isReplying}>
-                {isReplying ? 'Sending…' : comment.ownerReply ? 'Update reply' : 'Reply'}
+              <Button variant="ghost" size="sm" className="h-7 px-3 text-xs" onClick={handleCancelReply}>
+                Cancel
+              </Button>
+              <Button size="sm" className="h-7 px-3 text-xs" onClick={handleReply} disabled={!replyText.trim() || isReplying}>
+                {isReplying ? 'Sending…' : comment.ownerReply ? 'Update reply' : 'Send reply'}
               </Button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }
