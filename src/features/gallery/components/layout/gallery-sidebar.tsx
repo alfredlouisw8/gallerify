@@ -34,6 +34,8 @@ import { GalleryWithCategory } from '@/types'
 
 type GallerySidebarProps = {
   galleryData: GalleryWithCategory
+  onClose?: () => void
+  hideBanner?: boolean
 }
 
 const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
@@ -67,7 +69,7 @@ function useActiveTab(galleryId: string) {
   return 'category'
 }
 
-export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
+export default function GallerySidebar({ galleryData, onClose, hideBanner }: GallerySidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { prefs, selectedPanel, setSelectedPanel } = useGalleryDesign()
@@ -83,9 +85,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
     setDisplayTab(value)
     if (value === 'category') {
       if (galleryData.GalleryCategory[0]) {
-        router.push(
-          `/gallery/${galleryData.id}/collection/${galleryData.GalleryCategory[0].id}`
-        )
+        router.push(`/gallery/${galleryData.id}/collection/${galleryData.GalleryCategory[0].id}`)
       }
     } else if (value === 'image') {
       router.push(`/gallery/${galleryData.id}/design`)
@@ -119,8 +119,9 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
   }
 
   return (
-    <div className="hidden bg-background md:flex md:flex-col">
+    <div className="flex flex-col bg-background">
       {/* Banner / cover image */}
+      {!hideBanner && (
       <div
         className="group relative cursor-pointer overflow-hidden"
         onClick={() => !isUploadingBanner && fileInputRef.current?.click()}
@@ -157,34 +158,35 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
           onChange={handleBannerFileChange}
         />
       </div>
+      )}
 
       <Tabs
         value={displayTab}
         className="w-full"
         onValueChange={handleTabChange}
       >
-        <TabsList className="grid h-10 w-full grid-cols-4 rounded-none border-b bg-transparent p-0">
+        <TabsList className="grid h-auto w-full grid-cols-4 rounded-none border-b bg-transparent p-0">
           <TabsTrigger
             value="category"
-            className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="rounded-none border-b-2 border-transparent py-4 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             <ListIcon className="size-4" />
           </TabsTrigger>
           <TabsTrigger
             value="image"
-            className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="rounded-none border-b-2 border-transparent py-4 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             <ImageIcon className="size-4" />
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="rounded-none border-b-2 border-transparent py-4 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             <SettingsIcon className="size-4" />
           </TabsTrigger>
           <TabsTrigger
             value="activity"
-            className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            className="rounded-none border-b-2 border-transparent py-4 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             <ActivityIcon className="size-4" />
           </TabsTrigger>
@@ -193,13 +195,13 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
         {/* Category tab */}
         <TabsContent value="category" className="mt-0">
           <div className="flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center justify-between px-4 py-4">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Categories
               </span>
               <GalleryCategoryAddForm galleryId={galleryData.id} />
             </div>
-            <GalleryCategoryList galleryData={galleryData} />
+            <GalleryCategoryList galleryData={galleryData} onClose={onClose} />
           </div>
         </TabsContent>
 
@@ -213,8 +215,8 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
             return (
               <button
                 key={point.id}
-                onClick={() => setSelectedPanel(active ? null : point.id)}
-                className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
+                onClick={() => { setSelectedPanel(active ? null : point.id); onClose?.() }}
+                className={`flex items-center gap-3 border-r-2 px-4 py-4 text-sm transition-colors ${
                   active
                     ? 'border-foreground bg-accent text-accent-foreground'
                     : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -247,8 +249,8 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
             return (
               <button
                 key={item.id}
-                onClick={() => router.push(item.href(galleryData.id))}
-                className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
+                onClick={() => { router.push(item.href(galleryData.id)); onClose?.() }}
+                className={`flex items-center gap-3 border-r-2 px-4 py-4 text-sm transition-colors ${
                   active
                     ? 'border-foreground bg-accent text-accent-foreground'
                     : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -272,8 +274,8 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
             return (
               <button
                 key={item.id}
-                onClick={() => router.push(item.href(galleryData.id))}
-                className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
+                onClick={() => { router.push(item.href(galleryData.id)); onClose?.() }}
+                className={`flex items-center gap-3 border-r-2 px-4 py-4 text-sm transition-colors ${
                   active
                     ? 'border-foreground bg-accent text-accent-foreground'
                     : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'

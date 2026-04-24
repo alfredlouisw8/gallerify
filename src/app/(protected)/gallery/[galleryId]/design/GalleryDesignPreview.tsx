@@ -4,7 +4,9 @@ import {
   CheckIcon,
   LoaderIcon,
   MonitorIcon,
+  PaletteIcon,
   SmartphoneIcon,
+  XIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import type React from 'react'
@@ -30,10 +32,22 @@ const DEVICE_CONFIG: Record<Device, { virtualWidth: number; maxCardWidth: number
   mobile:  { virtualWidth: 390,  maxCardWidth: 380 },
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isMobile
+}
+
 /* ── Secondary options sidebar ── */
 function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: string | null }) {
-  const { prefs, setPrefs, selectedPanel, isDirty, setIsDirty } = useGalleryDesign()
+  const { prefs, setPrefs, selectedPanel, setSelectedPanel, isDirty, setIsDirty } = useGalleryDesign()
   const [isPending, startTransition] = useTransition()
+  const isMobile = useIsMobile()
 
   const update = <K extends keyof GalleryPreferences>(key: K, value: GalleryPreferences[K]) => {
     setPrefs({ ...prefs, [key]: value })
@@ -61,14 +75,27 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
           key={selectedPanel}
           className="shrink-0 overflow-hidden border-r"
           initial={{ width: 0 }}
-          animate={{ width: 300 }}
+          animate={{ width: isMobile ? '100%' : 300 }}
           exit={{ width: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex h-full w-[300px] flex-col gap-4 overflow-y-auto p-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 300 }}>
+            {/* Mobile close bar */}
+            {isMobile && (
+              <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                <p className="text-sm font-semibold">{titles[selectedPanel]}</p>
+                <button
+                  onClick={() => setSelectedPanel(null)}
+                  className="flex size-7 items-center justify-center rounded-full hover:bg-muted"
+                >
+                  <XIcon className="size-4" />
+                </button>
+              </div>
+            )}
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+            {!isMobile && <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {titles[selectedPanel]}
-            </p>
+            </p>}
 
             {/* ── COVER: design layout + focal point ── */}
             {selectedPanel === 'cover' && (<>
@@ -722,6 +749,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
               </Button>
             )}
           </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -899,7 +927,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 /* ── Root ── */
 export default function GalleryDesignPreview({ gallery, username }: Props) {
   const [device, setDevice] = useState<Device>('desktop')
-  const { prefs } = useGalleryDesign()
+  const { prefs, selectedPanel } = useGalleryDesign()
 
   const bannerUrl = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : null
 
@@ -929,12 +957,23 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
   }, [prefs, username, gallery.slug])
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full overflow-hidden">
       <OptionsPanel galleryId={gallery.id} bannerUrl={bannerUrl} />
 
-      {/* Canvas */}
+      {/* Mobile: no panel selected → prompt */}
+      {!selectedPanel && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center md:hidden">
+          <PaletteIcon className="mb-1 size-8 text-muted-foreground/30" />
+          <p className="text-sm font-medium text-muted-foreground">Design your gallery</p>
+          <p className="text-xs text-muted-foreground/60">
+            Tap ☰ and choose Cover, Style, Color, or Layout
+          </p>
+        </div>
+      )}
+
+      {/* Canvas — hidden on mobile, full preview on md+ */}
       <div
-        className="flex flex-1 flex-col overflow-hidden"
+        className="hidden md:flex flex-1 flex-col overflow-hidden"
         style={{ background: '#f0f0f0', padding: '10px 24px' }}
       >
         {/* Device toggle */}
