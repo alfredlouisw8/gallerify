@@ -106,26 +106,47 @@ export function ImageCommentPanel({ galleryId, imageId, isClient, theme }: Props
           </div>
         ) : (
           comments.map((c) => (
-            <div key={c.id} className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                  style={{ backgroundColor: TYPE_BADGE[c.type].bg, color: TYPE_BADGE[c.type].text }}
-                >
-                  {c.type}
-                </span>
-                {c.clientName && (
-                  <span className="text-xs font-medium" style={{ color: theme.textMuted }}>
-                    {c.clientName}
+            <div key={c.id} className="space-y-2">
+              {/* Client comment */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{ backgroundColor: TYPE_BADGE[c.type].bg, color: TYPE_BADGE[c.type].text }}
+                  >
+                    {c.type}
                   </span>
-                )}
-                <span className="ml-auto text-[10px]" style={{ color: theme.textDim }}>
-                  {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
+                  {c.clientName && (
+                    <span className="text-xs font-medium" style={{ color: theme.textMuted }}>
+                      {c.clientName}
+                    </span>
+                  )}
+                  <span className="ml-auto text-[10px]" style={{ color: theme.textDim }}>
+                    {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed" style={{ color: theme.text }}>
+                  {c.comment}
+                </p>
               </div>
-              <p className="text-sm leading-relaxed" style={{ color: theme.text }}>
-                {c.comment}
-              </p>
+
+              {/* Photographer reply */}
+              {c.ownerReply && (
+                <div
+                  className="ml-3 rounded-lg px-3 py-2.5 space-y-0.5"
+                  style={{
+                    backgroundColor: `${theme.text}12`,
+                    borderLeft: `2px solid ${theme.text}30`,
+                  }}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                    Photographer
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: theme.text }}>
+                    {c.ownerReply}
+                  </p>
+                </div>
+              )}
             </div>
           ))
         )}

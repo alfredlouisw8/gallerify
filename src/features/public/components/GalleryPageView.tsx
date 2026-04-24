@@ -1440,7 +1440,7 @@ function SharePopover({
 
       {open && (
         <div
-          className="absolute bottom-full right-0 z-50 mb-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-black/80 py-1 shadow-2xl backdrop-blur-md"
+          className={`absolute right-0 z-50 w-48 overflow-hidden rounded-xl border border-white/10 bg-black/80 py-1 shadow-2xl backdrop-blur-md ${lightbox ? 'top-full mt-2' : 'bottom-full mb-2'}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Copy link */}
@@ -1620,6 +1620,14 @@ function Lightbox({
   onToggleHidden?: (id: string) => void
 }) {
   const [commentOpen, setCommentOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const current = images[index]
   const isFavorited = favoritedIds?.has(current.id) ?? false
@@ -1770,7 +1778,7 @@ function Lightbox({
         {images.length > 1 && (
           <button
             className="absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-white/10"
-            style={{ color: theme.text, right: commentOpen ? `calc(${PANEL_W}px + 1rem)` : '1rem' }}
+            style={{ color: theme.text, right: commentOpen && !isMobile ? `calc(${PANEL_W}px + 1rem)` : '1rem' }}
             onClick={(e) => { e.stopPropagation(); onNext() }}
             aria-label="Next"
           >
@@ -1781,9 +1789,9 @@ function Lightbox({
         )}
       </div>
 
-      {/* ── Comment panel ── */}
+      {/* ── Comment panel — desktop: right side / mobile: bottom drawer ── */}
       <AnimatePresence>
-        {commentOpen && (
+        {commentOpen && !isMobile && (
           <motion.div
             className="h-full shrink-0 overflow-hidden"
             style={{
@@ -1804,6 +1812,39 @@ function Lightbox({
               isClient={!!isClient}
               theme={theme}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile bottom drawer */}
+      <AnimatePresence>
+        {commentOpen && isMobile && (
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 z-20 flex flex-col overflow-hidden rounded-t-2xl"
+            style={{
+              maxHeight: '65dvh',
+              backgroundColor: theme.surface,
+              borderTop: `1px solid ${theme.border}`,
+            }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 32, stiffness: 380 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div className="flex shrink-0 justify-center pb-1 pt-2.5">
+              <div className="h-1 w-10 rounded-full" style={{ backgroundColor: `${theme.text}25` }} />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ImageCommentPanel
+                key={current.id}
+                galleryId={galleryId}
+                imageId={current.id}
+                isClient={!!isClient}
+                theme={theme}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

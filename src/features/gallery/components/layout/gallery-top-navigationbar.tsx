@@ -7,6 +7,7 @@ import React, { useEffect, useState, useTransition } from 'react'
 
 import LogoutButton from '@/components/auth/logout-button'
 import { Button } from '@/components/ui/button'
+import { getStorageUrl } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,13 @@ export default function GalleryTopNavigationBar({
   const [origin, setOrigin] = useState('')
   useEffect(() => { setOrigin(window.location.origin) }, [])
   const galleryPublicUrl = `${origin}/${username}/${encodeURIComponent(galleryData.slug)}`
+
+  const allImages = galleryData.GalleryCategory.flatMap((cat) =>
+    cat.GalleryCategoryImage.map((img) => ({
+      id: img.id,
+      imageUrl: getStorageUrl(img.imageUrl),
+    }))
+  )
   const [isPending, startTransition] = useTransition()
   const [optimisticPublished, setOptimisticPublished] = useState(
     galleryData.isPublished
@@ -131,6 +139,8 @@ export default function GalleryTopNavigationBar({
             galleryTitle={galleryData.title}
             passwordPlain={galleryData.passwordPlain}
             clientPasswordPlain={galleryData.clientPasswordPlain}
+            galleryId={galleryData.id}
+            allImages={allImages}
           />
 
           {/* User menu */}

@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  ActivityIcon,
   FrameIcon,
   GridIcon,
   ImageIcon,
@@ -12,6 +13,7 @@ import {
   ShieldIcon,
   SlidersHorizontalIcon,
   UploadCloudIcon,
+  Users2Icon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -42,9 +44,13 @@ const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = 
 ]
 
 const SETTINGS_ITEMS = [
-  { id: 'general',  label: 'General',  icon: <Settings2Icon className="size-3.5" />,    href: (galleryId: string) => `/gallery/${galleryId}/update` },
-  { id: 'security', label: 'Security', icon: <ShieldIcon className="size-3.5" />,        href: (galleryId: string) => `/gallery/${galleryId}/security` },
-  { id: 'comments', label: 'Feedback', icon: <MessageSquareIcon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/comments` },
+  { id: 'general',  label: 'General',  icon: <Settings2Icon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/update` },
+  { id: 'security', label: 'Security', icon: <ShieldIcon className="size-3.5" />,    href: (galleryId: string) => `/gallery/${galleryId}/security` },
+]
+
+const ACTIVITY_ITEMS = [
+  { id: 'comments', label: 'Feedback',       icon: <MessageSquareIcon className="size-3.5" />, href: (galleryId: string) => `/gallery/${galleryId}/comments` },
+  { id: 'vendors',  label: 'Vendor Shares',  icon: <Users2Icon className="size-3.5" />,        href: (galleryId: string) => `/gallery/${galleryId}/vendors` },
 ]
 
 function useActiveTab(galleryId: string) {
@@ -52,9 +58,12 @@ function useActiveTab(galleryId: string) {
   if (pathname.includes(`/gallery/${galleryId}/design`)) return 'image'
   if (
     pathname.includes(`/gallery/${galleryId}/update`) ||
-    pathname.includes(`/gallery/${galleryId}/security`) ||
-    pathname.includes(`/gallery/${galleryId}/comments`)
+    pathname.includes(`/gallery/${galleryId}/security`)
   ) return 'settings'
+  if (
+    pathname.includes(`/gallery/${galleryId}/comments`) ||
+    pathname.includes(`/gallery/${galleryId}/vendors`)
+  ) return 'activity'
   return 'category'
 }
 
@@ -82,6 +91,8 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
       router.push(`/gallery/${galleryData.id}/design`)
     } else if (value === 'settings') {
       router.push(`/gallery/${galleryData.id}/update`)
+    } else if (value === 'activity') {
+      router.push(`/gallery/${galleryData.id}/comments`)
     }
   }
 
@@ -152,7 +163,7 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
         className="w-full"
         onValueChange={handleTabChange}
       >
-        <TabsList className="grid h-10 w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
+        <TabsList className="grid h-10 w-full grid-cols-4 rounded-none border-b bg-transparent p-0">
           <TabsTrigger
             value="category"
             className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
@@ -170,6 +181,12 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
             className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
             <SettingsIcon className="size-4" />
+          </TabsTrigger>
+          <TabsTrigger
+            value="activity"
+            className="rounded-none border-b-2 border-transparent py-2.5 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <ActivityIcon className="size-4" />
           </TabsTrigger>
         </TabsList>
 
@@ -226,6 +243,31 @@ export default function GallerySidebar({ galleryData }: GallerySidebarProps) {
         {/* Settings tab */}
         <TabsContent value="settings" className="mt-0 flex flex-col">
           {SETTINGS_ITEMS.map((item) => {
+            const active = pathname.includes(item.href(galleryData.id))
+            return (
+              <button
+                key={item.id}
+                onClick={() => router.push(item.href(galleryData.id))}
+                className={`flex items-center gap-3 border-r-2 px-4 py-3 text-sm transition-colors ${
+                  active
+                    ? 'border-foreground bg-accent text-accent-foreground'
+                    : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                }`}
+              >
+                <span
+                  className="size-1.5 shrink-0 rounded-full"
+                  style={{ background: active ? 'currentColor' : 'hsl(var(--border))' }}
+                />
+                {item.icon}
+                <span className="font-medium">{item.label}</span>
+              </button>
+            )
+          })}
+        </TabsContent>
+
+        {/* Activity tab */}
+        <TabsContent value="activity" className="mt-0 flex flex-col">
+          {ACTIVITY_ITEMS.map((item) => {
             const active = pathname.includes(item.href(galleryData.id))
             return (
               <button

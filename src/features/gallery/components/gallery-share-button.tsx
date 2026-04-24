@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckIcon, ClipboardIcon, DownloadIcon, KeyIcon, LinkIcon, LockIcon, QrCodeIcon, Share2Icon, UserIcon, XIcon } from 'lucide-react'
+import { CheckIcon, ClipboardIcon, DownloadIcon, KeyIcon, LinkIcon, LockIcon, QrCodeIcon, Share2Icon, UserIcon, UsersIcon, XIcon } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useCallback, useRef, useState } from 'react'
 
@@ -16,12 +16,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { VendorShareModal, type VendorShareImage } from './VendorShareModal'
 
 type Props = {
   galleryUrl: string
   galleryTitle: string
   passwordPlain: string | null
   clientPasswordPlain: string | null
+  galleryId: string
+  allImages: VendorShareImage[]
 }
 
 function CopyField({ label, icon, value }: { label: string; icon: React.ReactNode; value: string }) {
@@ -55,14 +58,20 @@ function CopyField({ label, icon, value }: { label: string; icon: React.ReactNod
   )
 }
 
-export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordPlain, clientPasswordPlain }: Props) {
+export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordPlain, clientPasswordPlain, galleryId, allImages }: Props) {
   const [qrOpen, setQrOpen] = useState(false)
+  const [vendorOpen, setVendorOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const qrRef = useRef<HTMLCanvasElement>(null)
 
   const handleOpenQr = () => {
     setDropdownOpen(false)
     setQrOpen(true)
+  }
+
+  const handleOpenVendor = () => {
+    setDropdownOpen(false)
+    setVendorOpen(true)
   }
 
   const handleDownloadQr = useCallback(() => {
@@ -134,8 +143,26 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
             <QrCodeIcon className="size-4" />
             Get QR code
           </button>
+
+          {/* Vendor share */}
+          <button
+            type="button"
+            onClick={handleOpenVendor}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+          >
+            <UsersIcon className="size-4" />
+            Share with Vendor
+          </button>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Vendor share modal */}
+      <VendorShareModal
+        open={vendorOpen}
+        onClose={() => setVendorOpen(false)}
+        galleryId={galleryId}
+        allImages={allImages}
+      />
 
       {/* QR code dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
