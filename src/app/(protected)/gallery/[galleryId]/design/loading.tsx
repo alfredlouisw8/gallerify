@@ -48,55 +48,28 @@ export default function GalleryDesignLoading() {
             }}
           >
             <div className="flex gap-1.5">
-              <div
-                className="size-2.5 rounded-full"
-                style={{ background: '#ff5f57' }}
-              />
-              <div
-                className="size-2.5 rounded-full"
-                style={{ background: '#febc2e' }}
-              />
-              <div
-                className="size-2.5 rounded-full"
-                style={{ background: '#28c840' }}
-              />
+              <div className="size-2.5 rounded-full" style={{ background: '#ff5f57' }} />
+              <div className="size-2.5 rounded-full" style={{ background: '#febc2e' }} />
+              <div className="size-2.5 rounded-full" style={{ background: '#28c840' }} />
             </div>
-            <div
-              className="h-5 flex-1 animate-pulse rounded"
-              style={{ background: '#e5e5e5' }}
-            />
+            <div className="h-5 flex-1 animate-pulse rounded" style={{ background: '#e5e5e5' }} />
           </div>
 
           {/* Simulated gallery page skeleton */}
-          <div
-            className="relative flex-1 overflow-hidden"
-            style={{ background: '#111' }}
-          >
+          <div className="relative flex-1 overflow-hidden" style={{ background: '#111' }}>
             {/* Hero shimmer */}
             <div className="absolute inset-0 animate-pulse">
               <div
                 className="h-[55%] w-full"
-                style={{
-                  background:
-                    'linear-gradient(180deg, #1a1a1a 0%, #222 60%, #111 100%)',
-                }}
+                style={{ background: 'linear-gradient(180deg, #1a1a1a 0%, #222 60%, #111 100%)' }}
               />
             </div>
 
             {/* Hero text placeholders */}
             <div className="absolute left-1/2 top-[18%] flex -translate-x-1/2 flex-col items-center gap-3">
-              <div
-                className="h-3 w-48 animate-pulse rounded-full"
-                style={{ background: 'rgba(255,255,255,0.12)' }}
-              />
-              <div
-                className="h-6 w-72 animate-pulse rounded-full"
-                style={{ background: 'rgba(255,255,255,0.18)' }}
-              />
-              <div
-                className="h-2.5 w-32 animate-pulse rounded-full"
-                style={{ background: 'rgba(255,255,255,0.08)' }}
-              />
+              <div className="h-3 w-48 animate-pulse rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }} />
+              <div className="h-6 w-72 animate-pulse rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
+              <div className="h-2.5 w-32 animate-pulse rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
 
             {/* Photo grid placeholders */}

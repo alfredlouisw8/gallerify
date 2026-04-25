@@ -28,7 +28,7 @@ const navItems = [
   { title: 'Billing', url: '/billing', icon: CreditCard },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
 
   return (
@@ -37,7 +37,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
+              <Link href="/dashboard" onClick={onNavigate}>
                 <Image
                   src="/gallery/Logo_white.svg"
                   alt="Gallerify"
@@ -66,7 +66,7 @@ export function AppSidebar() {
                   isActive={isActive}
                   className="py-6"
                 >
-                  <Link href={item.url}>
+                  <Link href={item.url} onClick={onNavigate}>
                     <item.icon className="size-4" />
                     <span>{item.title}</span>
                   </Link>

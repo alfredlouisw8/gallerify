@@ -34,6 +34,7 @@ interface GalleryPageViewProps {
 const ALL_CATEGORY = '__all__'
 
 const GRAIN_SVG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E\")"
+const BATCH_SIZE = 30
 
 export default function GalleryPageView({
   gallery,
@@ -78,6 +79,8 @@ export default function GalleryPageView({
     : (isLarge ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4')
 
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORY)
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const [lightbox, setLightbox] = useState<{
     open: boolean
     images: GalleryCategoryImage[]
@@ -184,6 +187,8 @@ export default function GalleryPageView({
           ?.GalleryCategoryImage ?? [])
 
   const visibleImages = rawVisibleImages
+  const renderedImages = visibleImages.slice(0, visibleCount)
+  const hasMore = visibleCount < visibleImages.length
 
   const openLightbox = useCallback(
     (images: GalleryCategoryImage[], index: number) => {
@@ -231,6 +236,23 @@ export default function GalleryPageView({
       active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     }
   }, [activeCategory])
+
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE)
+  }, [activeCategory])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasMore) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisibleCount((prev) => prev + BATCH_SIZE)
+      },
+      { rootMargin: '400px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore])
 
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -715,7 +737,7 @@ export default function GalleryPageView({
                 className={`grid ${gridColClass}`}
                 style={{ gap: spacing.gap }}
               >
-                {visibleImages.map((img, i) => (
+                {renderedImages.map((img, i) => (
                   <GridItem
                     key={img.id} image={img} index={i}
                     onClick={() => openLightbox(visibleImages, i)}
@@ -734,7 +756,7 @@ export default function GalleryPageView({
               </div>
             ) : prefs.photoLayout === 'editorial' ? (
               <div className="flex flex-col" style={{ gap: spacing.gap }}>
-                {visibleImages[0] && (
+                {renderedImages[0] && (
                   <motion.div
                     className="cursor-pointer overflow-hidden"
                     style={{ borderRadius: '2px', aspectRatio: '16/7' }}
@@ -745,7 +767,7 @@ export default function GalleryPageView({
                     whileHover={{ scale: 1.01 }}
                   >
                     <img
-                      src={getStorageUrl(visibleImages[0].imageUrl)}
+                      src={getStorageUrl(renderedImages[0].imageUrl)}
                       alt=""
                       className="size-full object-cover"
                       draggable={false}
@@ -753,12 +775,12 @@ export default function GalleryPageView({
                     />
                   </motion.div>
                 )}
-                {visibleImages.length > 1 && (
+                {renderedImages.length > 1 && (
                   <div
                     className={colClass}
                     style={{ columnFill: 'balance', columnGap: spacing.gap }}
                   >
-                    {visibleImages.slice(1).map((img, i) => (
+                    {renderedImages.slice(1).map((img, i) => (
                       <MasonryItem
                         key={img.id}
                         image={img}
@@ -780,7 +802,7 @@ export default function GalleryPageView({
               </div>
             ) : prefs.photoLayout === 'blog' ? (
               <BlogLayout
-                images={visibleImages}
+                images={renderedImages}
                 gap={spacing.gap}
                 onClick={(i) => openLightbox(visibleImages, i)}
                 isClient={isClient}
@@ -800,7 +822,7 @@ export default function GalleryPageView({
                 className={colClass}
                 style={{ columnFill: 'balance', columnGap: spacing.gap }}
               >
-                {visibleImages.map((img, i) => (
+                {renderedImages.map((img, i) => (
                   <MasonryItem
                     key={img.id}
                     image={img}
@@ -823,6 +845,9 @@ export default function GalleryPageView({
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Infinite scroll sentinel */}
+        {hasMore && <div ref={sentinelRef} aria-hidden className="h-1" />}
       </section>
 
       {/* ── GRAIN TEXTURE OVERLAY ── */}
