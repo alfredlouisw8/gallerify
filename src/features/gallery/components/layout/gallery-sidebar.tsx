@@ -2,6 +2,8 @@
 
 import {
   ActivityIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   FrameIcon,
   GridIcon,
   ImageIcon,
@@ -18,6 +20,7 @@ import {
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/use-toast'
@@ -36,6 +39,9 @@ type GallerySidebarProps = {
   galleryData: GalleryWithCategory
   onClose?: () => void
   hideBanner?: boolean
+  collapsed?: boolean
+  onToggleCollapse?: () => void
+  onNavigate?: (href: string) => void
 }
 
 const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
@@ -69,9 +75,18 @@ function useActiveTab(galleryId: string) {
   return 'category'
 }
 
-export default function GallerySidebar({ galleryData, onClose, hideBanner }: GallerySidebarProps) {
+export default function GallerySidebar({ galleryData, onClose, hideBanner, collapsed, onToggleCollapse, onNavigate }: GallerySidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
+
+  // Wrapper: signals the destination to the layout shell before every navigation.
+  // Design page has its own loading.tsx — don't intercept so it streams naturally.
+  function navigate(href: string) {
+    if (!href.includes('/design')) {
+      onNavigate?.(href)
+    }
+    router.push(href)
+  }
   const { prefs, selectedPanel, setSelectedPanel } = useGalleryDesign()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
@@ -81,18 +96,36 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner }: Gal
   // Sync back once navigation completes
   React.useEffect(() => { setDisplayTab(activeTab) }, [activeTab])
 
+  // ── Flyout popup state (collapsed mode) ──────────────────────────────────
+  const [flyoutTab, setFlyoutTab] = useState<string | null>(null)
+  const [flyoutY, setFlyoutY] = useState(0)
+  const flyoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function showFlyout(e: React.MouseEvent<HTMLButtonElement>, tab: string) {
+    if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setFlyoutY(rect.top)
+    setFlyoutTab(tab)
+  }
+  function scheduleFlyoutHide() {
+    flyoutTimerRef.current = setTimeout(() => setFlyoutTab(null), 150)
+  }
+  function cancelFlyoutHide() {
+    if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current)
+  }
+
   const handleTabChange = (value: string) => {
     setDisplayTab(value)
     if (value === 'category') {
       if (galleryData.GalleryCategory[0]) {
-        router.push(`/gallery/${galleryData.id}/collection/${galleryData.GalleryCategory[0].id}`)
+        navigate(`/gallery/${galleryData.id}/collection/${galleryData.GalleryCategory[0].id}`)
       }
     } else if (value === 'image') {
-      router.push(`/gallery/${galleryData.id}/design`)
+      navigate(`/gallery/${galleryData.id}/design`)
     } else if (value === 'settings') {
-      router.push(`/gallery/${galleryData.id}/update`)
+      navigate(`/gallery/${galleryData.id}/update`)
     } else if (value === 'activity') {
-      router.push(`/gallery/${galleryData.id}/comments`)
+      navigate(`/gallery/${galleryData.id}/comments`)
     }
   }
 
@@ -118,8 +151,130 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner }: Gal
     }
   }
 
+  // ── Icon-only collapsed view ──────────────────────────────────────────────
+  if (collapsed) {
+    const ICON_TABS = [
+      { tab: 'category', icon: <ListIcon className="size-4" />,     label: 'Categories' },
+      { tab: 'image',    icon: <ImageIcon className="size-4" />,    label: 'Design'     },
+      { tab: 'settings', icon: <SettingsIcon className="size-4" />, label: 'Settings'   },
+      { tab: 'activity', icon: <ActivityIcon className="size-4" />, label: 'Activity'   },
+    ] as const
+
+    const flyoutContent = (() => {
+      if (!flyoutTab) return null
+
+      const item = (label: string, icon: React.ReactNode, href: string, active: boolean) => (
+        <button
+          key={label}
+          onClick={() => { navigate(href); setFlyoutTab(null) }}
+          className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors ${active ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted/60'}`}
+        >
+          <span className="text-muted-foreground">{icon}</span>
+          {label}
+        </button>
+      )
+
+      if (flyoutTab === 'category') return (
+        <>
+          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Categories</p>
+          {galleryData.GalleryCategory.length === 0 && (
+            <p className="px-2.5 py-2 text-xs text-muted-foreground">No categories yet</p>
+          )}
+          {galleryData.GalleryCategory.map((cat) => {
+            const href = `/gallery/${galleryData.id}/collection/${cat.id}`
+            return item(cat.name, <ListIcon className="size-3.5" />, href, pathname === href)
+          })}
+        </>
+      )
+
+      if (flyoutTab === 'image') return (
+        <>
+          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Design</p>
+          {NAV_POINTS.map((p) => {
+            const href = `/gallery/${galleryData.id}/design`
+            return (
+              <button
+                key={p.id}
+                onClick={() => { setSelectedPanel(p.id); navigate(href); setFlyoutTab(null) }}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors ${selectedPanel === p.id && pathname.includes('/design') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-muted/60'}`}
+              >
+                <span className="text-muted-foreground">{p.icon}</span>
+                {p.label}
+              </button>
+            )
+          })}
+        </>
+      )
+
+      if (flyoutTab === 'settings') return (
+        <>
+          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Settings</p>
+          {SETTINGS_ITEMS.map((s) => item(s.label, s.icon, s.href(galleryData.id), pathname.includes(s.href(galleryData.id))))}
+        </>
+      )
+
+      if (flyoutTab === 'activity') return (
+        <>
+          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Activity</p>
+          {ACTIVITY_ITEMS.map((a) => item(a.label, a.icon, a.href(galleryData.id), pathname.includes(a.href(galleryData.id))))}
+        </>
+      )
+
+      return null
+    })()
+
+    return (
+      <div className="flex h-full flex-col items-center gap-1 py-2">
+        {/* Nav icons */}
+        {ICON_TABS.map(({ tab, icon, label }) => {
+          const active = activeTab === tab
+          return (
+            <button
+              key={tab}
+              onMouseEnter={(e) => showFlyout(e, tab)}
+              onMouseLeave={scheduleFlyoutHide}
+              onClick={onToggleCollapse}
+              title={label}
+              className={`flex size-9 items-center justify-center rounded-lg transition-colors ${
+                active
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+              }`}
+            >
+              {icon}
+            </button>
+          )
+        })}
+
+        {/* Expand button — very bottom */}
+        <div className="mt-auto w-full border-t pt-1.5 flex justify-center">
+          <button
+            onClick={onToggleCollapse}
+            title="Expand sidebar"
+            className="flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          >
+            <ChevronRightIcon className="size-5" />
+          </button>
+        </div>
+
+        {/* Flyout popup — fixed so it escapes overflow:hidden */}
+        {flyoutTab && flyoutContent && typeof document !== 'undefined' && ReactDOM.createPortal(
+          <div
+            style={{ position: 'fixed', top: flyoutY, left: 58, zIndex: 200 }}
+            className="min-w-[180px] overflow-hidden rounded-xl border bg-background p-1 shadow-xl"
+            onMouseEnter={cancelFlyoutHide}
+            onMouseLeave={() => setFlyoutTab(null)}
+          >
+            {flyoutContent}
+          </div>,
+          document.body
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex h-full flex-col bg-background">
       {/* Banner / cover image */}
       {!hideBanner && (
       <div
@@ -249,7 +404,7 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner }: Gal
             return (
               <button
                 key={item.id}
-                onClick={() => { router.push(item.href(galleryData.id)); onClose?.() }}
+                onClick={() => { navigate(item.href(galleryData.id)); onClose?.() }}
                 className={`flex items-center gap-3 border-r-2 px-4 py-4 text-sm transition-colors ${
                   active
                     ? 'border-foreground bg-accent text-accent-foreground'
@@ -274,7 +429,7 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner }: Gal
             return (
               <button
                 key={item.id}
-                onClick={() => { router.push(item.href(galleryData.id)); onClose?.() }}
+                onClick={() => { navigate(item.href(galleryData.id)); onClose?.() }}
                 className={`flex items-center gap-3 border-r-2 px-4 py-4 text-sm transition-colors ${
                   active
                     ? 'border-foreground bg-accent text-accent-foreground'
@@ -292,6 +447,19 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner }: Gal
           })}
         </TabsContent>
       </Tabs>
+
+      {/* Collapse toggle — very bottom of full sidebar */}
+      {onToggleCollapse && (
+        <div className="mt-auto border-t px-2 py-1.5">
+          <button
+            onClick={onToggleCollapse}
+            title="Collapse sidebar"
+            className="flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          >
+            <ChevronLeftIcon className="size-5" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
