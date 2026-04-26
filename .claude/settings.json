@@ -1,5 +1,10 @@
 {
   "enabledPlugins": {
     "impeccable@impeccable": true
+  },
+  "permissions": {
+    "additionalDirectories": [
+      "C:\\Users\\KUPOPO\\.claude\\projects\\d--Alfred-coding-projects-gallerify"
+    ]
   }
 }

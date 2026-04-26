@@ -1,9 +1,7 @@
-import { createClient } from '@/lib/supabase-browser'
-
 import { createSignedUploadUrls, recordUploadedFiles } from './storage-actions'
 
-const BUCKET = 'images'
 const UPLOAD_CONCURRENCY = 4
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL!
 
 /**
  * Run an array of async tasks with a maximum concurrency.
@@ -29,15 +27,15 @@ async function withConcurrency<T>(
 }
 
 /**
- * Upload files directly from the browser to Supabase Storage.
+ * Upload files directly from the browser to Cloudflare R2.
  *
  * Flow:
- *  1. Server validates plan limits and issues one-time signed upload tokens.
+ *  1. Server validates plan limits and issues presigned R2 PUT URLs.
  *     Only file metadata (name, size, type) is sent to the server — no bytes.
- *  2. Browser uploads each file directly to Supabase using its token.
+ *  2. Browser uploads each file directly to R2 via the presigned URL.
  *     Next.js is never in the data path, so there is no 413 / body-size limit.
  *  3. Uploads run UPLOAD_CONCURRENCY at a time to avoid overwhelming the
- *     browser or hitting Supabase rate limits on large batches.
+ *     browser or hitting R2 rate limits on large batches.
  *  4. Server records the added storage usage.
  *
  * Returns an array of JSON strings: {"path":"...","url":"...","size":...}
@@ -55,28 +53,27 @@ export const onImagesUpload = async (
     folder
   )
 
-  // 2. Upload files directly from the browser, UPLOAD_CONCURRENCY at a time
-  const supabaseClient = createClient()
+  // 2. Upload files directly from the browser to R2, UPLOAD_CONCURRENCY at a time
   let uploaded = 0
 
   const tasks = files.map((file, i) => async () => {
-    const { path, token } = uploads[i]
+    const { path, presignedUrl } = uploads[i]
 
-    const { data, error } = await supabaseClient.storage
-      .from(BUCKET)
-      .uploadToSignedUrl(path, token, file, { contentType: file.type })
+    const res = await fetch(presignedUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type },
+    })
 
-    if (error) throw new Error(`Upload failed for "${file.name}": ${error.message}`)
+    if (!res.ok) throw new Error(`Upload failed for "${file.name}": ${res.statusText}`)
 
-    const {
-      data: { publicUrl },
-    } = supabaseClient.storage.from(BUCKET).getPublicUrl(data.path)
+    const publicUrl = `${R2_PUBLIC_URL}/${path}`
 
     uploaded++
     onProgress?.(uploaded, files.length)
 
     return {
-      jsonUrl: JSON.stringify({ path: data.path, url: publicUrl, size: file.size }),
+      jsonUrl: JSON.stringify({ path, url: publicUrl, size: file.size }),
       size: file.size,
     }
   })

@@ -1,10 +1,14 @@
 'use server'
 
+import { DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
 import { getPlanLimits, isTrialExpired, getEffectivePlan } from '@/lib/plans'
+import { r2, R2_BUCKET } from '@/lib/r2'
 import supabase from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 
-const BUCKET = 'images'
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL!
 
 const VIDEO_MIME_TYPES = [
   'video/mp4',
@@ -83,22 +87,19 @@ export async function uploadToStorage(
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .upload(storagePath, buffer, {
-        contentType: file.type,
-        upsert: false,
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: storagePath,
+        Body: buffer,
+        ContentType: file.type,
       })
+    )
 
-    if (error) throw new Error(`Upload failed: ${error.message}`)
+    const publicUrl = `${R2_PUBLIC_URL}/${storagePath}`
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(BUCKET).getPublicUrl(data.path)
-
-    // Include size so we can decrement accurately on deletion
     return {
-      jsonUrl: JSON.stringify({ path: data.path, url: publicUrl, size: file.size }),
+      jsonUrl: JSON.stringify({ path: storagePath, url: publicUrl, size: file.size }),
       size: file.size,
     }
   })
@@ -116,13 +117,13 @@ export async function uploadToStorage(
 }
 
 /**
- * Validates plan limits server-side and returns one-time signed upload tokens.
- * File bytes never pass through Next.js — the client uploads directly to Supabase.
+ * Validates plan limits server-side and returns presigned R2 PUT URLs.
+ * File bytes never pass through Next.js — the client uploads directly to R2.
  */
 export async function createSignedUploadUrls(
   files: { name: string; size: number; type: string }[],
   folder: string = 'uploads'
-): Promise<{ userId: string; uploads: { path: string; token: string }[] }> {
+): Promise<{ userId: string; uploads: { path: string; presignedUrl: string }[] }> {
   if (!files.length) throw new Error('No files provided')
 
   const authClient = await createClient()
@@ -175,15 +176,13 @@ export async function createSignedUploadUrls(
       const uniqueName = `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`
       const path = `${user.id}/${folder}/${uniqueName}`
 
-      const { data, error } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUploadUrl(path)
+      const presignedUrl = await getSignedUrl(
+        r2,
+        new PutObjectCommand({ Bucket: R2_BUCKET, Key: path, ContentType: file.type }),
+        { expiresIn: 3600 }
+      )
 
-      if (error || !data) {
-        throw new Error(`Failed to create upload URL: ${error?.message}`)
-      }
-
-      return { path, token: data.token }
+      return { path, presignedUrl }
     })
   )
 
@@ -205,13 +204,20 @@ export async function recordUploadedFiles(
 }
 
 /**
- * Delete files from Supabase Storage by their storage paths.
+ * Delete files from R2 by their storage paths.
  * Paths are extracted from the stored JSON strings via getStoragePath().
  */
 export async function deleteFromStorage(paths: string[]): Promise<void> {
   if (!paths.length) return
-  const { error } = await supabase.storage.from(BUCKET).remove(paths)
-  if (error) throw new Error(`Delete failed: ${error.message}`)
+  await r2.send(
+    new DeleteObjectsCommand({
+      Bucket: R2_BUCKET,
+      Delete: {
+        Objects: paths.map((Key) => ({ Key })),
+        Quiet: true,
+      },
+    })
+  )
 }
 
 /**
