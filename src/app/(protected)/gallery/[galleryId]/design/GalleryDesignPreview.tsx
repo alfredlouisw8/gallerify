@@ -6,18 +6,22 @@ import {
   MonitorIcon,
   PaletteIcon,
   SmartphoneIcon,
+  UploadCloudIcon,
   XIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import type React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { getStorageUrl } from '@/lib/utils'
+import { updateGalleryBanner } from '@/features/gallery/actions/updateGalleryBanner'
 import { updateGalleryPreferences } from '@/features/gallery/actions/updateGalleryPreferences'
 import { useGalleryDesign } from '@/features/gallery/context/gallery-design-context'
 import { ACCENTS, FONT_PAIRS } from '@/features/gallery/constants/preferences'
+import { onImagesUpload } from '@/utils/functions'
 import type { GalleryPreferences, GalleryWithCategory } from '@/types'
 
 interface Props {
@@ -48,6 +52,26 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
   const { prefs, setPrefs, selectedPanel, setSelectedPanel, isDirty, setIsDirty } = useGalleryDesign()
   const [isPending, startTransition] = useTransition()
   const isMobile = useIsMobile()
+  const router = useRouter()
+  const bannerFileRef = useRef<HTMLInputElement>(null)
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setIsUploadingBanner(true)
+    try {
+      const [jsonUrl] = await onImagesUpload([file], 'banners')
+      await updateGalleryBanner(galleryId, jsonUrl)
+      router.refresh()
+      toast({ title: 'Cover updated.' })
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : 'Failed to update cover', variant: 'destructive' })
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
 
   const update = <K extends keyof GalleryPreferences>(key: K, value: GalleryPreferences[K]) => {
     setPrefs({ ...prefs, [key]: value })
@@ -75,11 +99,11 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
           key={selectedPanel}
           className="shrink-0 overflow-hidden border-r"
           initial={{ width: 0 }}
-          animate={{ width: isMobile ? '100%' : 300 }}
+          animate={{ width: isMobile ? '100%' : 340 }}
           exit={{ width: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 300 }}>
+          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 340 }}>
             {/* Mobile close bar */}
             {isMobile && (
               <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
@@ -99,6 +123,19 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
 
             {/* ── COVER: design layout + focal point ── */}
             {selectedPanel === 'cover' && (<>
+              <Section label="Banner image">
+                <button
+                  onClick={() => !isUploadingBanner && bannerFileRef.current?.click()}
+                  className="flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-all hover:bg-muted/30"
+                  style={{ borderColor: 'hsl(var(--border))' }}
+                >
+                  <UploadCloudIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <span>{isUploadingBanner ? 'Uploading…' : 'Change Banner'}</span>
+                  {isUploadingBanner && <LoaderIcon className="ml-auto size-3.5 animate-spin text-muted-foreground" />}
+                </button>
+                <input ref={bannerFileRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+              </Section>
+
               <div className="grid grid-cols-2 gap-2">
                 {(
                   [
@@ -256,6 +293,49 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                         </div>
                       ),
                     },
+                    {
+                      value: 'video-classic' as const,
+                      label: 'Video Classic',
+                      desc: 'YouTube, title bottom-left',
+                      preview: (
+                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
+                          <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,#1a1510 0%,#0a0908 100%)' }} />
+                          {/* play icon */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '3.5px 0 3.5px 6px', borderColor: 'transparent transparent transparent rgba(255,255,255,0.65)', marginLeft: '1.5px' }} />
+                            </div>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0" style={{ height: '55%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
+                          <div className="absolute" style={{ bottom: '14%', left: '11%', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ width: '6px', height: '1px', background: 'oklch(0.78 0.09 80 / 0.9)' }} />
+                            <div style={{ width: '22px', height: '2.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.85)' }} />
+                            <div style={{ width: '14px', height: '1.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.35)' }} />
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      value: 'video-centered' as const,
+                      label: 'Video Centered',
+                      desc: 'YouTube, title centered',
+                      preview: (
+                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
+                          <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,#1a1510 0%,#0a0908 100%)' }} />
+                          {/* play icon top-center */}
+                          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '18%' }}>
+                            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '3px 0 3px 5px', borderColor: 'transparent transparent transparent rgba(255,255,255,0.6)', marginLeft: '1.5px' }} />
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ gap: '3px', paddingTop: '22%' }}>
+                            <div style={{ width: '8px', height: '1px', background: 'oklch(0.78 0.09 80 / 0.85)' }} />
+                            <div style={{ width: '22px', height: '1.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.85)' }} />
+                            <div style={{ width: '8px', height: '1px', background: 'oklch(0.78 0.09 80 / 0.85)' }} />
+                          </div>
+                        </div>
+                      ),
+                    },
                   ]
                 ).map((opt) => {
                   const active = prefs.coverDesign === opt.value
@@ -288,6 +368,22 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                   )
                 })}
               </div>
+
+              {(prefs.coverDesign === 'video-classic' || prefs.coverDesign === 'video-centered') && (
+                <Section label="YouTube URL">
+                  <input
+                    type="url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={prefs.bannerVideoUrl ?? ''}
+                    onChange={(e) => update('bannerVideoUrl', e.target.value)}
+                    className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[oklch(0.78_0.09_80)]"
+                    style={{ borderColor: 'hsl(var(--border))' }}
+                  />
+                  <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    Paste a YouTube link — video plays muted and looped
+                  </p>
+                </Section>
+              )}
 
               {bannerUrl && (
                 <Section label="Focal point">
@@ -962,6 +1058,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
       ...(prefs.colorTheme === 'custom' && prefs.customColorTheme
         ? { customColorTheme: prefs.customColorTheme }
         : {}),
+      ...(prefs.bannerVideoUrl ? { bannerVideoUrl: prefs.bannerVideoUrl } : {}),
     })
     return `/${username}/${gallery.slug}?${params.toString()}`
   }, [prefs, username, gallery.slug])

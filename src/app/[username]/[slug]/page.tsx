@@ -29,7 +29,7 @@ function prefsFromParams(
 ): GalleryPreferences {
   const s = (k: string) => (typeof p[k] === 'string' ? (p[k] as string) : undefined)
   return {
-    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic'].includes(s('coverDesign') ?? '')
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered'].includes(s('coverDesign') ?? '')
       ? s('coverDesign')! : stored.coverDesign) as GalleryPreferences['coverDesign'],
     colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(s('colorTheme') ?? '')
       ? s('colorTheme')! : stored.colorTheme) as GalleryPreferences['colorTheme'],
@@ -59,6 +59,7 @@ function prefsFromParams(
       x: s('focalX') !== undefined ? Math.min(100, Math.max(0, Number(s('focalX')))) : stored.bannerFocalPoint.x,
       y: s('focalY') !== undefined ? Math.min(100, Math.max(0, Number(s('focalY')))) : stored.bannerFocalPoint.y,
     },
+    bannerVideoUrl: s('bannerVideoUrl') ?? stored.bannerVideoUrl,
   }
 }
 

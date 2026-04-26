@@ -29,10 +29,8 @@ import {
   useGalleryDesign,
   type DesignPanel,
 } from '@/features/gallery/context/gallery-design-context'
-import { updateGalleryBanner } from '@/features/gallery/actions/updateGalleryBanner'
 import GalleryCategoryAddForm from '@/features/galleryCategory/components/gallery-category-add-form'
 import GalleryCategoryList from '@/features/galleryCategory/components/gallery-category-list'
-import { onImagesUpload } from '@/utils/functions'
 import { GalleryWithCategory } from '@/types'
 
 type GallerySidebarProps = {
@@ -88,8 +86,6 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
     router.push(href)
   }
   const { prefs, selectedPanel, setSelectedPanel } = useGalleryDesign()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const activeTab = useActiveTab(galleryData.id)
   const [displayTab, setDisplayTab] = useState(activeTab)
 
@@ -126,28 +122,6 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
       navigate(`/gallery/${galleryData.id}/update`)
     } else if (value === 'activity') {
       navigate(`/gallery/${galleryData.id}/comments`)
-    }
-  }
-
-  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    // Reset input so the same file can be re-selected later
-    e.target.value = ''
-
-    setIsUploadingBanner(true)
-    try {
-      const [jsonUrl] = await onImagesUpload([file], 'banners')
-      await updateGalleryBanner(galleryData.id, jsonUrl)
-      router.refresh()
-      toast({ title: 'Cover updated.' })
-    } catch (err) {
-      toast({
-        title: err instanceof Error ? err.message : 'Failed to update cover',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsUploadingBanner(false)
     }
   }
 
@@ -279,7 +253,7 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
       {!hideBanner && (
       <div
         className="group relative cursor-pointer overflow-hidden"
-        onClick={() => !isUploadingBanner && fileInputRef.current?.click()}
+        onClick={() => { setSelectedPanel('cover'); navigate(`/gallery/${galleryData.id}/design`) }}
       >
         {galleryData.bannerImage.length > 0 ? (
           <Image
@@ -296,22 +270,10 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
         )}
 
         {/* Hover overlay */}
-        <div className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/50 transition-opacity duration-150 ${
-          isUploadingBanner ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        }`}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/50 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           <UploadCloudIcon className="size-5 text-white" />
-          <span className="text-xs font-medium text-white">
-            {isUploadingBanner ? 'Uploading…' : 'Change Cover'}
-          </span>
+          <span className="text-xs font-medium text-white">Change Cover</span>
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleBannerFileChange}
-        />
       </div>
       )}
 
