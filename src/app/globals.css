@@ -4,6 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  @keyframes nav-progress {
+    0%   { transform: translateX(-100%); }
+    60%  { transform: translateX(20%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
 @layer base {
   :root {
     /* Warm neutral palette */

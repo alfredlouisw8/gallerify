@@ -35,7 +35,7 @@ const DEVICE_CONFIG: Record<Device, { virtualWidth: number; maxCardWidth: number
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
+    const check = () => setIsMobile(window.innerWidth < 1024)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -972,7 +972,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
 
       {/* Mobile floating save — outside motion.div so fixed positioning isn't broken by transforms */}
       {isDirty && isMobile && selectedPanel && (
-        <div className="fixed bottom-6 left-4 right-4 z-50 md:hidden">
+        <div className="fixed bottom-6 left-4 right-4 z-50 lg:hidden">
           <Button
             onClick={handleMobileSave}
             disabled={isSaving}
@@ -987,7 +987,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
 
       {/* Mobile: no panel selected → prompt */}
       {!selectedPanel && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center md:hidden">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center lg:hidden">
           <PaletteIcon className="mb-1 size-8 text-muted-foreground/30" />
           <p className="text-sm font-medium text-muted-foreground">Design your gallery</p>
           <p className="text-xs text-muted-foreground/60">
@@ -998,7 +998,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
 
       {/* Canvas — hidden on mobile, full preview on md+ */}
       <div
-        className="hidden md:flex flex-1 flex-col overflow-hidden"
+        className="hidden lg:flex flex-1 flex-col overflow-hidden"
         style={{ background: '#f0f0f0', padding: '10px 24px' }}
       >
         {/* Device toggle */}

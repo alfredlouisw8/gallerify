@@ -157,11 +157,11 @@ export function VendorGalleryClient({ share, token }: Props) {
             <p style={{ color: theme.textMuted }}>No photos in this share.</p>
           </div>
         ) : (
-          <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 xl:columns-5">
+          <div className="columns-2 gap-2 sm:columns-3">
             {share.images.map((img, i) => (
               <div
                 key={img.id}
-                className="group relative mb-3 break-inside-avoid cursor-pointer overflow-hidden rounded-lg"
+                className="group relative mb-2 break-inside-avoid cursor-pointer overflow-hidden"
                 onClick={() => openLightbox(i)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
