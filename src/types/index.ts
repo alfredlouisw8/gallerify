@@ -84,7 +84,7 @@ export const DEFAULT_HOMEPAGE_PREFERENCES: HomepagePreferences = {
 }
 
 export type GalleryPreferences = {
-  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic'
+  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic' | 'video-classic' | 'video-centered'
   colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive' | 'custom'
   customColorTheme?: string
   photoLayout: 'masonry' | 'grid' | 'editorial' | 'blog'
@@ -97,6 +97,7 @@ export type GalleryPreferences = {
   grainIntensity: 'none' | 'subtle' | 'strong'
   categoryBarStyle: 'pills' | 'underline' | 'text'
   bannerFocalPoint: { x: number; y: number }
+  bannerVideoUrl?: string
 }
 
 export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
@@ -387,7 +388,7 @@ function parseHomepagePreferences(raw: Record<string, unknown> | null | undefine
 
 function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
   return {
-    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic'].includes(raw?.coverDesign as string)
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered'].includes(raw?.coverDesign as string)
       ? raw!.coverDesign
       : (['left', 'center', 'right'].includes(raw?.titleAlign as string) ? 'classic' : DEFAULT_GALLERY_PREFERENCES.coverDesign)) as GalleryPreferences['coverDesign'],
     colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(raw?.colorTheme as string)
@@ -430,6 +431,7 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
       typeof (raw.bannerFocalPoint as Record<string, unknown>).y === 'number'
     ) ? raw!.bannerFocalPoint as { x: number; y: number }
       : DEFAULT_GALLERY_PREFERENCES.bannerFocalPoint,
+    bannerVideoUrl: typeof raw?.bannerVideoUrl === 'string' ? raw.bannerVideoUrl : undefined,
   }
 }
 

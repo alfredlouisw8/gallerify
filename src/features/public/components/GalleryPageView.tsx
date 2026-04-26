@@ -67,6 +67,11 @@ export default function GalleryPageView({
   const overlayAlpha = { subtle: 0.05, medium: 0.28, strong: 0.58 }[prefs.overlayIntensity]
   const coverDesign = prefs.coverDesign ?? 'classic'
   const focalPoint = prefs.bannerFocalPoint ?? { x: 50, y: 50 }
+  const videoId = (() => {
+    const url = prefs.bannerVideoUrl ?? ''
+    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+    return m?.[1] ?? null
+  })()
   const objectPosition = `${focalPoint.x}% ${focalPoint.y}%`
   const isLarge = prefs.thumbnailSize === 'large'
   // narrowPhotoGrid = design preview pane (always narrow, no responsive needed)
@@ -658,6 +663,93 @@ export default function GalleryPageView({
               </motion.div>
             </div>
           </section>
+        </>
+      )}
+
+      {/* ── VIDEO CLASSIC ── */}
+      {coverDesign === 'video-classic' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+            <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
+              {videoId ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&controls=0&playlist=${videoId}&disablekb=1&fs=0&modestbranding=1&rel=0&playsinline=1`}
+                  allow="autoplay; encrypted-media"
+                  title="Gallery video banner"
+                  style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 'max(177.78vh, 100%)',
+                    height: 'max(56.25vw, 100%)',
+                    border: 'none',
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+              )}
+            </div>
+            <div className="absolute inset-x-0 bottom-0" style={{ height: '35%', background: `linear-gradient(to top, ${theme.bg}cc 0%, transparent 100%)` }} />
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
+            {BackLink}
+            <motion.div
+              className="absolute bottom-12 left-8 sm:left-12 lg:left-16"
+              style={narrowPhotoGrid ? { left: '2rem' } : {}}
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
+              <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>{formattedDate}</p>
+              <h1 className="max-w-2xl text-5xl leading-[1.05] sm:text-6xl lg:text-7xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', textShadow: '0 2px 40px oklch(0 0 0 / 0.5)', ...(narrowPhotoGrid ? { fontSize: '3rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
+              {galleryUrl && <div className="mt-4"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
+            </motion.div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
+        </>
+      )}
+
+      {/* ── VIDEO CENTERED ── */}
+      {coverDesign === 'video-centered' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+            <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
+              {videoId ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&controls=0&playlist=${videoId}&disablekb=1&fs=0&modestbranding=1&rel=0&playsinline=1`}
+                  allow="autoplay; encrypted-media"
+                  title="Gallery video banner"
+                  style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 'max(177.78vh, 100%)',
+                    height: 'max(56.25vw, 100%)',
+                    border: 'none',
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+              )}
+            </div>
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
+            {BackLink}
+            <motion.div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
+              <div style={{ width: '32px', height: '1px', background: accent, opacity: 0.8 }} />
+              <h1 className="max-w-2xl text-center text-5xl leading-[1.05] sm:text-6xl lg:text-7xl" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', textShadow: '0 2px 40px oklch(0 0 0 / 0.5)', ...(narrowPhotoGrid ? { fontSize: '3rem' } : {}) }}>
+                {gallery.title}
+              </h1>
+              <div style={{ width: '32px', height: '1px', background: accent, opacity: 0.8 }} />
+              <p className="text-sm" style={{ color: theme.textMuted }}>{formattedDate}</p>
+              {galleryUrl && <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />}
+            </motion.div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
         </>
       )}
 
