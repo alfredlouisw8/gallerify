@@ -7,6 +7,8 @@ import {
   HardDriveIcon,
   ImagesIcon,
   ArrowRightIcon,
+  AlertTriangleIcon,
+  SparklesIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -16,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { formatBytes, getPlanLimits, PLANS, isTrialExpired } from '@/lib/plans'
+import { formatBytes, getPlanLimits, Plan, PLANS, isTrialExpired, SubscriptionStatus } from '@/lib/plans'
 
 type DashboardMeta = {
   plan: string
@@ -24,6 +26,7 @@ type DashboardMeta = {
   trial_ends_at: string | null
   storage_used_bytes: number
   current_period_end: string | null
+  subscription_expired_at: string | null
 } | null
 
 export default function DashboardView({ meta }: { meta: DashboardMeta }) {
@@ -50,13 +53,29 @@ export default function DashboardView({ meta }: { meta: DashboardMeta }) {
         )
       : 0
   const trialExpired =
-    meta?.plan === 'free_trial' && isTrialExpired(meta.trial_ends_at)
+    meta?.plan === Plan.FREE_TRIAL && isTrialExpired(meta.trial_ends_at)
 
   const trialDaysLeft = (() => {
     if (!meta?.trial_ends_at) return null
     const diff = new Date(meta.trial_ends_at).getTime() - Date.now()
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
   })()
+
+  const subscriptionExpired = meta?.subscription_status === SubscriptionStatus.EXPIRED
+
+  // Days remaining before permanent data deletion (60 days after expiry)
+  const daysUntilDeletion = (() => {
+    const expiredAt = meta?.subscription_expired_at ?? meta?.trial_ends_at
+    if (!expiredAt) return null
+    const deletionDate = new Date(expiredAt)
+    deletionDate.setDate(deletionDate.getDate() + 60)
+    return Math.max(0, Math.ceil((deletionDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  })()
+
+  const onActiveTrial =
+    meta?.plan === Plan.FREE_TRIAL &&
+    meta.subscription_status === SubscriptionStatus.TRIALING &&
+    !trialExpired
 
   return (
     <div className="space-y-6 p-5 lg:p-7">
@@ -95,6 +114,46 @@ export default function DashboardView({ meta }: { meta: DashboardMeta }) {
           </AlertDescription>
         </Alert>
       )}
+      {subscriptionExpired && (
+        <Alert className="border-orange-500/30 bg-orange-50">
+          <AlertTriangleIcon className="size-4 text-orange-600" />
+          <AlertTitle className="text-orange-900">Your subscription has expired</AlertTitle>
+          <AlertDescription className="text-orange-800">
+            <span>
+              Renew to restore full access.{' '}
+              {daysUntilDeletion !== null && daysUntilDeletion > 0
+                ? `Your galleries and data will be permanently deleted in ${daysUntilDeletion} day${daysUntilDeletion === 1 ? '' : 's'}.`
+                : 'Your data is scheduled for deletion.'}
+            </span>
+            <Button
+              size="sm"
+              asChild
+              className="ml-3 h-7 rounded-full bg-orange-600 px-3 text-xs text-white hover:bg-orange-700"
+            >
+              <Link href="/billing">Renew now</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      {onActiveTrial && (
+        <Alert className="border-blue-500/30 bg-blue-50">
+          <SparklesIcon className="size-4 text-blue-600" />
+          <AlertTitle className="text-blue-900">
+            You&apos;re on a free trial
+            {trialDaysLeft !== null && ` — ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left`}
+          </AlertTitle>
+          <AlertDescription className="text-blue-800">
+            Upgrade to unlock unlimited galleries, more storage, and custom domains.
+            <Button
+              size="sm"
+              asChild
+              className="ml-3 h-7 rounded-full bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
+            >
+              <Link href="/billing">Upgrade now</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Page heading */}
       <div>
@@ -127,19 +186,19 @@ export default function DashboardView({ meta }: { meta: DashboardMeta }) {
               <div className="mt-3 flex items-center gap-2">
                 <Badge
                   variant={
-                    meta.subscription_status === 'active' ? 'default' : 'secondary'
+                    meta.subscription_status === SubscriptionStatus.ACTIVE ? 'default' : 'secondary'
                   }
                   className="rounded-full text-xs"
                 >
                   {meta.subscription_status}
                 </Badge>
-                {meta.plan === 'free_trial' && trialDaysLeft !== null && !trialExpired && (
+                {meta.plan === Plan.FREE_TRIAL && trialDaysLeft !== null && !trialExpired && (
                   <span className="text-xs text-muted-foreground">
                     {trialDaysLeft}d left
                   </span>
                 )}
               </div>
-              {meta.plan !== 'pro_max' && (
+              {meta.plan !== Plan.PRO_MAX && (
                 <Link
                   href="/billing"
                   className="mt-4 flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"

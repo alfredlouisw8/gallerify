@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { createSafeAction } from '@/lib/create-safe-action'
-import { getPlanLimits, isTrialExpired, getEffectivePlan } from '@/lib/plans'
+import { getPlanLimits, isTrialExpired, getEffectivePlan, Plan } from '@/lib/plans'
 import supabase from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 import { mapGallery } from '@/types'
@@ -36,7 +36,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     )
     const limits = getPlanLimits(effectivePlan)
 
-    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+    if (effectivePlan === Plan.FREE_TRIAL && isTrialExpired(meta.trial_ends_at)) {
       return {
         error:
           'Your free trial has expired. Please upgrade to continue creating galleries.',

@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { formatBytes, getPlanLimits, PLANS } from '@/lib/plans'
+import { formatBytes, getPlanLimits, Plan, PLANS, SubscriptionStatus } from '@/lib/plans'
 import { getPricing } from '@/lib/pricing'
 
 type BillingMeta = {
@@ -31,11 +31,11 @@ function statusBadge(status: string) {
     string,
     { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
   > = {
-    trialing: { label: 'Trial', variant: 'secondary' },
-    active: { label: 'Active', variant: 'default' },
-    cancelled: { label: 'Cancelled', variant: 'outline' },
-    expired: { label: 'Expired', variant: 'destructive' },
-    past_due: { label: 'Past Due', variant: 'destructive' },
+    [SubscriptionStatus.TRIALING]: { label: 'Trial', variant: 'secondary' },
+    [SubscriptionStatus.ACTIVE]:   { label: 'Active', variant: 'default' },
+    [SubscriptionStatus.CANCELLED]:{ label: 'Cancelled', variant: 'outline' },
+    [SubscriptionStatus.EXPIRED]:  { label: 'Expired', variant: 'destructive' },
+    [SubscriptionStatus.PAST_DUE]: { label: 'Past Due', variant: 'destructive' },
   }
   const { label, variant } = map[status] ?? { label: status, variant: 'secondary' }
   return (
@@ -65,11 +65,11 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
     Math.round((meta.storage_used_bytes / limits.maxStorageBytes) * 100)
   )
   const daysLeft = trialDaysLeft(meta.trial_ends_at)
-  const isTrialExpired = meta.plan === 'free_trial' && daysLeft === 0
-  const hasPaidPlan = meta.plan !== 'free_trial'
+  const isTrialExpired = meta.plan === Plan.FREE_TRIAL && daysLeft === 0
+  const hasPaidPlan = meta.plan !== Plan.FREE_TRIAL
 
   useEffect(() => {
-    if (autoPlan && (autoPlan === 'pro' || autoPlan === 'pro_max')) {
+    if (autoPlan && (autoPlan === Plan.PRO || autoPlan === Plan.PRO_MAX)) {
       void handleUpgrade(autoPlan)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,8 +134,8 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {hasPaidPlan && meta.current_period_end
-                    ? `${meta.subscription_status === 'cancelled' ? 'Access until' : 'Renews'} ${new Date(meta.current_period_end).toLocaleDateString('en-GB')}`
-                    : meta.plan === 'free_trial' && daysLeft !== null
+                    ? `${meta.subscription_status === SubscriptionStatus.CANCELLED ? 'Access until' : 'Renews'} ${new Date(meta.current_period_end).toLocaleDateString('en-GB')}`
+                    : meta.plan === Plan.FREE_TRIAL && daysLeft !== null
                       ? isTrialExpired
                         ? 'Trial expired'
                         : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in trial`
@@ -185,13 +185,13 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
           </ul>
 
           {/* Warnings */}
-          {meta.subscription_status === 'past_due' && (
+          {meta.subscription_status === SubscriptionStatus.PAST_DUE && (
             <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
               <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
               Payment is past due. Please update your payment method.
             </div>
           )}
-          {meta.subscription_status === 'cancelled' && meta.current_period_end && (
+          {meta.subscription_status === SubscriptionStatus.CANCELLED && meta.current_period_end && (
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-50 p-3 text-sm text-amber-700">
               <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
               Subscription cancelled. Full access until{' '}
@@ -221,14 +221,14 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
       </div>
 
       {/* Upgrade section */}
-      {meta.plan !== 'pro_max' && (
+      {meta.plan !== Plan.PRO_MAX && (
         <div className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground">
             {isTrialExpired ? 'Choose a plan to continue' : 'Upgrade your plan'}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {meta.plan !== 'pro' && (
+            {meta.plan !== Plan.PRO && (
               <div className="relative rounded-2xl border-2 border-foreground bg-card p-5">
                 <span className="absolute -top-3 left-4 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
                   Most popular

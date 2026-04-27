@@ -60,6 +60,7 @@ export type UserMetadata = {
   lsSubscriptionId: string | null
   subscriptionStatus: string
   currentPeriodEnd: string | null
+  subscriptionExpiredAt: string | null
   homepagePreferences: HomepagePreferences
   customDomain: string | null
   businessName: string | null
@@ -199,6 +200,7 @@ export type UserMetadataRow = {
   ls_subscription_id: string | null
   subscription_status: string
   current_period_end: string | null
+  subscription_expired_at: string | null
   homepage_preferences: Record<string, unknown> | null
   custom_domain: string | null
   business_name: string | null
@@ -498,6 +500,7 @@ export function mapUserMetadata(row: UserMetadataRow): UserMetadata {
     lsSubscriptionId: row.ls_subscription_id ?? null,
     subscriptionStatus: row.subscription_status ?? 'trialing',
     currentPeriodEnd: row.current_period_end ?? null,
+    subscriptionExpiredAt: row.subscription_expired_at ?? null,
     homepagePreferences: parseHomepagePreferences(row.homepage_preferences),
     customDomain: row.custom_domain ?? null,
     businessName: row.business_name ?? null,

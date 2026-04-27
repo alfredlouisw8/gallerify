@@ -39,6 +39,7 @@ CREATE INDEX IF NOT EXISTS watermarks_user_id_idx
 ALTER TABLE public.watermarks ENABLE ROW LEVEL SECURITY;
 
 -- Users can only read and write their own watermarks
+DROP POLICY IF EXISTS "Users manage own watermarks" ON public.watermarks;
 CREATE POLICY "Users manage own watermarks"
   ON public.watermarks
   FOR ALL

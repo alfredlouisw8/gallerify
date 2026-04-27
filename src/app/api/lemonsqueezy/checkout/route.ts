@@ -5,6 +5,7 @@ import {
   createCheckout,
   updateSubscription,
 } from '@/lib/lemonsqueezy'
+import { Plan, SubscriptionStatus } from '@/lib/plans'
 import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
 
@@ -33,9 +34,9 @@ const VARIANT_IDS: Record<string, Record<string, Record<string, string>>> = {
 }
 
 const PLAN_LEVELS: Record<string, number> = {
-  free_trial: 0,
-  pro: 1,
-  pro_max: 2,
+  [Plan.FREE_TRIAL]: 0,
+  [Plan.PRO]: 1,
+  [Plan.PRO_MAX]: 2,
 }
 
 export async function POST(request: Request) {
@@ -81,8 +82,8 @@ export async function POST(request: Request) {
 
   const hasActivePaidSub =
     meta &&
-    meta.subscription_status === 'active' &&
-    meta.plan !== 'free_trial' &&
+    meta.subscription_status === SubscriptionStatus.ACTIVE &&
+    meta.plan !== Plan.FREE_TRIAL &&
     !!meta.ls_subscription_id
 
   if (hasActivePaidSub) {

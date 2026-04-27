@@ -2,34 +2,28 @@ import crypto from 'crypto'
 
 import { NextResponse } from 'next/server'
 
+import { Plan, PlanType, SubscriptionStatus, SubscriptionStatusType } from '@/lib/plans'
 import supabase from '@/lib/supabase'
 
 // Map Lemon Squeezy subscription statuses to our internal plan
-function getPlanFromVariantId(variantId: string): 'pro' | 'pro_max' {
+function getPlanFromVariantId(variantId: string): PlanType {
   const proMaxIds = [
     process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID,
     process.env.LEMONSQUEEZY_PRO_MAX_VARIANT_ID_ID,
     process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID,
     process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID_ID,
   ].filter(Boolean)
-  if (proMaxIds.includes(variantId)) return 'pro_max'
-  return 'pro'
+  if (proMaxIds.includes(variantId)) return Plan.PRO_MAX
+  return Plan.PRO
 }
 
-function getSubscriptionStatus(
-  lsStatus: string
-): 'active' | 'cancelled' | 'expired' | 'past_due' | 'trialing' {
+function getSubscriptionStatus(lsStatus: string): SubscriptionStatusType {
   switch (lsStatus) {
-    case 'active':
-      return 'active'
-    case 'cancelled':
-      return 'cancelled'
-    case 'expired':
-      return 'expired'
-    case 'past_due':
-      return 'past_due'
-    default:
-      return 'active'
+    case 'active':    return SubscriptionStatus.ACTIVE
+    case 'cancelled': return SubscriptionStatus.CANCELLED
+    case 'expired':   return SubscriptionStatus.EXPIRED
+    case 'past_due':  return SubscriptionStatus.PAST_DUE
+    default:          return SubscriptionStatus.ACTIVE
   }
 }
 
@@ -74,6 +68,13 @@ export async function POST(request: Request) {
         ? new Date(attributes.renews_at).toISOString()
         : null
 
+      // Treat past_due as immediately expired: start the grace + deletion clock.
+      // Clear it if the subscription recovers back to active.
+      const subscriptionExpiredAt =
+        status === SubscriptionStatus.PAST_DUE ? new Date().toISOString()
+        : status === SubscriptionStatus.ACTIVE  ? null
+        : undefined // leave unchanged for other statuses
+
       await supabase
         .from('user_metadata')
         .update({
@@ -82,8 +83,8 @@ export async function POST(request: Request) {
           ls_customer_id: lsCustomerId,
           ls_subscription_id: lsSubscriptionId,
           current_period_end: currentPeriodEnd,
-          // Clear trial fields once a paid plan is active
           trial_ends_at: null,
+          ...(subscriptionExpiredAt !== undefined && { subscription_expired_at: subscriptionExpiredAt }),
         })
         .eq('user_id', userId)
 
@@ -94,19 +95,20 @@ export async function POST(request: Request) {
       // Keep access until end of current period — just mark as cancelled
       await supabase
         .from('user_metadata')
-        .update({ subscription_status: 'cancelled' })
+        .update({ subscription_status: SubscriptionStatus.CANCELLED })
         .eq('user_id', userId)
 
       break
     }
 
     case 'subscription_expired': {
-      // Downgrade back to free_trial (expired = no paid access)
+      // Keep plan column as-is so the cleanup worker knows which tier expired.
+      // getEffectivePlan() already treats status=expired as free_trial for enforcement.
       await supabase
         .from('user_metadata')
         .update({
-          plan: 'free_trial',
-          subscription_status: 'expired',
+          subscription_status: SubscriptionStatus.EXPIRED,
+          subscription_expired_at: new Date().toISOString(),
           ls_subscription_id: null,
           current_period_end: null,
         })

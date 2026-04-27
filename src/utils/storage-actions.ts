@@ -3,7 +3,7 @@
 import { DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
-import { getPlanLimits, isTrialExpired, getEffectivePlan } from '@/lib/plans'
+import { getPlanLimits, isTrialExpired, getEffectivePlan, Plan } from '@/lib/plans'
 import { r2, R2_BUCKET } from '@/lib/r2'
 import supabase from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
@@ -55,7 +55,7 @@ export async function uploadToStorage(
     )
     const limits = getPlanLimits(effectivePlan)
 
-    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+    if (effectivePlan === Plan.FREE_TRIAL && isTrialExpired(meta.trial_ends_at)) {
       throw new Error(
         'Your free trial has expired. Please upgrade to continue uploading.'
       )
@@ -148,7 +148,7 @@ export async function createSignedUploadUrls(
     )
     const limits = getPlanLimits(effectivePlan)
 
-    if (effectivePlan === 'free_trial' && isTrialExpired(meta.trial_ends_at)) {
+    if (effectivePlan === Plan.FREE_TRIAL && isTrialExpired(meta.trial_ends_at)) {
       throw new Error(
         'Your free trial has expired. Please upgrade to continue uploading.'
       )

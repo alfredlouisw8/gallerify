@@ -1,3 +1,21 @@
+export const Plan = {
+  FREE_TRIAL: 'free_trial',
+  PRO: 'pro',
+  PRO_MAX: 'pro_max',
+} as const
+
+export type PlanType = typeof Plan[keyof typeof Plan]
+
+export const SubscriptionStatus = {
+  TRIALING: 'trialing',
+  ACTIVE: 'active',
+  CANCELLED: 'cancelled',
+  EXPIRED: 'expired',
+  PAST_DUE: 'past_due',
+} as const
+
+export type SubscriptionStatusType = typeof SubscriptionStatus[keyof typeof SubscriptionStatus]
+
 export const PLANS = {
   free_trial: {
     label: 'Free Trial',
@@ -31,8 +49,6 @@ export const PLANS = {
   },
 } as const
 
-export type PlanType = keyof typeof PLANS
-
 export function getPlanLimits(plan: string) {
   return PLANS[plan as PlanType] ?? PLANS.free_trial
 }
@@ -53,17 +69,66 @@ export function getEffectivePlan(
   currentPeriodEnd: string | null
 ): string {
   // If subscription is past_due or expired, treat as free_trial
-  if (subscriptionStatus === 'expired') return 'free_trial'
-  if (subscriptionStatus === 'past_due') return 'free_trial'
+  if (subscriptionStatus === SubscriptionStatus.EXPIRED) return Plan.FREE_TRIAL
+  if (subscriptionStatus === SubscriptionStatus.PAST_DUE) return Plan.FREE_TRIAL
   // If cancelled and period has ended, treat as free_trial (webhook fallback)
   if (
-    subscriptionStatus === 'cancelled' &&
+    subscriptionStatus === SubscriptionStatus.CANCELLED &&
     currentPeriodEnd &&
     new Date() > new Date(currentPeriodEnd)
   ) {
-    return 'free_trial'
+    return Plan.FREE_TRIAL
   }
   return plan
+}
+
+export const GALLERY_GRACE_PERIOD_DAYS = 7
+export const DATA_DELETION_DAYS = 60
+
+/**
+ * Returns whether a client can still view galleries for an expired paid subscription.
+ * Paid plans (pro / pro_max) get a 7-day grace window after subscription_expired_at.
+ */
+export function isPaidGalleryGraceActive(
+  plan: string,
+  subscriptionExpiredAt: string | null
+): boolean {
+  if (plan !== Plan.PRO && plan !== Plan.PRO_MAX) return false
+  if (!subscriptionExpiredAt) return false
+  const cutoff = new Date(subscriptionExpiredAt)
+  cutoff.setDate(cutoff.getDate() + GALLERY_GRACE_PERIOD_DAYS)
+  return new Date() < cutoff
+}
+
+/**
+ * Returns true when a user's data should be permanently deleted.
+ *   - Free trial: 60 days after trial_ends_at
+ *   - Paid expired: 60 days after subscription_expired_at
+ */
+export function isDataDeletionDue(
+  subscriptionStatus: string,
+  trialEndsAt: string | null,
+  subscriptionExpiredAt: string | null
+): boolean {
+  const cutoffDate = (from: string) => {
+    const d = new Date(from)
+    d.setDate(d.getDate() + DATA_DELETION_DAYS)
+    return d
+  }
+
+  if (subscriptionStatus === SubscriptionStatus.TRIALING && trialEndsAt && isTrialExpired(trialEndsAt)) {
+    return new Date() > cutoffDate(trialEndsAt)
+  }
+
+  if (
+    (subscriptionStatus === SubscriptionStatus.EXPIRED ||
+     subscriptionStatus === SubscriptionStatus.PAST_DUE) &&
+    subscriptionExpiredAt
+  ) {
+    return new Date() > cutoffDate(subscriptionExpiredAt)
+  }
+
+  return false
 }
 
 export function formatBytes(bytes: number): string {
