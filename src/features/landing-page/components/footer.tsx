@@ -12,7 +12,7 @@ export default function Footer() {
         <div className="container px-4 md:px-6">
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
             <div>
-              <h2 className="text-3xl font-semibold tracking-tighter text-background md:text-4xl">
+              <h2 className="font-display text-3xl font-semibold tracking-tighter text-background md:text-4xl">
                 Your work is too good for a Drive link.
               </h2>
               <p className="mt-2 text-background/60">
@@ -62,7 +62,7 @@ export default function Footer() {
             </nav>
 
             <p className="text-sm text-muted-foreground">
-              © 2025 Gallerify. All rights reserved.
+              © 2026 Gallerify. All rights reserved.
             </p>
           </div>
         </div>

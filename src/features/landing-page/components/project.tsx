@@ -59,10 +59,10 @@ export default function Project() {
             <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Built with Gallerify
             </p>
-            <h2 className="text-4xl font-semibold tracking-tighter md:text-5xl">
+            <h2 className="font-display text-4xl font-semibold tracking-tighter md:text-5xl">
               Real work.
               <br />
-              <span className="text-muted-foreground">Real photographers.</span>
+              <span className="italic text-muted-foreground">Real photographers.</span>
             </h2>
           </motion.div>
 
@@ -80,7 +80,7 @@ export default function Project() {
         </div>
 
         {/* Horizontal scroll gallery */}
-        <div className="flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-[repeat(5,1fr)] md:overflow-visible md:pb-0">
+        <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-[repeat(5,1fr)] md:overflow-visible md:pb-0">
           {examples.map((ex, i) => (
             <motion.div
               key={ex.seed}
