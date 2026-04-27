@@ -60,11 +60,11 @@ export default function Intro() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl font-semibold leading-[1.06] tracking-tighter md:text-6xl xl:text-7xl"
+              className="font-display text-5xl font-semibold leading-[1.06] tracking-tighter md:text-6xl xl:text-7xl"
             >
               Your work
               <br />
-              <span className="text-muted-foreground">deserves a</span>
+              <span className="italic text-muted-foreground">deserves a</span>
               <br />
               better stage.
             </motion.h1>
@@ -169,9 +169,9 @@ export default function Intro() {
             </div>
 
             {/* Floating notification card */}
-            <div className="absolute -bottom-3 -left-6 rounded-2xl border border-border bg-white p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <div className="absolute -bottom-3 -left-6 rounded-2xl border border-border bg-card p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.6)]">
               <div className="flex items-center gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
                       d="M8 2L9.8 6.2L14 7L11 9.9L11.7 14L8 11.8L4.3 14L5 9.9L2 7L6.2 6.2L8 2Z"

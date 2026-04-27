@@ -33,7 +33,10 @@
       "Bash(grep -E \"^[^/]*\\(/[^/]*\\){0,3}$\")",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
       "Bash(node *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(xargs -I{} basename {} .tsx)"
     ]
   }
 }

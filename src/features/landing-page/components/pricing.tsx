@@ -241,7 +241,7 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Pricing
           </p>
-          <h2 className="text-4xl font-semibold tracking-tighter md:text-5xl">
+          <h2 className="font-display text-4xl font-semibold tracking-tighter md:text-5xl">
             Simple, honest pricing.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
