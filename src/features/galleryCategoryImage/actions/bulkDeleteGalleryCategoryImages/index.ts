@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
 import {
   decrementStorageUsage,
+  decrementVideoUsage,
   deleteFromStorage,
 } from '@/utils/storage-actions'
-import { getStoragePath, getStorageSize } from '@/utils/storage'
+import { getStoragePath, getStorageSize, getStorageDuration } from '@/utils/storage'
 
 export async function bulkDeleteGalleryCategoryImages(
   imageIds: string[]
@@ -54,14 +55,13 @@ export async function bulkDeleteGalleryCategoryImages(
     await deleteFromStorage(storagePaths)
   }
 
-  // Decrement storage usage by total bytes removed
-  const totalBytes = images.reduce(
-    (sum, img) => sum + getStorageSize(img.image_url),
-    0
-  )
-  if (totalBytes > 0) {
-    await decrementStorageUsage(user.id, totalBytes)
-  }
+  // Decrement storage and video usage
+  const totalBytes = images.reduce((sum, img) => sum + getStorageSize(img.image_url), 0)
+  const totalVideoSeconds = images.reduce((sum, img) => sum + getStorageDuration(img.image_url), 0)
+  await Promise.all([
+    decrementStorageUsage(user.id, totalBytes),
+    decrementVideoUsage(user.id, totalVideoSeconds),
+  ])
 
   // Revalidate all affected collection paths
   for (const category of categories ?? []) {

@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
-import { deleteFromStorage, decrementStorageUsage } from '@/utils/storage-actions'
-import { getStoragePath, getStorageSize } from '@/utils/storage'
+import { deleteFromStorage, decrementStorageUsage, decrementVideoUsage } from '@/utils/storage-actions'
+import { getStoragePath, getStorageSize, getStorageDuration } from '@/utils/storage'
 
 export async function deleteGalleryCategoryImage(imageId: string): Promise<void> {
   const authClient = await createClient()
@@ -26,6 +26,7 @@ export async function deleteGalleryCategoryImage(imageId: string): Promise<void>
 
   const storagePath = getStoragePath(image.image_url)
   const bytes = getStorageSize(image.image_url)
+  const videoSeconds = getStorageDuration(image.image_url)
 
   // Delete from DB first
   const { error: deleteError } = await supabase
@@ -40,10 +41,11 @@ export async function deleteGalleryCategoryImage(imageId: string): Promise<void>
     await deleteFromStorage([storagePath])
   }
 
-  // Decrement owner's storage usage
-  if (bytes > 0) {
-    await decrementStorageUsage(user.id, bytes)
-  }
+  // Decrement owner's storage and video usage
+  await Promise.all([
+    decrementStorageUsage(user.id, bytes),
+    decrementVideoUsage(user.id, videoSeconds),
+  ])
 
   // Get gallery_id from category for cache revalidation
   const { data: category } = await supabase

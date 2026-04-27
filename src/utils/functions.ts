@@ -3,6 +3,25 @@ import { createSignedUploadUrls, recordUploadedFiles } from './storage-actions'
 const UPLOAD_CONCURRENCY = 4
 const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL!
 
+const VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/ogg']
+
+function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    const url = URL.createObjectURL(file)
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url)
+      resolve(isFinite(video.duration) ? video.duration : 0)
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(0)
+    }
+    video.src = url
+  })
+}
+
 /**
  * Run an array of async tasks with a maximum concurrency.
  * Avoids firing hundreds of requests simultaneously on large batches.
@@ -47,13 +66,20 @@ export const onImagesUpload = async (
 ): Promise<string[]> => {
   if (!files.length) return []
 
-  // 1. Validate plan limits & get signed tokens (server-side, metadata only)
-  const { userId, uploads } = await createSignedUploadUrls(
-    files.map((f) => ({ name: f.name, size: f.size, type: f.type })),
-    folder
+  // 1. Read video durations client-side so the server can enforce per-plan limits
+  const fileMeta = await Promise.all(
+    files.map(async (f) => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      durationSeconds: VIDEO_MIME_TYPES.includes(f.type) ? await getVideoDuration(f) : undefined,
+    }))
   )
 
-  // 2. Upload files directly from the browser to R2, UPLOAD_CONCURRENCY at a time
+  // 2. Validate plan limits & get signed tokens (server-side, metadata only)
+  const { userId, uploads } = await createSignedUploadUrls(fileMeta, folder)
+
+  // 3. Upload files directly from the browser to R2, UPLOAD_CONCURRENCY at a time
   let uploaded = 0
 
   const tasks = files.map((file, i) => async () => {
@@ -68,21 +94,33 @@ export const onImagesUpload = async (
     if (!res.ok) throw new Error(`Upload failed for "${file.name}": ${res.statusText}`)
 
     const publicUrl = `${R2_PUBLIC_URL}/${path}`
+    const durationSeconds = fileMeta[i].durationSeconds
 
     uploaded++
     onProgress?.(uploaded, files.length)
 
     return {
-      jsonUrl: JSON.stringify({ path, url: publicUrl, size: file.size }),
+      jsonUrl: JSON.stringify({
+        path,
+        url: publicUrl,
+        size: file.size,
+        ...(durationSeconds !== undefined && durationSeconds > 0
+          ? { duration: Math.round(durationSeconds) }
+          : {}),
+      }),
       size: file.size,
+      durationSeconds: durationSeconds ?? 0,
     }
   })
 
   const results = await withConcurrency(tasks, UPLOAD_CONCURRENCY)
 
-  // 3. Record total storage usage server-side
+  // 4. Record total storage and video usage server-side
   const totalBytes = results.reduce((sum, r) => sum + r.size, 0)
-  await recordUploadedFiles(userId, totalBytes)
+  const totalVideoSeconds = Math.round(
+    results.reduce((sum, r) => sum + r.durationSeconds, 0)
+  )
+  await recordUploadedFiles(userId, totalBytes, totalVideoSeconds)
 
   return results.map((r) => r.jsonUrl)
 }

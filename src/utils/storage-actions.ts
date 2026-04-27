@@ -64,7 +64,7 @@ export async function uploadToStorage(
     const hasVideo = files.some((f) => VIDEO_MIME_TYPES.includes(f.type))
     if (hasVideo && !limits.videoAllowed) {
       throw new Error(
-        'Video uploads are not available on your current plan. Upgrade to Pro Max to upload videos.'
+        'Video uploads are not available on your current plan. Upgrade to Pro or Pro Max to upload videos.'
       )
     }
 
@@ -119,9 +119,10 @@ export async function uploadToStorage(
 /**
  * Validates plan limits server-side and returns presigned R2 PUT URLs.
  * File bytes never pass through Next.js — the client uploads directly to R2.
+ * Checks both storage quota and total video time quota.
  */
 export async function createSignedUploadUrls(
-  files: { name: string; size: number; type: string }[],
+  files: { name: string; size: number; type: string; durationSeconds?: number }[],
   folder: string = 'uploads'
 ): Promise<{ userId: string; uploads: { path: string; presignedUrl: string }[] }> {
   if (!files.length) throw new Error('No files provided')
@@ -135,7 +136,7 @@ export async function createSignedUploadUrls(
   const { data: meta } = await supabase
     .from('user_metadata')
     .select(
-      'plan, trial_ends_at, storage_used_bytes, subscription_status, current_period_end'
+      'plan, trial_ends_at, storage_used_bytes, video_used_seconds, subscription_status, current_period_end'
     )
     .eq('user_id', user.id)
     .single()
@@ -157,8 +158,24 @@ export async function createSignedUploadUrls(
     const hasVideo = files.some((f) => VIDEO_MIME_TYPES.includes(f.type))
     if (hasVideo && !limits.videoAllowed) {
       throw new Error(
-        'Video uploads are not available on your current plan. Upgrade to Pro Max to upload videos.'
+        'Video uploads are not available on your current plan. Upgrade to Pro or Pro Max to upload videos.'
       )
+    }
+
+    if (hasVideo && limits.maxVideoDurationSeconds > 0) {
+      const newVideoSeconds = files
+        .filter((f) => VIDEO_MIME_TYPES.includes(f.type))
+        .reduce((sum, f) => sum + (f.durationSeconds ?? 0), 0)
+      const usedVideoSeconds = (meta.video_used_seconds as number) ?? 0
+      if (usedVideoSeconds + newVideoSeconds > limits.maxVideoDurationSeconds) {
+        const remainingMin = Math.max(
+          0,
+          Math.floor((limits.maxVideoDurationSeconds - usedVideoSeconds) / 60)
+        )
+        throw new Error(
+          `Not enough video time remaining. You have ${remainingMin} min left on your ${limits.label} plan. Please upgrade or delete existing videos.`
+        )
+      }
     }
 
     const uploadBytes = files.reduce((sum, f) => sum + f.size, 0)
@@ -190,17 +207,25 @@ export async function createSignedUploadUrls(
 }
 
 /**
- * Increments the user's storage usage after a successful direct client upload.
+ * Increments the user's storage and video usage after a successful direct client upload.
  */
 export async function recordUploadedFiles(
   userId: string,
-  totalBytes: number
+  totalBytes: number,
+  totalVideoSeconds: number = 0
 ): Promise<void> {
-  if (totalBytes <= 0) return
-  await supabase.rpc('increment_storage_usage', {
-    p_user_id: userId,
-    p_bytes: totalBytes,
-  })
+  const promises: Promise<unknown>[] = []
+  if (totalBytes > 0) {
+    promises.push(
+      supabase.rpc('increment_storage_usage', { p_user_id: userId, p_bytes: totalBytes })
+    )
+  }
+  if (totalVideoSeconds > 0) {
+    promises.push(
+      supabase.rpc('increment_video_usage', { p_user_id: userId, p_seconds: totalVideoSeconds })
+    )
+  }
+  await Promise.all(promises)
 }
 
 /**
@@ -232,5 +257,20 @@ export async function decrementStorageUsage(
   await supabase.rpc('decrement_storage_usage', {
     p_user_id: userId,
     p_bytes: bytes,
+  })
+}
+
+/**
+ * Decrement the owner's video usage by the given second count.
+ * Safe to call with 0 seconds (no-op).
+ */
+export async function decrementVideoUsage(
+  userId: string,
+  seconds: number
+): Promise<void> {
+  if (seconds <= 0) return
+  await supabase.rpc('decrement_video_usage', {
+    p_user_id: userId,
+    p_seconds: seconds,
   })
 }

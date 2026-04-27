@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const { data: meta } = user
     ? await supabase
         .from('user_metadata')
-        .select('plan, subscription_status, trial_ends_at, storage_used_bytes, current_period_end, subscription_expired_at, onboarding_completed')
+        .select('plan, subscription_status, trial_ends_at, storage_used_bytes, video_used_seconds, current_period_end, subscription_expired_at, onboarding_completed')
         .eq('user_id', user.id)
         .single()
     : { data: null }

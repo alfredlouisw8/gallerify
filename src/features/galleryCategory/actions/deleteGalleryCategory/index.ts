@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase-server'
 import supabase from '@/lib/supabase'
-import { decrementStorageUsage, deleteFromStorage } from '@/utils/storage-actions'
-import { getStoragePath, sumStorageSizes } from '@/utils/storage'
+import { decrementStorageUsage, decrementVideoUsage, deleteFromStorage } from '@/utils/storage-actions'
+import { getStoragePath, sumStorageSizes, sumStorageDurations } from '@/utils/storage'
 
 export async function deleteGalleryCategory(categoryId: string): Promise<void> {
   const authClient = await createClient()
@@ -32,6 +32,7 @@ export async function deleteGalleryCategory(categoryId: string): Promise<void> {
 
   const imageUrls = (imageRows ?? []).map((r) => r.image_url)
   const totalBytes = sumStorageSizes(imageUrls)
+  const totalVideoSeconds = sumStorageDurations(imageUrls)
   const storagePaths = imageUrls.map(getStoragePath).filter(Boolean)
 
   // Delete image files from storage
@@ -47,10 +48,11 @@ export async function deleteGalleryCategory(categoryId: string): Promise<void> {
 
   if (deleteError) throw new Error(deleteError.message)
 
-  // Decrement storage usage
-  if (totalBytes > 0) {
-    await decrementStorageUsage(user.id, totalBytes)
-  }
+  // Decrement storage and video usage
+  await Promise.all([
+    decrementStorageUsage(user.id, totalBytes),
+    decrementVideoUsage(user.id, totalVideoSeconds),
+  ])
 
   revalidatePath(`/gallery/${category.gallery_id}`)
 }

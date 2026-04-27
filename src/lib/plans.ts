@@ -23,6 +23,7 @@ export const PLANS = {
     maxStorageBytes: 1 * 1024 * 1024 * 1024, // 1 GB
     maxStorageLabel: '1 GB',
     videoAllowed: false,
+    maxVideoDurationSeconds: 0,
     customDomainAllowed: false,
     trialDays: 14,
     price: 0,
@@ -32,7 +33,8 @@ export const PLANS = {
     maxGalleries: Infinity,
     maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     maxStorageLabel: '10 GB',
-    videoAllowed: false,
+    videoAllowed: true,
+    maxVideoDurationSeconds: 3600, // 1 hour
     customDomainAllowed: true,
     trialDays: 0,
     price: 10,
@@ -43,6 +45,7 @@ export const PLANS = {
     maxStorageBytes: 100 * 1024 * 1024 * 1024, // 100 GB
     maxStorageLabel: '100 GB',
     videoAllowed: true,
+    maxVideoDurationSeconds: 7200, // 2 hours
     customDomainAllowed: true,
     trialDays: 0,
     price: 20,
@@ -137,4 +140,12 @@ export function formatBytes(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+export function formatVideoDuration(seconds: number): string {
+  if (seconds === 0) return ''
+  const minutes = seconds / 60
+  const hours = seconds / 3600
+  if (seconds % 3600 === 0) return hours === 1 ? '1 hour' : `${hours} hours`
+  return `${minutes} min`
 }

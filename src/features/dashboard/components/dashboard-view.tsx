@@ -9,6 +9,7 @@ import {
   ArrowRightIcon,
   AlertTriangleIcon,
   SparklesIcon,
+  VideoIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -25,6 +26,7 @@ type DashboardMeta = {
   subscription_status: string
   trial_ends_at: string | null
   storage_used_bytes: number
+  video_used_seconds: number
   current_period_end: string | null
   subscription_expired_at: string | null
 } | null
@@ -236,8 +238,39 @@ export default function DashboardView({ meta }: { meta: DashboardMeta }) {
               </p>
             </div>
 
+            {/* Video usage card — only for plans with video */}
+            {limits.videoAllowed && (() => {
+              const usedMin = Math.round(meta.video_used_seconds / 60)
+              const totalMin = limits.maxVideoDurationSeconds / 60
+              const videoPercent = Math.min(100, Math.round((meta.video_used_seconds / limits.maxVideoDurationSeconds) * 100))
+              return (
+                <div className="rounded-2xl border bg-card p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                        Video
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold tracking-tight">
+                        {usedMin} min
+                      </p>
+                    </div>
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-secondary">
+                      <VideoIcon className="size-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    of {totalMin} min used
+                  </p>
+                  <Progress value={videoPercent} className="mt-3 h-1.5" />
+                  <p className="mt-1.5 text-right text-xs tabular-nums text-muted-foreground">
+                    {videoPercent}%
+                  </p>
+                </div>
+              )
+            })()}
+
             {/* Quick actions card */}
-            <div className="rounded-2xl border bg-card p-5 sm:col-span-2 lg:col-span-1">
+            <div className={`rounded-2xl border bg-card p-5 ${limits.videoAllowed ? '' : 'sm:col-span-2 lg:col-span-1'}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">

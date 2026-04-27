@@ -7,6 +7,7 @@ import {
   AlertTriangleIcon,
   CrownIcon,
   HardDriveIcon,
+  VideoIcon,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -14,7 +15,7 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { formatBytes, getPlanLimits, Plan, PLANS, SubscriptionStatus } from '@/lib/plans'
+import { formatBytes, formatVideoDuration, getPlanLimits, Plan, PLANS, SubscriptionStatus } from '@/lib/plans'
 import { getPricing } from '@/lib/pricing'
 
 type BillingMeta = {
@@ -22,6 +23,7 @@ type BillingMeta = {
   subscription_status: string
   trial_ends_at: string | null
   storage_used_bytes: number
+  video_used_seconds: number
   current_period_end: string | null
   ls_subscription_id: string | null
 }
@@ -160,6 +162,28 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
             <Progress value={storagePercent} className="h-1.5" />
           </div>
 
+          {/* Video usage bar */}
+          {limits.videoAllowed && (() => {
+            const usedMin = Math.round(meta.video_used_seconds / 60)
+            const totalMin = limits.maxVideoDurationSeconds / 60
+            const videoPercent = Math.min(
+              100,
+              Math.round((meta.video_used_seconds / limits.maxVideoDurationSeconds) * 100)
+            )
+            return (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <VideoIcon className="size-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Video</span>
+                  <span className="ml-auto text-xs font-medium tabular-nums">
+                    {usedMin} / {totalMin} min
+                  </span>
+                </div>
+                <Progress value={videoPercent} className="h-1.5" />
+              </div>
+            )
+          })()}
+
           {/* Features list */}
           <ul className="space-y-1.5 text-sm">
             <li className="flex items-center gap-2 text-muted-foreground">
@@ -180,7 +204,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
               ) : (
                 <XIcon className="size-3.5 shrink-0 opacity-40" />
               )}
-              Video uploads
+              {limits.videoAllowed
+                ? `Video uploads (up to ${formatVideoDuration(limits.maxVideoDurationSeconds)})`
+                : 'Video uploads'}
             </li>
           </ul>
 
@@ -248,8 +274,8 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   <li className="flex items-center gap-2 text-muted-foreground">
                     <CheckIcon className="size-3.5 text-green-500" /> Custom domain
                   </li>
-                  <li className="flex items-center gap-2 text-muted-foreground/50">
-                    <XIcon className="size-3.5 opacity-40" /> Video uploads
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckIcon className="size-3.5 text-green-500" /> Video uploads (up to 1 hour)
                   </li>
                 </ul>
                 <Button
@@ -284,7 +310,7 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   <CheckIcon className="size-3.5 text-green-500" /> Custom domain
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
-                  <CheckIcon className="size-3.5 text-green-500" /> Video uploads
+                  <CheckIcon className="size-3.5 text-green-500" /> Video uploads (up to 2 hours)
                 </li>
               </ul>
               <Button

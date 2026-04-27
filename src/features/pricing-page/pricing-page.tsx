@@ -55,7 +55,7 @@ const COMPARISON: TableGroup[] = [
       { label: 'Number of galleries',    free: '3',          pro: 'Unlimited',   pro_max: 'Unlimited' },
       { label: 'Storage',                free: '1 GB',       pro: '10 GB',       pro_max: '100 GB' },
       { label: 'Photo uploads',          free: true,         pro: true,          pro_max: true },
-      { label: 'Video uploads',          free: false,        pro: false,         pro_max: true },
+      { label: 'Video uploads',          free: false,        pro: '1 hour',      pro_max: '2 hours' },
       { label: 'Watermark protection',   free: true,         pro: true,          pro_max: true },
     ],
   },
@@ -171,7 +171,7 @@ function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
         { label: 'All gallery themes & live preview', included: true },
         { label: 'Custom domain', included: true },
         { label: 'Remove Gallerify branding', included: true },
-        { label: 'Video uploads', included: false },
+        { label: 'Video uploads (up to 1 hour)', included: true },
       ],
     },
     {
@@ -186,7 +186,7 @@ function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
       features: [
         { label: 'Unlimited galleries', included: true },
         { label: '100 GB storage', included: true },
-        { label: 'Photo + video uploads', included: true },
+        { label: 'Video uploads (up to 2 hours)', included: true },
         { label: 'Public portfolio page', included: true },
         { label: 'Gallery password protection', included: true },
         { label: 'Client comments & feedback', included: true },

@@ -8,8 +8,9 @@ import { mapGallery } from '@/types'
 import {
   deleteFromStorage,
   decrementStorageUsage,
+  decrementVideoUsage,
 } from '@/utils/storage-actions'
-import { getStoragePath, sumStorageSizes } from '@/utils/storage'
+import { getStoragePath, sumStorageSizes, sumStorageDurations } from '@/utils/storage'
 
 export default async function deleteGallery(galleryId: string) {
   const authClient = await createClient()
@@ -36,9 +37,9 @@ export default async function deleteGallery(galleryId: string) {
 
   const categoryImageUrls = (categoryImages ?? []).map((img) => img.image_url)
 
-  // Calculate total bytes being freed
-  const totalBytes =
-    sumStorageSizes(bannerImages) + sumStorageSizes(categoryImageUrls)
+  // Calculate total bytes and video seconds being freed
+  const totalBytes = sumStorageSizes(bannerImages) + sumStorageSizes(categoryImageUrls)
+  const totalVideoSeconds = sumStorageDurations(categoryImageUrls)
 
   // Delete files from Supabase Storage
   const bannerPaths = bannerImages.map(getStoragePath).filter(Boolean)
@@ -59,9 +60,12 @@ export default async function deleteGallery(galleryId: string) {
 
   if (deleteError) throw new Error(deleteError.message)
 
-  // Decrement storage usage for the gallery owner
-  if (user && totalBytes > 0) {
-    await decrementStorageUsage(user.id, totalBytes)
+  // Decrement storage and video usage for the gallery owner
+  if (user) {
+    await Promise.all([
+      decrementStorageUsage(user.id, totalBytes),
+      decrementVideoUsage(user.id, totalVideoSeconds),
+    ])
   }
 
   revalidatePath('/gallery')

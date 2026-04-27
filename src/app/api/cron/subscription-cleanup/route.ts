@@ -100,6 +100,7 @@ async function deleteUserData(userId: string) {
       about_image: null,
       logo: null,
       storage_used_bytes: 0,
+      video_used_seconds: 0,
     })
     .eq('user_id', userId)
 
