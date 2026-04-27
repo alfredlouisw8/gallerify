@@ -35,8 +35,8 @@ export default function Navbar() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className={`flex items-center justify-between gap-8 rounded-full px-5 py-2.5 transition-all duration-300 ${
           scrolled
-            ? 'border border-black/[0.07] bg-white/92 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] backdrop-blur-md'
-            : 'border border-black/[0.04] bg-white/70 backdrop-blur-sm'
+            ? 'border border-black/[0.07] bg-background/[0.92] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] backdrop-blur-md'
+            : 'border border-black/[0.04] bg-background/70 backdrop-blur-sm'
         }`}
         style={{ width: 'min(700px, calc(100vw - 2rem))' }}
       >
@@ -53,9 +53,9 @@ export default function Navbar() {
 
         <nav className="hidden items-center gap-7 md:flex">
           {[
-            { label: 'Features', href: '#features' },
-            { label: 'Pricing', href: '#pricing' },
-            { label: 'Examples', href: '#examples' },
+            { label: 'Features', href: '/#features' },
+            { label: 'Pricing', href: '/pricing' },
+            { label: 'Examples', href: '/#examples' },
           ].map((item) => (
             <Link
               key={item.label}
@@ -90,6 +90,9 @@ export default function Navbar() {
         <button
           className="rounded-lg p-1.5 transition-colors hover:bg-secondary md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle navigation"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
         >
           {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
         </button>
@@ -100,12 +103,13 @@ export default function Navbar() {
           initial={{ opacity: 0, y: -8, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute left-4 right-4 top-20 flex flex-col gap-1 rounded-2xl border border-black/[0.07] bg-white/95 p-3 shadow-xl backdrop-blur-md"
+          id="mobile-nav"
+          className="absolute left-4 right-4 top-20 flex flex-col gap-1 rounded-2xl border border-black/[0.07] bg-background/95 p-3 shadow-xl backdrop-blur-md"
         >
           {[
-            { label: 'Features', href: '#features' },
-            { label: 'Pricing', href: '#pricing' },
-            { label: 'Examples', href: '#examples' },
+            { label: 'Features', href: '/#features' },
+            { label: 'Pricing', href: '/pricing' },
+            { label: 'Examples', href: '/#examples' },
           ].map((item) => (
             <Link
               key={item.label}

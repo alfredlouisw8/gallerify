@@ -69,7 +69,8 @@ const config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-outfit)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-jost)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-bodoni)', 'Georgia', 'serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       keyframes: {

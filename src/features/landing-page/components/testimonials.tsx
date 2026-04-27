@@ -47,7 +47,7 @@ export default function Testimonials() {
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
             What photographers say
           </p>
-          <h2 className="text-4xl font-semibold tracking-tighter md:text-5xl">
+          <h2 className="font-display text-4xl font-semibold tracking-tighter md:text-5xl">
             Clients notice the difference.
           </h2>
         </motion.div>

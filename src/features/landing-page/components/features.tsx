@@ -51,7 +51,7 @@ export default function Features() {
               <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 What you get
               </p>
-              <h2 className="text-4xl font-semibold leading-[1.1] tracking-tighter md:text-5xl">
+              <h2 className="font-display text-4xl font-semibold leading-[1.1] tracking-tighter md:text-5xl">
                 Every tool a photographer needs.
               </h2>
               <p className="mt-4 text-muted-foreground">Nothing you don&apos;t.</p>

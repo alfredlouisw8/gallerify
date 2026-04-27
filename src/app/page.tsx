@@ -5,6 +5,7 @@ import Footer from '@/features/landing-page/components/footer'
 import Intro from '@/features/landing-page/components/intro'
 import Navbar from '@/features/landing-page/components/navbar'
 import Pricing from '@/features/landing-page/components/pricing'
+import ProductPreview from '@/features/landing-page/components/product-preview'
 import Project from '@/features/landing-page/components/project'
 import Testimonials from '@/features/landing-page/components/testimonials'
 
@@ -62,6 +63,7 @@ export default async function Home() {
         <Navbar />
         <main className="flex-1">
           <Intro />
+          <ProductPreview />
           <Features />
           <Testimonials />
           <Pricing isIndonesia={isIndonesia} />

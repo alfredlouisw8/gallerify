@@ -1,14 +1,25 @@
 import type { Metadata } from 'next'
 
-import { Outfit } from 'next/font/google'
+import { Bodoni_Moda, Jost } from 'next/font/google'
 
 import './globals.css'
 import Providers from '@/components/providers'
 import { Toaster } from '@/components/ui/toaster'
 
-const outfit = Outfit({
+const jost = Jost({
   subsets: ['latin'],
-  variable: '--font-outfit',
+  variable: '--font-jost',
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+})
+
+const bodoniModa = Bodoni_Moda({
+  subsets: ['latin'],
+  variable: '--font-bodoni',
+  weight: ['400', '500', '600', '700', '900'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  adjustFontFallback: false,
 })
 
 export const metadata: Metadata = {
@@ -78,7 +89,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} font-sans antialiased`}>
+      <body className={`${jost.variable} ${bodoniModa.variable} font-sans antialiased`}>
         <Providers>
           <Toaster />
           {children}
