@@ -217,12 +217,12 @@ export async function recordUploadedFiles(
   const promises: Promise<unknown>[] = []
   if (totalBytes > 0) {
     promises.push(
-      supabase.rpc('increment_storage_usage', { p_user_id: userId, p_bytes: totalBytes })
+      supabase.rpc('increment_storage_usage', { p_user_id: userId, p_bytes: totalBytes }).then()
     )
   }
   if (totalVideoSeconds > 0) {
     promises.push(
-      supabase.rpc('increment_video_usage', { p_user_id: userId, p_seconds: totalVideoSeconds })
+      supabase.rpc('increment_video_usage', { p_user_id: userId, p_seconds: totalVideoSeconds }).then()
     )
   }
   await Promise.all(promises)
