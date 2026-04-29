@@ -143,14 +143,19 @@ export function isGalleryAccessible(meta: {
 }): boolean {
   const { plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end } = meta
 
+  // Free trial: only trial_ends_at matters — subscription_status is ignored
+  // because it can be left as "active" by a partial webhook and would bypass the trial check.
+  if (plan === Plan.FREE_TRIAL) {
+    return !isTrialExpired(trial_ends_at)
+  }
+
+  // Paid plans: use subscription_status
   if (subscription_status === SubscriptionStatus.ACTIVE) return true
   if (
     subscription_status === SubscriptionStatus.CANCELLED &&
     current_period_end &&
     new Date() < new Date(current_period_end)
   ) return true
-
-  if (subscription_status === SubscriptionStatus.TRIALING && !isTrialExpired(trial_ends_at)) return true
 
   if (
     subscription_status === SubscriptionStatus.EXPIRED ||

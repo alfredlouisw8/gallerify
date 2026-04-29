@@ -4,7 +4,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { NextResponse } from 'next/server'
 
-import { isDataDeletionDue, SubscriptionStatus } from '@/lib/plans'
+import { isDataDeletionDue, Plan, SubscriptionStatus } from '@/lib/plans'
 import { r2, R2_BUCKET } from '@/lib/r2'
 import supabase from '@/lib/supabase'
 
@@ -23,12 +23,44 @@ export async function GET(request: Request) {
   console.log('[cron] subscription-cleanup started', new Date().toISOString())
 
   const results = {
+    stuckFixed: 0,
     backfilled: 0,
     deleted: 0,
     errors: [] as string[],
   }
 
-  // ── Step 1: backfill subscription_expired_at for any missed webhook ──────────
+  // ── Step 1: fix stuck-active paid subscriptions ───────────────────────────────
+  // If current_period_end is > 1 day past and status is still active,
+  // the renewal/expired webhook was missed. Mark as expired to start the grace clock.
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+  const { data: stuckActive, error: stuckErr } = await supabase
+    .from('user_metadata')
+    .select('user_id')
+    .eq('subscription_status', SubscriptionStatus.ACTIVE)
+    .in('plan', [Plan.PRO, Plan.PRO_MAX])
+    .not('current_period_end', 'is', null)
+    .lt('current_period_end', oneDayAgo)
+
+  if (stuckErr) {
+    results.errors.push(`stuck-active-query: ${stuckErr.message}`)
+  } else if (stuckActive?.length) {
+    const { error: fixErr } = await supabase
+      .from('user_metadata')
+      .update({
+        subscription_status: SubscriptionStatus.EXPIRED,
+        subscription_expired_at: new Date().toISOString(),
+      })
+      .in('user_id', stuckActive.map((u) => u.user_id))
+
+    if (fixErr) {
+      results.errors.push(`stuck-active-update: ${fixErr.message}`)
+    } else {
+      results.stuckFixed = stuckActive.length
+    }
+  }
+
+  // ── Step 2: backfill subscription_expired_at for any missed webhook ──────────
   // Users with status=expired but no timestamp (webhook missed or old records)
   const { data: missing, error: missingErr } = await supabase
     .from('user_metadata')
@@ -52,7 +84,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── Step 2: find candidates for data deletion ────────────────────────────────
+  // ── Step 3: find candidates for data deletion ────────────────────────────────
   // We fetch all expired/trialing users and let isDataDeletionDue() decide
   // whether 60 days have passed, to keep the SQL simple.
   const { data: candidates, error: candidatesErr } = await supabase
@@ -70,7 +102,7 @@ export async function GET(request: Request) {
     isDataDeletionDue(u.subscription_status, u.trial_ends_at, u.subscription_expired_at)
   )
 
-  // ── Step 3: delete each user's data ─────────────────────────────────────────
+  // ── Step 4: delete each user's data ─────────────────────────────────────────
   for (const user of due) {
     try {
       await deleteUserData(user.user_id)

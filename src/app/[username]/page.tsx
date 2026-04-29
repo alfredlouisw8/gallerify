@@ -5,7 +5,6 @@ import { getProfileByUsername } from '@/features/public/actions/getProfileByUser
 import { getPublishedGalleriesByUsername } from '@/features/public/actions/getPublishedGalleriesByUsername'
 import CustomerPageView from '@/features/public/components/CustomerPageView'
 import { isGalleryAccessible } from '@/lib/plans'
-import supabase from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 import type { HomepagePreferences } from '@/types'
 
@@ -48,16 +47,14 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   }
 
   // ── Subscription access gate ─────────────────────────────────────────────────
-  const { data: ownerMeta } = await supabase
-    .from('user_metadata')
-    .select('plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end')
-    .eq('user_id', profile.userId)
-    .maybeSingle()
-
-  if (ownerMeta && !isGalleryAccessible(ownerMeta)) {
-    const authClient = await createClient()
-    const { data: { user } } = await authClient.auth.getUser()
-    if (!user || user.id !== profile.userId) notFound()
+  if (!isGalleryAccessible({
+    plan: profile.plan,
+    subscription_status: profile.subscriptionStatus,
+    subscription_expired_at: profile.subscriptionExpiredAt,
+    trial_ends_at: profile.trialEndsAt,
+    current_period_end: profile.currentPeriodEnd,
+  })) {
+    notFound()
   }
 
   // ── Design preview bypass (owner only) ──────────────────────────────────────

@@ -5,8 +5,9 @@ import Container from '@/components/layout/container'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import GalleryCreateSheet from '@/features/gallery/components/gallery-create-sheet'
 import GalleryList from '@/features/gallery/components/gallery-list'
-import { createClient } from '@/lib/supabase-server'
+import { isGalleryAccessible } from '@/lib/plans'
 import supabaseAdmin from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-server'
 
 export default async function GalleryPage() {
   const supabase = await createClient()
@@ -20,11 +21,12 @@ export default async function GalleryPage() {
 
   const { data: meta } = await supabaseAdmin
     .from('user_metadata')
-    .select('username')
+    .select('username, plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end')
     .eq('user_id', user.id)
     .maybeSingle()
 
   const username = meta?.username ?? ''
+  const canCreate = meta ? isGalleryAccessible(meta) : false
 
   const t = await getTranslations('GalleryPage')
 
@@ -39,7 +41,7 @@ export default async function GalleryPage() {
                 {t('description')}
               </p>
             </div>
-            <GalleryCreateSheet />
+            <GalleryCreateSheet canCreate={canCreate} />
           </div>
           <GalleryList username={username} />
         </div>

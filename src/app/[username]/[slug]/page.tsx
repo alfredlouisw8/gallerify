@@ -120,13 +120,9 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
   const profilePath = isSubdomain ? '/' : `/${username}`
 
   // ── Subscription access gate ─────────────────────────────────────────────────
-  // Block public access when the owner's subscription has expired.
-  // Owners can still view their own galleries regardless of status.
-  if (!ownerIsAccessible) {
-    const authClient = await createClient()
-    const { data: { user } } = await authClient.auth.getUser()
-    if (!user || user.id !== gallery.userId) notFound()
-  }
+  // Public URL 404s when the owner's subscription has expired — no exceptions.
+  // Owners retain access through the protected /gallery dashboard routes.
+  if (!ownerIsAccessible) notFound()
 
   // ── Owner preview bypass ─────────────────────────────────────────────────────
   let isOwnerPreview = false

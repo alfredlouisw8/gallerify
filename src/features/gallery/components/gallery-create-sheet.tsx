@@ -11,11 +11,41 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 import GalleryCreateForm from './gallery-create-form'
 
-export default function GalleryCreateSheet() {
+type Props = {
+  canCreate: boolean
+}
+
+export default function GalleryCreateSheet({ canCreate }: Props) {
   const [open, setOpen] = useState(false)
+
+  if (!canCreate) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button size="sm" className="gap-2 rounded-full" disabled>
+                <PlusIcon className="size-3.5" />
+                New gallery
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            Your subscription has expired. Please upgrade to create galleries.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

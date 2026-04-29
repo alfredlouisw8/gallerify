@@ -14,7 +14,8 @@
     "db:reset": "npx supabase db reset",
     "db:seed": "npx supabase db seed",
     "db:types": "npx supabase gen types typescript --local > src/types/supabase.ts",
-    "db:studio": "npx supabase studio"
+    "db:studio": "npx supabase studio",
+    "cron:run": "node scripts/run-cron.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1037.0",
