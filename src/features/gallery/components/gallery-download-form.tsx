@@ -2,6 +2,7 @@
 
 import { DownloadIcon, KeyIcon, RefreshCwIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -19,6 +20,7 @@ function randomPin() {
 }
 
 export default function GalleryDownloadForm({ galleryId, downloadEnabled, downloadPinRequired }: Props) {
+  const t = useTranslations('GalleryDownload')
   const [enabled, setEnabled] = useState(downloadEnabled)
   const [pinEnabled, setPinEnabled] = useState(downloadPinRequired)
   const [pin, setPin] = useState('')
@@ -42,7 +44,7 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
       )
       if (result.error) throw new Error(result.error)
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to save', variant: 'destructive' })
+      toast({ title: err instanceof Error ? err.message : t('saveFail'), variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
@@ -52,37 +54,36 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
     setEnabled(checked)
     if (!checked) setPinEnabled(false)
     await save(checked, checked ? pinEnabled : false, pin)
-    toast({ title: checked ? 'Photo download enabled.' : 'Photo download disabled.' })
+    toast({ title: checked ? t('downloadEnabled') : t('downloadDisabled') })
   }
 
   const handleTogglePin = async (checked: boolean) => {
     setPinEnabled(checked)
     await save(enabled, checked, pin)
-    toast({ title: checked ? 'Download PIN enabled.' : 'Download PIN disabled.' })
+    toast({ title: checked ? t('pinEnabled') : t('pinDisabled') })
   }
 
   const handleSavePin = async () => {
     if (pin.length !== 4) return
     await save(enabled, pinEnabled, pin)
-    toast({ title: 'PIN saved.' })
+    toast({ title: t('pinSaved') })
   }
 
   const handleResetPin = async () => {
     const newPin = randomPin()
     setPin(newPin)
     await save(enabled, pinEnabled, newPin)
-    toast({ title: `New PIN: ${newPin}` })
+    toast({ title: t('newPin', { pin: newPin }) })
   }
 
   return (
     <div className="space-y-4">
-      {/* Download toggle */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <DownloadIcon className="size-4 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium">Photo download</p>
-            <p className="text-xs text-muted-foreground">Allow visitors to download photos.</p>
+            <p className="text-sm font-medium">{t('title')}</p>
+            <p className="text-xs text-muted-foreground">{t('description')}</p>
           </div>
         </div>
         <button
@@ -101,14 +102,13 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
 
       {enabled && (
         <div className="ml-7 space-y-4">
-          {/* PIN toggle */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <KeyIcon className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Download PIN</p>
+                <p className="text-sm font-medium">{t('pinTitle')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Require downloaders to enter a 4-digit PIN.
+                  {t('pinDescription')}
                 </p>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
           {pinEnabled && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                Share this 4-digit PIN with visitors so they can download photos.
+                {t('pinHint')}
               </p>
               <div className="flex gap-2">
                 <input
@@ -139,7 +139,7 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
                   value={pin}
                   onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   onKeyDown={(e) => { if (e.key === 'Enter') void handleSavePin() }}
-                  placeholder="0000"
+                  placeholder={t('pinPlaceholder')}
                   className="w-24 rounded-lg border border-border bg-background px-3 py-2 text-center text-sm font-mono tracking-widest outline-none focus:ring-1 focus:ring-ring"
                 />
                 <Button
@@ -147,17 +147,17 @@ export default function GalleryDownloadForm({ galleryId, downloadEnabled, downlo
                   onClick={() => void handleSavePin()}
                   disabled={pin.length !== 4 || isSaving}
                 >
-                  Save
+                  {t('save')}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => void handleResetPin()}
                   disabled={isSaving}
-                  title="Generate random PIN"
+                  title={t('resetTitle')}
                 >
                   <RefreshCwIcon className="size-3.5" />
-                  Reset
+                  {t('reset')}
                 </Button>
               </div>
             </div>

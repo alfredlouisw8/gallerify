@@ -3,6 +3,9 @@
  * @type {import('next').NextConfig}
  */
 
+const createNextIntlPlugin = require('next-intl/plugin')
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
+
 const r2PublicHostname = process.env.NEXT_PUBLIC_R2_PUBLIC_URL
   ? new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL).hostname
   : null
@@ -38,4 +41,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)

@@ -14,6 +14,8 @@ import {
   XIcon,
 } from 'lucide-react'
 
+import { useTranslations } from 'next-intl'
+
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/use-toast'
@@ -42,13 +44,14 @@ type Props = {
 
 type Filter = 'all' | 'unanswered' | 'replied'
 
-const TYPE_BADGE: Record<ImageCommentType, { label: string; className: string }> = {
-  comment:  { label: 'Comment',  className: 'bg-blue-500/10 text-blue-500' },
-  feedback: { label: 'Feedback', className: 'bg-amber-500/10 text-amber-600' },
-  request:  { label: 'Request',  className: 'bg-purple-500/10 text-purple-500' },
+const TYPE_BADGE_CLASS: Record<ImageCommentType, string> = {
+  comment:  'bg-blue-500/10 text-blue-500',
+  feedback: 'bg-amber-500/10 text-amber-600',
+  request:  'bg-purple-500/10 text-purple-500',
 }
 
 export default function GalleryCommentsView({ galleryId, initialComments }: Props) {
+  const t = useTranslations('GalleryComments')
   const [comments, setComments] = useState(initialComments)
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -98,9 +101,9 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
         <div className="flex size-12 items-center justify-center rounded-full bg-muted mb-4">
           <MessageSquareIcon className="size-5 text-muted-foreground" />
         </div>
-        <p className="text-sm font-medium">No client feedback yet</p>
+        <p className="text-sm font-medium">{t('noFeedback')}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Client comments and requests will appear here.
+          {t('noFeedbackDesc')}
         </p>
       </div>
     )
@@ -121,7 +124,7 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
                 : 'text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            {f}
+            {f === 'all' ? t('filterAll') : f === 'unanswered' ? t('filterUnanswered') : t('filterReplied')}
             {f === 'unanswered' && unansweredCount > 0 && (
               <span className="ml-1.5 rounded-full bg-destructive px-1.5 py-0.5 text-[9px] text-white">
                 {unansweredCount}
@@ -130,7 +133,7 @@ export default function GalleryCommentsView({ galleryId, initialComments }: Prop
           </button>
         ))}
         <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} {filtered.length === 1 ? 'comment' : 'comments'}
+          {t('commentCount', { count: filtered.length })}
         </span>
       </div>
 
@@ -172,6 +175,7 @@ function ImageGroup({
   onDone: (commentId: string, done: boolean) => void
   onImageReplaced: (newUrl: string) => void
 }) {
+  const t = useTranslations('GalleryComments')
   const [isReplacing, setIsReplacing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [displayUrl, setDisplayUrl] = useState(initialImageUrl)
@@ -197,9 +201,9 @@ function ImageGroup({
         setDisplayUrl(newUrl)
       }
       onImageReplaced(newUrl)
-      toast({ title: 'Image replaced.' })
+      toast({ title: t('imageReplaced') })
     } catch {
-      toast({ title: 'Failed to replace image', variant: 'destructive' })
+      toast({ title: t('imageReplaceFail'), variant: 'destructive' })
     } finally {
       setIsReplacing(false)
     }
@@ -226,7 +230,7 @@ function ImageGroup({
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium">
-                {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+                {t('commentCount', { count: comments.length })}
               </p>
               <span className="text-[10px] text-muted-foreground tabular-nums">
                 {doneCount}/{comments.length} done
@@ -250,7 +254,7 @@ function ImageGroup({
             {isReplacing
               ? <Loader2Icon className="size-3 animate-spin" />
               : <ImageIcon className="size-3" />}
-            {isReplacing ? 'Replacing…' : 'Replace image'}
+            {isReplacing ? t('replacing') : t('replaceImage')}
           </Button>
           <input
             ref={replaceInputRef}
@@ -295,7 +299,7 @@ function ImageGroup({
               <div className="flex flex-1 flex-col overflow-hidden border-l">
                 <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
                   <div>
-                    <p className="text-sm font-semibold">Feedback</p>
+                    <p className="text-sm font-semibold">{t('feedbackLabel')}</p>
                     <p className="text-[10px] text-muted-foreground font-mono">{imageId.slice(0, 8)}…</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -370,7 +374,7 @@ function ImageGroup({
               {/* Header bar */}
               <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <p className="text-sm font-semibold">
-                  {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+                  {t('commentCount', { count: comments.length })}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
@@ -413,11 +417,17 @@ function CommentRow({
   onReplied: (reply: string) => void
   onDone: (done: boolean) => void
 }) {
+  const t = useTranslations('GalleryComments')
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState(comment.ownerReply ?? '')
   const [isReplying, startReplyTransition] = useTransition()
   const [isDoneLoading, startDoneTransition] = useTransition()
-  const badge = TYPE_BADGE[comment.type]
+  const badgeClass = TYPE_BADGE_CLASS[comment.type]
+  const badgeLabel = {
+    comment: t('typeBadge_comment'),
+    feedback: t('typeBadge_feedback'),
+    request: t('typeBadge_request'),
+  }[comment.type]
 
   function handleReply() {
     if (!replyText.trim()) return
@@ -446,8 +456,8 @@ function CommentRow({
     <div className={`px-4 py-4 space-y-3 transition-colors ${comment.isDone ? 'bg-green-500/5' : ''}`}>
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>
-            {badge.label}
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>
+            {badgeLabel}
           </span>
           {comment.clientName && (
             <span className="text-xs font-medium">{comment.clientName}</span>
@@ -455,7 +465,7 @@ function CommentRow({
           {comment.isDone && (
             <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-600">
               <CheckCircle2Icon className="size-3" />
-              Done
+              {t('done')}
             </span>
           )}
           <span className="ml-auto text-[10px] text-muted-foreground">
@@ -473,7 +483,7 @@ function CommentRow({
             onClick={() => setReplying(true)}
           >
             <MessageSquareTextIcon className="size-3" />
-            {comment.ownerReply ? 'Edit reply' : 'Reply'}
+            {comment.ownerReply ? t('editReply') : t('reply')}
           </Button>
         )}
         <Button
@@ -487,7 +497,7 @@ function CommentRow({
             : comment.isDone
               ? <RotateCcwIcon className="size-3" />
               : <CheckCircle2Icon className="size-3" />}
-          {comment.isDone ? 'Undo done' : 'Mark done'}
+          {comment.isDone ? t('undoDone') : t('markDone')}
         </Button>
       </div>
 
@@ -497,7 +507,7 @@ function CommentRow({
             <CheckIcon className="size-2.5 text-background" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Your reply</p>
+            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">{t('yourReply')}</p>
             <p className="text-xs leading-relaxed">{comment.ownerReply}</p>
           </div>
         </div>
@@ -512,19 +522,19 @@ function CommentRow({
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply()
               if (e.key === 'Escape') handleCancelReply()
             }}
-            placeholder="Write a reply…"
+            placeholder={t('replyPlaceholder')}
             rows={2}
             autoFocus
             className="w-full resize-none rounded-xl border bg-background px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
           />
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">⌘↵ to send · Esc to cancel</p>
+            <p className="text-[10px] text-muted-foreground">{t('replyHint')}</p>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" className="h-7 px-3 text-xs" onClick={handleCancelReply}>
-                Cancel
+                {t('cancel')}
               </Button>
               <Button size="sm" className="h-7 px-3 text-xs" onClick={handleReply} disabled={!replyText.trim() || isReplying}>
-                {isReplying ? 'Sending…' : comment.ownerReply ? 'Update reply' : 'Send reply'}
+                {isReplying ? t('sending') : comment.ownerReply ? t('updateReply') : t('sendReply')}
               </Button>
             </div>
           </div>

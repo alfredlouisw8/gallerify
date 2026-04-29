@@ -6,5 +6,19 @@
     "additionalDirectories": [
       "C:\\Users\\KUPOPO\\.claude\\projects\\d--Alfred-coding-projects-gallerify"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const d=require('fs').readFileSync(0,'utf8');const p=((JSON.parse(d).tool_input)||{}).file_path||'';if(/src\\/.+\\.(tsx?|ts)$/.test(p))console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'PreToolUse',additionalContext:'REMINDER: Any user-visible strings added must have entries in both src/messages/en.json and src/messages/ja.json'}}))\"",
+            "statusMessage": "Checking i18n coverage…"
+          }
+        ]
+      }
+    ]
   }
 }

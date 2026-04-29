@@ -9,8 +9,9 @@ import {
   HardDriveIcon,
   VideoIcon,
 } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,25 +29,6 @@ type BillingMeta = {
   ls_subscription_id: string | null
 }
 
-function statusBadge(status: string) {
-  const map: Record<
-    string,
-    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-  > = {
-    [SubscriptionStatus.TRIALING]: { label: 'Trial', variant: 'secondary' },
-    [SubscriptionStatus.ACTIVE]:   { label: 'Active', variant: 'default' },
-    [SubscriptionStatus.CANCELLED]:{ label: 'Cancelled', variant: 'outline' },
-    [SubscriptionStatus.EXPIRED]:  { label: 'Expired', variant: 'destructive' },
-    [SubscriptionStatus.PAST_DUE]: { label: 'Past Due', variant: 'destructive' },
-  }
-  const { label, variant } = map[status] ?? { label: status, variant: 'secondary' }
-  return (
-    <Badge variant={variant} className="rounded-full text-xs">
-      {label}
-    </Badge>
-  )
-}
-
 function trialDaysLeft(trialEndsAt: string | null): number | null {
   if (!trialEndsAt) return null
   const diff = new Date(trialEndsAt).getTime() - Date.now()
@@ -54,9 +36,9 @@ function trialDaysLeft(trialEndsAt: string | null): number | null {
 }
 
 export default function BillingView({ meta, isIndonesia = false }: { meta: BillingMeta; isIndonesia?: boolean }) {
+  const t = useTranslations('Billing')
   const pricing = getPricing(isIndonesia)
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
 
@@ -86,8 +68,6 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
         body: JSON.stringify({ plan }),
       })
       const { url, error } = await res.json()
-      // For upgrades the checkout route swaps the variant and returns a dashboard URL,
-      // so `url` is always present on success — including the upgrade path.
       if (res.status === 409 || error || !url) {
         setLoadingPlan(null)
         return
@@ -113,12 +93,52 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
     }
   }
 
+  type StatusKey = 'trialing' | 'active' | 'cancelled' | 'expired' | 'past_due'
+  const statusMap: Record<string, { key: StatusKey; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    [SubscriptionStatus.TRIALING]: { key: 'trialing', variant: 'secondary' },
+    [SubscriptionStatus.ACTIVE]:   { key: 'active',   variant: 'default' },
+    [SubscriptionStatus.CANCELLED]:{ key: 'cancelled', variant: 'outline' },
+    [SubscriptionStatus.EXPIRED]:  { key: 'expired',  variant: 'destructive' },
+    [SubscriptionStatus.PAST_DUE]: { key: 'past_due', variant: 'destructive' },
+  }
+  const statusLabels: Record<StatusKey, string> = {
+    trialing: t('status_trialing'),
+    active: t('status_active'),
+    cancelled: t('status_cancelled'),
+    expired: t('status_expired'),
+    past_due: t('status_past_due'),
+  }
+  const statusBadge = (status: string) => {
+    const entry = statusMap[status]
+    const label = entry ? statusLabels[entry.key] : status
+    const variant = entry?.variant ?? 'secondary'
+    return (
+      <Badge variant={variant} className="rounded-full text-xs">
+        {label}
+      </Badge>
+    )
+  }
+
+  const periodText = (() => {
+    if (hasPaidPlan && meta.current_period_end) {
+      const date = new Date(meta.current_period_end).toLocaleDateString('en-GB')
+      return meta.subscription_status === SubscriptionStatus.CANCELLED
+        ? t('accessUntil', { date })
+        : t('renewsOn', { date })
+    }
+    if (meta.plan === Plan.FREE_TRIAL && daysLeft !== null) {
+      if (isTrialExpired) return t('trialExpired')
+      return t('daysLeftInTrial', { days: daysLeft })
+    }
+    return null
+  })()
+
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Manage your plan and storage.
+          {t('description')}
         </p>
       </div>
 
@@ -134,15 +154,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 <p className="font-semibold">
                   {PLANS[meta.plan as keyof typeof PLANS]?.label ?? meta.plan}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {hasPaidPlan && meta.current_period_end
-                    ? `${meta.subscription_status === SubscriptionStatus.CANCELLED ? 'Access until' : 'Renews'} ${new Date(meta.current_period_end).toLocaleDateString('en-GB')}`
-                    : meta.plan === Plan.FREE_TRIAL && daysLeft !== null
-                      ? isTrialExpired
-                        ? 'Trial expired'
-                        : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in trial`
-                      : null}
-                </p>
+                {periodText && (
+                  <p className="text-xs text-muted-foreground">{periodText}</p>
+                )}
               </div>
             </div>
           </div>
@@ -154,7 +168,7 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
           <div>
             <div className="mb-1.5 flex items-center gap-2">
               <HardDriveIcon className="size-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Storage</span>
+              <span className="text-xs text-muted-foreground">{t('storage')}</span>
               <span className="ml-auto tabular-nums text-xs font-medium">
                 {formatBytes(meta.storage_used_bytes)} / {limits.maxStorageLabel}
               </span>
@@ -174,7 +188,7 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
               <div>
                 <div className="mb-1.5 flex items-center gap-2">
                   <VideoIcon className="size-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Video</span>
+                  <span className="text-xs text-muted-foreground">{t('video')}</span>
                   <span className="ml-auto text-xs font-medium tabular-nums">
                     {usedMin} / {totalMin} min
                   </span>
@@ -189,12 +203,12 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
             <li className="flex items-center gap-2 text-muted-foreground">
               <CheckIcon className="size-3.5 shrink-0 text-green-500" />
               {limits.maxGalleries === Infinity
-                ? 'Unlimited galleries'
-                : `Up to ${limits.maxGalleries} galleries`}
+                ? t('feat_unlimitedGalleries')
+                : t('feat_upToGalleries', { count: limits.maxGalleries })}
             </li>
             <li className="flex items-center gap-2 text-muted-foreground">
               <CheckIcon className="size-3.5 shrink-0 text-green-500" />
-              {limits.maxStorageLabel} storage
+              {t('feat_storage', { label: limits.maxStorageLabel })}
             </li>
             <li
               className={`flex items-center gap-2 ${limits.videoAllowed ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}
@@ -205,8 +219,8 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 <XIcon className="size-3.5 shrink-0 opacity-40" />
               )}
               {limits.videoAllowed
-                ? `Video uploads (up to ${formatVideoDuration(limits.maxVideoDurationSeconds)})`
-                : 'Video uploads'}
+                ? t('feat_videoUpTo', { duration: formatVideoDuration(limits.maxVideoDurationSeconds) })
+                : t('feat_videoUploads')}
             </li>
           </ul>
 
@@ -214,14 +228,13 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
           {meta.subscription_status === SubscriptionStatus.PAST_DUE && (
             <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
               <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
-              Payment is past due. Please update your payment method.
+              {t('pastDue')}
             </div>
           )}
           {meta.subscription_status === SubscriptionStatus.CANCELLED && meta.current_period_end && (
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-50 p-3 text-sm text-amber-700">
               <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
-              Subscription cancelled. Full access until{' '}
-              {new Date(meta.current_period_end).toLocaleDateString('en-GB')}.
+              {t('cancelledAccess', { date: new Date(meta.current_period_end).toLocaleDateString('en-GB') })}
             </div>
           )}
 
@@ -236,10 +249,10 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
               {portalLoading ? (
                 <>
                   <Loader2Icon className="mr-2 size-3.5 animate-spin" />
-                  Loading…
+                  {t('loading')}
                 </>
               ) : (
-                'Manage Subscription'
+                t('manageSubscription')
               )}
             </Button>
           )}
@@ -250,14 +263,14 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
       {meta.plan !== Plan.PRO_MAX && (
         <div className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground">
-            {isTrialExpired ? 'Choose a plan to continue' : 'Upgrade your plan'}
+            {isTrialExpired ? t('chooseAPlan') : t('upgradeTitle')}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {meta.plan !== Plan.PRO && (
               <div className="relative rounded-2xl border-2 border-foreground bg-card p-5">
                 <span className="absolute -top-3 left-4 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
-                  Most popular
+                  {t('mostPopular')}
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-semibold tracking-tight">{pricing.pro.monthly.amount}</span>
@@ -266,16 +279,16 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 <p className="mt-0.5 font-medium">Pro</p>
                 <ul className="mt-4 space-y-1.5 text-sm">
                   <li className="flex items-center gap-2 text-muted-foreground">
-                    <CheckIcon className="size-3.5 text-green-500" /> Unlimited galleries
+                    <CheckIcon className="size-3.5 text-green-500" /> {t('feat_unlimitedGalleries')}
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
-                    <CheckIcon className="size-3.5 text-green-500" /> 10 GB storage
+                    <CheckIcon className="size-3.5 text-green-500" /> {t('pro_10gb')}
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
-                    <CheckIcon className="size-3.5 text-green-500" /> Custom domain
+                    <CheckIcon className="size-3.5 text-green-500" /> {t('pro_customDomain')}
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
-                    <CheckIcon className="size-3.5 text-green-500" /> Video uploads (up to 1 hour)
+                    <CheckIcon className="size-3.5 text-green-500" /> {t('pro_video1h')}
                   </li>
                 </ul>
                 <Button
@@ -285,9 +298,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   disabled={loadingPlan !== null}
                 >
                   {loadingPlan === 'pro' ? (
-                    <><Loader2Icon className="mr-2 size-3.5 animate-spin" />Redirecting…</>
+                    <><Loader2Icon className="mr-2 size-3.5 animate-spin" />{t('redirecting')}</>
                   ) : (
-                    'Upgrade to Pro'
+                    t('upgradeToPro')
                   )}
                 </Button>
               </div>
@@ -301,16 +314,16 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
               <p className="mt-0.5 font-medium">Pro Max</p>
               <ul className="mt-4 space-y-1.5 text-sm">
                 <li className="flex items-center gap-2 text-muted-foreground">
-                  <CheckIcon className="size-3.5 text-green-500" /> Unlimited galleries
+                  <CheckIcon className="size-3.5 text-green-500" /> {t('feat_unlimitedGalleries')}
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
-                  <CheckIcon className="size-3.5 text-green-500" /> 100 GB storage
+                  <CheckIcon className="size-3.5 text-green-500" /> {t('proMax_100gb')}
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
-                  <CheckIcon className="size-3.5 text-green-500" /> Custom domain
+                  <CheckIcon className="size-3.5 text-green-500" /> {t('proMax_customDomain')}
                 </li>
                 <li className="flex items-center gap-2 text-muted-foreground">
-                  <CheckIcon className="size-3.5 text-green-500" /> Video uploads (up to 2 hours)
+                  <CheckIcon className="size-3.5 text-green-500" /> {t('proMax_video2h')}
                 </li>
               </ul>
               <Button
@@ -321,9 +334,9 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 disabled={loadingPlan !== null}
               >
                 {loadingPlan === 'pro_max' ? (
-                  <><Loader2Icon className="mr-2 size-3.5 animate-spin" />Redirecting…</>
+                  <><Loader2Icon className="mr-2 size-3.5 animate-spin" />{t('redirecting')}</>
                 ) : (
-                  'Upgrade to Pro Max'
+                  t('upgradeToProMax')
                 )}
               </Button>
             </div>

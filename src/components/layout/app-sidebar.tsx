@@ -9,6 +9,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import {
   Sidebar,
@@ -20,16 +21,18 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar'
 import LogoutButton from '@/components/auth/logout-button'
-
-const navItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Gallery', url: '/gallery', icon: Images },
-  { title: 'Public page', url: '/homepage', icon: Globe },
-  { title: 'Billing', url: '/billing', icon: CreditCard },
-]
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useTranslations('Sidebar')
   const pathname = usePathname()
+
+  const navItems = [
+    { title: t('dashboard'), url: '/dashboard', icon: LayoutDashboard },
+    { title: t('gallery'), url: '/gallery', icon: Images },
+    { title: t('publicPage'), url: '/homepage', icon: Globe },
+    { title: t('billing'), url: '/billing', icon: CreditCard },
+  ]
 
   return (
     <Sidebar collapsible="icon">
@@ -59,7 +62,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               (item.url !== '/dashboard' && pathname.startsWith(item.url))
 
             return (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   asChild
                   tooltip={item.title}
@@ -79,6 +82,11 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <SidebarFooter className="px-2 pb-4">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="px-2 py-1">
+              <LanguageSwitcher />
+            </div>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <LogoutButton />
           </SidebarMenuItem>

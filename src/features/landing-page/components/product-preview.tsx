@@ -4,86 +4,55 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Eye, Images, MessageSquare, MonitorSmartphone } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
-// ─── Tab definitions ──────────────────────────────────────────────────────────
-
-const TABS = [
+// Static (non-translatable) tab data
+const TAB_STATIC = [
   {
     id: 'dashboard',
     icon: Images,
-    label: 'Gallery Dashboard',
-    title: 'Add photos as fast as you shoot.',
-    description:
-      'Drop images into any category, reorder in seconds, publish when ready. No exports, no Drive folders — just your work, beautifully organised.',
-    bullets: [
-      'Organise by category — ceremony, portraits, candids',
-      'Publish or keep private with one click',
-      'Unlimited galleries on paid plans',
-    ],
     type: 'browser' as const,
     src: '/gallery/gallery-dashboard.png',
-    alt: 'Gallerify gallery dashboard showing photo organisation',
     url: 'gallerify.com/gallery/vincent-wedding',
   },
   {
     id: 'live-preview',
     icon: Eye,
-    label: 'Live Preview',
-    title: 'Watch your gallery take shape — live.',
-    description:
-      'Switch themes, change layouts, update cover images. Your live preview updates in real time on the right as you edit on the left. What you see is exactly what your client opens.',
-    bullets: [
-      'Theme picker with instant side-by-side preview',
-      'Cover, layout, and colour controls in one panel',
-      'No refresh, no guessing — ever',
-    ],
     type: 'browser' as const,
     src: '/gallery/gallery-live-preview.png',
-    alt: 'Gallerify live preview showing real-time gallery customisation',
     url: 'gallerify.com/gallery/vincent-wedding/edit',
   },
   {
     id: 'client-view',
     icon: MonitorSmartphone,
-    label: 'Client View',
-    title: 'Stunning on every screen — no app needed.',
-    description:
-      'Clients open a fast, beautiful gallery with no login and no download. Category tabs keep everything organised, and it looks flawless whether they\'re on a laptop or a phone.',
-    bullets: [
-      'Fully responsive — desktop, tablet, mobile',
-      'Category tabs for effortless browsing',
-      'Watermark protection built in',
-    ],
     type: 'split' as const,
     src: '/gallery/gallery-user-preview.png',
     mobileSrc: '/gallery/gallery-user-preview-mobile.png',
-    alt: 'Gallerify client gallery view on desktop',
     url: 'gallerify.com/g/vincent-wedding',
   },
   {
     id: 'feedback',
     icon: MessageSquare,
-    label: 'Client Feedback',
-    title: 'Comments pinned right on the photo.',
-    description:
-      'Clients click any image and leave feedback in context. No email threads, no "the third photo from the left." Everyone sees exactly what\'s being discussed.',
-    bullets: [
-      'Per-photo comment threads',
-      'Like, annotate, and flag favourites',
-      'Switch between photographer and client role',
-    ],
     type: 'browser' as const,
     src: '/gallery/gallery-client-feedback.png',
-    alt: 'Gallerify client feedback with comments pinned on a photo',
     url: 'gallerify.com/g/vincent-wedding',
   },
 ] as const
 
-type Tab = (typeof TABS)[number]
+type TabStatic = (typeof TAB_STATIC)[number]
+
+type Tab = TabStatic & {
+  label: string
+  title: string
+  description: string
+  bullets: string[]
+  alt: string
+  mobileAlt?: string
+}
 
 // ─── Browser chrome frame ─────────────────────────────────────────────────────
 
-function BrowserFrame({ src, alt }: { src: string; alt: string; url?: string }) {
+function BrowserFrame({ src, alt }: { src: string; alt: string }) {
   return (
     <div
       className="relative aspect-[16/10] w-full overflow-hidden rounded-xl"
@@ -133,7 +102,6 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
 function SplitFrame({ tab }: { tab: Extract<Tab, { type: 'split' }> }) {
   return (
     <div className="flex items-end gap-3 md:gap-4">
-      {/* Desktop screenshot */}
       <div
         className="relative flex-1 overflow-hidden rounded-xl"
         style={{
@@ -153,9 +121,8 @@ function SplitFrame({ tab }: { tab: Extract<Tab, { type: 'split' }> }) {
         </div>
       </div>
 
-      {/* Mobile screenshot */}
       <div className="mb-4 hidden sm:block">
-        <PhoneFrame src={tab.mobileSrc} alt="Client gallery mobile view" />
+        <PhoneFrame src={tab.mobileSrc} alt={tab.mobileAlt ?? tab.alt} />
       </div>
     </div>
   )
@@ -176,7 +143,6 @@ function TabButton({
     <button
       onClick={onClick}
       className="relative flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-      style={{ color: isActive ? undefined : undefined }}
     >
       {isActive && (
         <motion.span
@@ -202,8 +168,46 @@ function TabButton({
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export default function ProductPreview() {
-  const [activeId, setActiveId] = useState<string>(TABS[0].id)
-  const activeTab = TABS.find((t) => t.id === activeId)!
+  const t = useTranslations('ProductPreview')
+  const [activeId, setActiveId] = useState<string>(TAB_STATIC[0].id)
+
+  const TABS: Tab[] = [
+    {
+      ...TAB_STATIC[0],
+      label: t('tab_dashboard_label'),
+      title: t('tab_dashboard_title'),
+      description: t('tab_dashboard_desc'),
+      bullets: [t('tab_dashboard_bullet1'), t('tab_dashboard_bullet2'), t('tab_dashboard_bullet3')],
+      alt: t('tab_dashboard_alt'),
+    },
+    {
+      ...TAB_STATIC[1],
+      label: t('tab_livePreview_label'),
+      title: t('tab_livePreview_title'),
+      description: t('tab_livePreview_desc'),
+      bullets: [t('tab_livePreview_bullet1'), t('tab_livePreview_bullet2'), t('tab_livePreview_bullet3')],
+      alt: t('tab_livePreview_alt'),
+    },
+    {
+      ...TAB_STATIC[2],
+      label: t('tab_clientView_label'),
+      title: t('tab_clientView_title'),
+      description: t('tab_clientView_desc'),
+      bullets: [t('tab_clientView_bullet1'), t('tab_clientView_bullet2'), t('tab_clientView_bullet3')],
+      alt: t('tab_clientView_alt'),
+      mobileAlt: t('tab_clientView_mobileAlt'),
+    },
+    {
+      ...TAB_STATIC[3],
+      label: t('tab_feedback_label'),
+      title: t('tab_feedback_title'),
+      description: t('tab_feedback_desc'),
+      bullets: [t('tab_feedback_bullet1'), t('tab_feedback_bullet2'), t('tab_feedback_bullet3')],
+      alt: t('tab_feedback_alt'),
+    },
+  ]
+
+  const activeTab = TABS.find((tab) => tab.id === activeId)!
 
   return (
     <section className="py-24 md:py-32">
@@ -218,12 +222,12 @@ export default function ProductPreview() {
           className="mb-10"
         >
           <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            See it in action
+            {t('sectionLabel')}
           </p>
           <h2 className="font-display max-w-xl text-4xl font-semibold leading-[1.08] tracking-tighter md:text-5xl">
-            One tool.
+            {t('heading1')}
             <br />
-            <span className="italic text-muted-foreground">Everything you need.</span>
+            <span className="italic text-muted-foreground">{t('heading2')}</span>
           </h2>
         </motion.div>
 
@@ -279,10 +283,7 @@ export default function ProductPreview() {
                 {activeTab.type === 'split' ? (
                   <SplitFrame tab={activeTab as Extract<Tab, { type: 'split' }>} />
                 ) : (
-                  <BrowserFrame
-                    src={activeTab.src}
-                    alt={activeTab.alt}
-                  />
+                  <BrowserFrame src={activeTab.src} alt={activeTab.alt} />
                 )}
               </div>
 

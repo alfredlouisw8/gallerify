@@ -11,6 +11,7 @@ import {
   Loader2Icon,
   Share2Icon,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -28,20 +29,8 @@ type VendorType = 'florist' | 'mua' | 'venue' | 'planner' | 'other'
 type SelectionMode = 'all' | 'category' | 'pick'
 type Expiry = '7d' | '30d' | '90d' | 'never'
 
-const VENDOR_TYPES: { value: VendorType; label: string }[] = [
-  { value: 'florist', label: 'Florist' },
-  { value: 'mua',     label: 'MUA' },
-  { value: 'venue',   label: 'Venue' },
-  { value: 'planner', label: 'Planner' },
-  { value: 'other',   label: 'Other' },
-]
-
-const EXPIRY_OPTIONS: { value: Expiry; label: string }[] = [
-  { value: '7d',    label: '7 days' },
-  { value: '30d',   label: '30 days' },
-  { value: '90d',   label: '90 days' },
-  { value: 'never', label: 'Never' },
-]
+const VENDOR_TYPE_VALUES: VendorType[] = ['florist', 'mua', 'venue', 'planner', 'other']
+const EXPIRY_VALUES: Expiry[] = ['7d', '30d', '90d', 'never']
 
 export type VendorShareImage = { id: string; imageUrl: string }
 export type VendorCategory = { id: string; name: string; images: VendorShareImage[] }
@@ -56,6 +45,7 @@ type Props = {
 }
 
 export function VendorShareModal({ open, onClose, galleryId, allImages, categories, preSelectedIds }: Props) {
+  const t = useTranslations('VendorShare')
   const hasCategories = (categories?.length ?? 0) > 0
 
   const [step, setStep] = useState<'form' | 'success'>('form')
@@ -69,6 +59,21 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const vendorTypeLabel: Record<VendorType, string> = {
+    florist: t('typeFlorist'),
+    mua: t('typeMUA'),
+    venue: t('typeVenue'),
+    planner: t('typePlanner'),
+    other: t('typeOther'),
+  }
+
+  const expiryLabel: Record<Expiry, string> = {
+    '7d': t('expiry7d'),
+    '30d': t('expiry30d'),
+    '90d': t('expiry90d'),
+    never: t('expiryNever'),
+  }
 
   useEffect(() => {
     if (open) {
@@ -156,9 +161,9 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
   }
 
   const modeOptions: { value: SelectionMode; label: string }[] = [
-    { value: 'all',      label: `All photos (${allImages.length})` },
-    ...(hasCategories ? [{ value: 'category' as SelectionMode, label: 'By category' }] : []),
-    { value: 'pick',     label: 'Pick photos' },
+    { value: 'all',      label: t('modeAll', { count: allImages.length }) },
+    ...(hasCategories ? [{ value: 'category' as SelectionMode, label: t('modeCategory') }] : []),
+    { value: 'pick',     label: t('modePick') },
   ]
 
   return (
@@ -167,7 +172,7 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
         <DialogHeader className="border-b px-6 pb-4 pt-5">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Share2Icon className="size-4 text-muted-foreground" />
-            Share with Vendor
+            {t('title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -178,30 +183,30 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
               {/* Vendor name + type */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Vendor name</Label>
+                  <Label className="text-xs">{t('vendorName')}</Label>
                   <Input
                     value={vendorName}
                     onChange={(e) => setVendorName(e.target.value)}
-                    placeholder="e.g. Bloom & Co."
+                    placeholder={t('vendorNamePlaceholder')}
                     className="h-9 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Vendor type</Label>
+                  <Label className="text-xs">{t('vendorType')}</Label>
                   <div className="flex flex-wrap gap-1.5">
-                    {VENDOR_TYPES.map((t) => (
+                    {VENDOR_TYPE_VALUES.map((value) => (
                       <button
-                        key={t.value}
+                        key={value}
                         type="button"
-                        onClick={() => setVendorType(t.value)}
+                        onClick={() => setVendorType(value)}
                         className={[
                           'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                          vendorType === t.value
+                          vendorType === value
                             ? 'bg-foreground text-background'
                             : 'border text-muted-foreground hover:text-foreground',
                         ].join(' ')}
                       >
-                        {t.label}
+                        {vendorTypeLabel[value]}
                       </button>
                     ))}
                   </div>
@@ -210,7 +215,7 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
 
               {/* Selection mode */}
               <div className="space-y-3">
-                <Label className="text-xs">Photos to share</Label>
+                <Label className="text-xs">{t('photosToShare')}</Label>
                 <div className="flex overflow-hidden rounded-lg border">
                   {modeOptions.map((m) => (
                     <button
@@ -234,8 +239,8 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
                   <div className="space-y-2">
                     <p className="text-[10px] text-muted-foreground">
                       {selectedCategoryIds.size === 0
-                        ? 'Select one or more categories'
-                        : `${selectedCategoryIds.size} categor${selectedCategoryIds.size !== 1 ? 'ies' : 'y'} · ${imageIds.length} photos`}
+                        ? t('selectCategories')
+                        : t('selectedCategories', { catCount: selectedCategoryIds.size, photoCount: imageIds.length })}
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {categories.map((cat) => {
@@ -253,7 +258,6 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
                                 : 'border-border hover:border-muted-foreground/50',
                             ].join(' ')}
                           >
-                            {/* Thumbnail */}
                             <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                               {thumb ? (
                                 <Image src={thumb} alt="" fill className="object-cover" sizes="56px" />
@@ -267,7 +271,7 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
                               <p className="truncate text-sm font-medium">{cat.name}</p>
                               <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <ImageIcon className="size-3" />
-                                {cat.images.length} photo{cat.images.length !== 1 ? 's' : ''}
+                                {t('catPhotoCount', { count: cat.images.length })}
                               </p>
                             </div>
                             {selected && (
@@ -286,7 +290,7 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
                 {mode === 'pick' && (
                   <div className="space-y-2">
                     <p className="text-[10px] text-muted-foreground">
-                      {selectedIds.size} of {allImages.length} selected
+                      {t('selectedPhotos', { count: selectedIds.size, total: allImages.length })}
                     </p>
                     <div className="grid grid-cols-3 gap-2 overflow-y-auto rounded-lg border p-2 sm:grid-cols-4" style={{ maxHeight: '320px' }}>
                       {allImages.map((img) => {
@@ -325,9 +329,8 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
 
               {/* Watermark + expiry */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Watermark toggle */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Watermark</Label>
+                  <Label className="text-xs">{t('watermark')}</Label>
                   <button
                     type="button"
                     onClick={() => setWatermark((v) => !v)}
@@ -336,31 +339,30 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
                       watermark ? 'border-foreground bg-foreground/5' : 'text-muted-foreground',
                     ].join(' ')}
                   >
-                    <span>{watermark ? 'Enabled' : 'Disabled'}</span>
+                    <span>{watermark ? t('watermarkEnabled') : t('watermarkDisabled')}</span>
                     <div className={['relative h-4 w-7 rounded-full transition-colors', watermark ? 'bg-foreground' : 'bg-muted-foreground/30'].join(' ')}>
                       <span className={['absolute top-0.5 size-3 rounded-full bg-white shadow transition-transform', watermark ? 'translate-x-3.5' : 'translate-x-0.5'].join(' ')} />
                     </div>
                   </button>
-                  <p className="text-[10px] text-muted-foreground">Uses the gallery&apos;s assigned watermark</p>
+                  <p className="text-[10px] text-muted-foreground">{t('watermarkNote')}</p>
                 </div>
 
-                {/* Expiry */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Link expires</Label>
+                  <Label className="text-xs">{t('linkExpires')}</Label>
                   <div className="grid grid-cols-2 gap-1">
-                    {EXPIRY_OPTIONS.map((e) => (
+                    {EXPIRY_VALUES.map((value) => (
                       <button
-                        key={e.value}
+                        key={value}
                         type="button"
-                        onClick={() => setExpiry(e.value)}
+                        onClick={() => setExpiry(value)}
                         className={[
                           'rounded-lg border py-1.5 text-xs font-medium transition-colors',
-                          expiry === e.value
+                          expiry === value
                             ? 'border-foreground bg-foreground/5 text-foreground'
                             : 'text-muted-foreground hover:text-foreground',
                         ].join(' ')}
                       >
-                        {e.label}
+                        {expiryLabel[value]}
                       </button>
                     ))}
                   </div>
@@ -371,27 +373,26 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
             {/* Footer */}
             <div className="flex items-center justify-between border-t px-6 py-4">
               <p className="text-xs text-muted-foreground">
-                {imageIds.length} photo{imageIds.length !== 1 ? 's' : ''} will be shared
+                {t('photosWillBeShared', { count: imageIds.length })}
               </p>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+                <Button variant="ghost" size="sm" onClick={onClose}>{t('cancel')}</Button>
                 <Button size="sm" onClick={handleSubmit} disabled={!canSubmit || isPending} className="gap-1.5">
                   {isPending && <Loader2Icon className="size-3.5 animate-spin" />}
-                  Generate link
+                  {t('generateLink')}
                 </Button>
               </div>
             </div>
           </div>
         ) : (
-          /* Success step */
           <div className="space-y-5 px-6 py-8 text-center">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-500/15">
               <CheckIcon className="size-5 text-green-600" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-semibold">Vendor link created</p>
+              <p className="text-sm font-semibold">{t('successTitle')}</p>
               <p className="text-xs text-muted-foreground">
-                Share this link with <span className="font-medium">{vendorName}</span>. No login required.
+                {t('successDesc', { vendorName })}
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-left">
@@ -403,16 +404,16 @@ export function VendorShareModal({ open, onClose, galleryId, allImages, categori
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => void handleCopy()}>
                 {copied ? <CheckIcon className="size-3.5" /> : <ClipboardIcon className="size-3.5" />}
-                {copied ? 'Copied!' : 'Copy link'}
+                {copied ? t('copied') : t('copyLink')}
               </Button>
               <Button size="sm" className="flex-1 gap-1.5" asChild>
                 <a href={generatedUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLinkIcon className="size-3.5" />
-                  Open link
+                  {t('openLink')}
                 </a>
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>Done</Button>
+            <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>{t('done')}</Button>
           </div>
         )}
       </DialogContent>

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 
 import Container from '@/components/layout/container'
 import { SidebarProvider } from '@/components/ui/sidebar'
@@ -25,15 +26,17 @@ export default async function GalleryPage() {
 
   const username = meta?.username ?? ''
 
+  const t = await getTranslations('GalleryPage')
+
   return (
     <SidebarProvider>
       <Container sideBar={true}>
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">Galleries</h1>
+              <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Manage your photography galleries.
+                {t('description')}
               </p>
             </div>
             <GalleryCreateSheet />

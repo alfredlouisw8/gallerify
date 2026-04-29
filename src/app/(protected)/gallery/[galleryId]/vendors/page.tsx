@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import { getGalleryVendorShares } from '@/features/gallery/actions/getGalleryVendorShares'
 import { VendorSharesView } from '@/features/gallery/components/VendorSharesView'
@@ -11,9 +13,10 @@ export default async function GalleryVendorsPage({
   params: Promise<{ galleryId: string }>
 }) {
   const { galleryId } = await params
-  const [shares, gallery] = await Promise.all([
+  const [shares, gallery, t] = await Promise.all([
     getGalleryVendorShares(galleryId),
     getGalleryById(galleryId),
+    getTranslations('VendorSharesPage'),
   ])
 
   const galleryCategories = gallery?.GalleryCategory ?? []
@@ -38,9 +41,9 @@ export default async function GalleryVendorsPage({
     <div className="overflow-auto p-6 lg:p-8">
       <div className="max-w-3xl">
         <div className="mb-6">
-          <h2 className="text-lg font-semibold">Vendor Shares</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">
-            Links shared with vendors such as florists, MUAs, venues, and planners.
+            {t('description')}
           </p>
         </div>
         <VendorSharesView

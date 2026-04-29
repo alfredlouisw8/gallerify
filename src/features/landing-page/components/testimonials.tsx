@@ -1,38 +1,38 @@
 'use client'
 
 import { motion } from 'framer-motion'
-
-const testimonials = [
-  {
-    quote:
-      "I used to send Google Drive links and felt embarrassed every time. Gallerify made my delivery look as professional as my work actually is.",
-    name: 'Sarah K.',
-    role: 'Wedding Photographer',
-    location: 'New York',
-    initials: 'SK',
-    color: 'bg-rose-100 text-rose-700',
-  },
-  {
-    quote:
-      "My clients text me to say how beautiful the gallery looks. That never happened when I was using WeTransfer. It's a completely different experience.",
-    name: 'Marcus T.',
-    role: 'Portrait Photographer',
-    location: 'London',
-    initials: 'MT',
-    color: 'bg-sky-100 text-sky-700',
-  },
-  {
-    quote:
-      "Setting up my portfolio page took 10 minutes. I booked two new clients in the first week just from people finding it online.",
-    name: 'Aiko N.',
-    role: 'Commercial Photographer',
-    location: 'Tokyo',
-    initials: 'AN',
-    color: 'bg-amber-100 text-amber-700',
-  },
-]
+import { useTranslations } from 'next-intl'
 
 export default function Testimonials() {
+  const t = useTranslations('Testimonials')
+
+  const testimonials = [
+    {
+      quote: t('quote1'),
+      name: t('name1'),
+      role: t('role1'),
+      location: t('location1'),
+      initials: 'SK',
+      color: 'bg-rose-100 text-rose-700',
+    },
+    {
+      quote: t('quote2'),
+      name: t('name2'),
+      role: t('role2'),
+      location: t('location2'),
+      initials: 'MT',
+      color: 'bg-sky-100 text-sky-700',
+    },
+    {
+      quote: t('quote3'),
+      name: t('name3'),
+      role: t('role3'),
+      location: t('location3'),
+      initials: 'AN',
+      color: 'bg-amber-100 text-amber-700',
+    },
+  ]
+
   return (
     <section className="py-24 md:py-32">
       <div className="container px-4 md:px-6">
@@ -45,17 +45,17 @@ export default function Testimonials() {
           className="mb-14 text-center"
         >
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            What photographers say
+            {t('label')}
           </p>
           <h2 className="font-display text-4xl font-semibold tracking-tighter md:text-5xl">
-            Clients notice the difference.
+            {t('heading')}
           </h2>
         </motion.div>
 
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
-          {testimonials.map((t, i) => (
+          {testimonials.map((testimonial, i) => (
             <motion.div
-              key={t.name}
+              key={testimonial.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -71,17 +71,17 @@ export default function Testimonials() {
               </div>
 
               <p className="flex-1 text-sm leading-relaxed text-foreground">
-                &ldquo;{t.quote}&rdquo;
+                &ldquo;{testimonial.quote}&rdquo;
               </p>
 
               <div className="flex items-center gap-3">
-                <div className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${t.color}`}>
-                  {t.initials}
+                <div className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${testimonial.color}`}>
+                  {testimonial.initials}
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-sm font-medium">{testimonial.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.role} · {t.location}
+                    {testimonial.role} · {testimonial.location}
                   </p>
                 </div>
               </div>

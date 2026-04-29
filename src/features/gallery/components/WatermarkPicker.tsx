@@ -1,6 +1,7 @@
 'use client'
 
 import { CheckIcon, DropletIcon } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 import type { Watermark } from '@/types'
 import { WatermarkPreview } from '@/features/homepage/components/WatermarkPreview'
@@ -12,14 +13,13 @@ type Props = {
 }
 
 export function WatermarkPicker({ watermarks, value, onChange }: Props) {
+  const t = useTranslations('WatermarkPicker')
+
   if (watermarks.length === 0) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/20 px-4 py-3 text-xs text-muted-foreground">
         <DropletIcon className="size-3.5 shrink-0" />
-        No watermarks yet. Create one in{' '}
-        <a href="/homepage?tab=watermarks" className="underline underline-offset-2 hover:text-foreground">
-          Public page → Watermarks
-        </a>
+        {t('noWatermarks')}
       </div>
     )
   }
@@ -43,7 +43,7 @@ export function WatermarkPicker({ watermarks, value, onChange }: Props) {
           </span>
         )}
         <DropletIcon className="size-4 text-muted-foreground/40" />
-        <span className="text-[10px] text-muted-foreground">None</span>
+        <span className="text-[10px] text-muted-foreground">{t('none')}</span>
       </button>
 
       {watermarks.map((wm) => {

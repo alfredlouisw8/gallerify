@@ -1,11 +1,13 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 
 export default function LoginForm() {
+  const t = useTranslations('Login')
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/dashboard'
   const plan = searchParams.get('plan')
@@ -26,10 +28,10 @@ export default function LoginForm() {
     <div className="flex w-full flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome back
+          {t('title')}
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Sign in to your Gallerify account to continue.
+          {t('description')}
         </p>
       </div>
 
@@ -56,17 +58,17 @@ export default function LoginForm() {
             fill="#EA4335"
           />
         </svg>
-        Continue with Google
+        {t('continueWithGoogle')}
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        By continuing, you agree to our{' '}
-        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">
-          Terms of Service
+        {t('agreeText')}{' '}
+        <span className="cursor-pointer underline underline-offset-2 transition-colors hover:text-foreground">
+          {t('termsOfService')}
         </span>{' '}
-        and{' '}
-        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">
-          Privacy Policy
+        {t('and')}{' '}
+        <span className="cursor-pointer underline underline-offset-2 transition-colors hover:text-foreground">
+          {t('privacyPolicy')}
         </span>
         .
       </p>
