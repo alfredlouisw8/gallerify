@@ -5,17 +5,11 @@ import { ArrowRight, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase-browser'
 
-const stats = [
-  { value: '12,400+', label: 'Photographers' },
-  { value: '847K', label: 'Galleries published' },
-  { value: '4.9 / 5', label: 'Average rating' },
-]
-
-// Replace these with real photography images when available
 const heroImages = [
   { id: '1005', alt: 'Portrait photography', aspect: 'aspect-[3/4]' },
   { id: '1058', alt: 'Wedding photography', aspect: 'aspect-[4/3]' },
@@ -24,6 +18,7 @@ const heroImages = [
 ]
 
 export default function Intro() {
+  const t = useTranslations('Intro')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -32,6 +27,12 @@ export default function Intro() {
       setIsAuthenticated(!!data.user)
     })
   }, [])
+
+  const stats = [
+    { value: '12,400+', label: t('statPhotographers') },
+    { value: '847K', label: t('statGalleries') },
+    { value: '4.9 / 5', label: t('statRating') },
+  ]
 
   return (
     <section className="flex min-h-[100dvh] items-center pb-16 pt-28">
@@ -52,7 +53,7 @@ export default function Intro() {
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">
-                Loved by 12,400+ photographers
+                {t('badge')}
               </span>
             </motion.div>
 
@@ -62,11 +63,11 @@ export default function Intro() {
               transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
               className="font-display text-5xl font-semibold leading-[1.06] tracking-tighter md:text-6xl xl:text-7xl"
             >
-              Your work
+              {t('headline1')}
               <br />
-              <span className="italic text-muted-foreground">deserves a</span>
+              <span className="italic text-muted-foreground">{t('headline2')}</span>
               <br />
-              better stage.
+              {t('headline3')}
             </motion.h1>
 
             <motion.p
@@ -75,8 +76,7 @@ export default function Intro() {
               transition={{ duration: 0.6, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
               className="max-w-[46ch] text-base leading-relaxed text-muted-foreground"
             >
-              Stop sending Drive links. Give clients a gallery they&apos;ll
-              love opening — and a portfolio page that wins your next shoot.
+              {t('description')}
             </motion.p>
 
             <motion.div
@@ -87,7 +87,7 @@ export default function Intro() {
             >
               <Button size="lg" asChild className="group rounded-full px-6">
                 <Link href={isAuthenticated ? '/dashboard' : '/login'}>
-                  {isAuthenticated ? 'Go to Dashboard' : 'Start free — no card needed'}
+                  {isAuthenticated ? t('goToDashboard') : t('startFree')}
                   <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </Button>
@@ -97,7 +97,7 @@ export default function Intro() {
                 asChild
                 className="rounded-full px-6"
               >
-                <Link href="#examples">See examples</Link>
+                <Link href="#examples">{t('seeExamples')}</Link>
               </Button>
             </motion.div>
 
@@ -180,9 +180,9 @@ export default function Intro() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs font-medium">Gallery published</p>
+                  <p className="text-xs font-medium">{t('galleryPublished')}</p>
                   <p className="text-xs text-muted-foreground">
-                    47 photos · just now
+                    {t('photosJustNow')}
                   </p>
                 </div>
               </div>

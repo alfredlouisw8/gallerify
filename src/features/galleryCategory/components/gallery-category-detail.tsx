@@ -66,6 +66,8 @@ import {
   GalleryCategory,
   GalleryWithCategory,
 } from '@/types'
+import { useTranslations } from 'next-intl'
+
 import { fetchCategoryDetail } from '../fetcher'
 
 const CAT_DROP_PREFIX = 'cat-drop-'
@@ -131,6 +133,7 @@ export default function GalleryCategoryDetail({
   galleryData,
   collectionId,
 }: GalleryDetailProps) {
+  const t = useTranslations('GalleryCategoryDetail')
   const router = useRouter()
   const {
     data: categoryData,
@@ -198,7 +201,7 @@ export default function GalleryCategoryDetail({
       await bulkDeleteGalleryCategoryImages(Array.from(selectedIds))
       await mutate()
       clearSelection()
-      toast({ title: 'Photos deleted.' })
+      toast({ title: t('photosDeleted') })
     } catch (err) {
       toast({
         title: err instanceof Error ? err.message : 'Delete failed',
@@ -214,7 +217,7 @@ export default function GalleryCategoryDetail({
     await mutate()
     router.refresh()
     clearSelection()
-    toast({ title: 'Photos moved.' })
+    toast({ title: t('photosMoved') })
   }
 
   // ── Upload / drop zone ───────────────────────────────────────────────────
@@ -235,9 +238,7 @@ export default function GalleryCategoryDetail({
         })
         if (result?.error) throw new Error(result.error)
         await mutate()
-        toast({
-          title: `${acceptedFiles.length} photo${acceptedFiles.length > 1 ? 's' : ''} uploaded!`,
-        })
+        toast({ title: t('uploadedOk', { count: acceptedFiles.length }) })
       } catch (err) {
         toast({
           title: err instanceof Error ? err.message : 'Upload failed',
@@ -357,8 +358,8 @@ export default function GalleryCategoryDetail({
         router.refresh() // re-run layout server component so sidebar counts update
         const targetName = galleryData.GalleryCategory.find(
           (c) => c.id === targetCatId
-        )?.name
-        toast({ title: `Moved to "${targetName}".` })
+        )?.name ?? ''
+        toast({ title: t('movedToCategory', { name: targetName }) })
       } catch (err) {
         await mutate()
         toast({
@@ -378,7 +379,7 @@ export default function GalleryCategoryDetail({
 
     const result = await reorderGalleryCategoryImages(newOrder)
     if (result?.error) {
-      toast({ title: 'Failed to save order', variant: 'destructive' })
+      toast({ title: t('orderSaveFail'), variant: 'destructive' })
       await mutate()
       return
     }
@@ -387,7 +388,7 @@ export default function GalleryCategoryDetail({
         current ? { ...current, GalleryCategoryImage: imagesRef.current } : current,
       { revalidate: false }
     )
-    toast({ title: 'Order saved.' })
+    toast({ title: t('orderSaved') })
   }
 
   useEffect(() => {
@@ -397,8 +398,8 @@ export default function GalleryCategoryDetail({
     }
   }, [categoryData])
 
-  if (isLoading) return <div>Loading images...</div>
-  if (error) return <div>Failed to load images</div>
+  if (isLoading) return <div>{t('loading')}</div>
+  if (error) return <div>{t('loadFailed')}</div>
 
   const selectionActive = selectedIds.size > 0
   const otherCategories = galleryData.GalleryCategory.filter((c) => c.id !== collectionId)
@@ -425,7 +426,7 @@ export default function GalleryCategoryDetail({
                     ? 'bg-secondary text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                title="Small grid"
+                title={t('smallGrid')}
               >
                 <Grid3X3Icon className="size-3.5" />
               </button>
@@ -436,7 +437,7 @@ export default function GalleryCategoryDetail({
                     ? 'bg-secondary text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                title="Large grid"
+                title={t('largeGrid')}
               >
                 <Grid2X2Icon className="size-3.5" />
               </button>
@@ -456,7 +457,7 @@ export default function GalleryCategoryDetail({
             <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-neutral-900 px-4 py-3 shadow-2xl dark:bg-neutral-100">
               {/* Count + clear */}
               <span className="text-sm font-semibold tabular-nums text-white dark:text-neutral-900">{selectedIds.size}</span>
-              <span className="hidden text-sm text-neutral-400 sm:inline dark:text-neutral-600">selected</span>
+              <span className="hidden text-sm text-neutral-400 sm:inline dark:text-neutral-600">{t('selectedLabel')}</span>
               <button
                 onClick={clearSelection}
                 title="Clear selection"
@@ -471,7 +472,7 @@ export default function GalleryCategoryDetail({
                   onClick={() => setSelectedIds(new Set(images.map((img) => img.id)))}
                   className="hidden text-xs text-neutral-400 underline-offset-2 hover:text-white hover:underline sm:block dark:text-neutral-600 dark:hover:text-neutral-900"
                 >
-                  Select all {images.length}
+                  {t('selectAll', { count: images.length })}
                 </button>
               )}
 
@@ -480,35 +481,35 @@ export default function GalleryCategoryDetail({
               {/* Actions */}
               <div className="flex items-center gap-1">
                 <button
-                  title="Create vendor link"
+                  title={t('createVendorLink')}
                   onClick={() => setVendorShareOpen(true)}
                   className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-white transition-colors hover:bg-white/10 dark:text-neutral-900 dark:hover:bg-black/10"
                 >
                   <Share2Icon className="size-3.5" />
-                  <span className="hidden sm:inline">Vendor link</span>
+                  <span className="hidden sm:inline">{t('vendorLink')}</span>
                 </button>
                 <button
-                  title="Move to…"
+                  title={t('moveTo')}
                   onClick={() => setBulkMoveOpen(true)}
                   className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-white transition-colors hover:bg-white/10 dark:text-neutral-900 dark:hover:bg-black/10"
                 >
                   <FolderInputIcon className="size-3.5" />
-                  <span className="hidden sm:inline">Move to…</span>
+                  <span className="hidden sm:inline">{t('moveTo')}</span>
                 </button>
                 <DeleteGalleryDialog
                   triggerComponent={
                     <button
                       disabled={isBulkDeleting}
-                      title="Delete selected"
+                      title={t('deleteSelected')}
                       className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-red-400 transition-colors hover:bg-white/10 disabled:opacity-50 dark:text-red-500 dark:hover:bg-black/10"
                     >
                       <TrashIcon className="size-3.5" />
                       <span className="hidden sm:inline">
-                        {isBulkDeleting ? 'Deleting…' : 'Delete'}
+                        {isBulkDeleting ? t('deleting') : t('delete')}
                       </span>
                     </button>
                   }
-                  description={`${selectedIds.size} photo${selectedIds.size > 1 ? 's' : ''} will be permanently deleted.`}
+                  description={t('deletePhotosDesc', { count: selectedIds.size })}
                   onConfirm={handleBulkDelete}
                 />
               </div>
@@ -561,15 +562,15 @@ export default function GalleryCategoryDetail({
                   }`}
                 >
                   {uploadProgress
-                    ? `Uploading ${uploadProgress.uploaded} / ${uploadProgress.total}…`
+                    ? t('uploading', { uploaded: uploadProgress.uploaded, total: uploadProgress.total })
                     : isDragActive
-                      ? 'Release to upload'
-                      : 'Drop your photos here'}
+                      ? t('releaseToUpload')
+                      : t('dropPhotos')}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {uploadProgress
-                    ? 'Please wait while your photos are being saved'
-                    : 'or click to browse — multiple images supported'}
+                    ? t('uploadingDesc')
+                    : t('dropOr')}
                 </p>
               </div>
               {uploadProgress && (
@@ -654,7 +655,7 @@ export default function GalleryCategoryDetail({
         >
           <div className="rounded-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur-md">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Move to
+              {t('moveToTitle')}
             </p>
             <div className="flex flex-col gap-1.5">
               {otherCategories.map((cat) => (
@@ -725,6 +726,7 @@ function DraggableImage({
   onToggleSelect: (id: string) => void
   gridSize: 'small' | 'large'
 }) {
+  const t = useTranslations('GalleryCategoryDetail')
   const router = useRouter()
   const [moveOpen, setMoveOpen] = useState(false)
   const [isReplacing, setIsReplacing] = useState(false)
@@ -741,9 +743,9 @@ function DraggableImage({
         return
       }
       await mutate()
-      toast({ title: 'Image replaced.' })
+      toast({ title: t('imageReplaced') })
     } catch {
-      toast({ title: 'Failed to replace image', variant: 'destructive' })
+      toast({ title: t('imageReplaceFail'), variant: 'destructive' })
     } finally {
       setIsReplacing(false)
     }
@@ -843,7 +845,7 @@ function DraggableImage({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <DownloadIcon className="ml-6 mr-4 size-4" />
-                Download
+                {t('contextDownload')}
               </Button>
               <Button
                 variant="ghost"
@@ -852,7 +854,7 @@ function DraggableImage({
                 onClick={() => setMoveOpen(true)}
               >
                 <ArrowRightFromLineIcon className="ml-2 mr-4 size-4" />
-                Move
+                {t('contextMove')}
               </Button>
               <MoveToCategoryModal
                 open={moveOpen}
@@ -864,7 +866,7 @@ function DraggableImage({
                   await bulkMoveGalleryCategoryImages([item.id], targetCategoryId)
                   await mutate()
                   router.refresh()
-                  toast({ title: 'Photo moved.' })
+                  toast({ title: t('photoMoved') })
                 }}
               />
               <Button
@@ -876,7 +878,7 @@ function DraggableImage({
                 onClick={(e) => { e.stopPropagation(); replaceInputRef.current?.click() }}
               >
                 <ArrowLeftRightIcon className="ml-6 mr-4 size-4" />
-                {isReplacing ? 'Replacing…' : 'Replace'}
+                {isReplacing ? t('contextReplacing') : t('contextReplace')}
               </Button>
               <Button
                 variant="ghost"
@@ -885,7 +887,7 @@ function DraggableImage({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <ImageIcon className="ml-6 mr-4 size-4" />
-                Set as Cover
+                {t('contextSetCover')}
               </Button>
               <DeleteGalleryDialog
                 triggerComponent={
@@ -896,10 +898,10 @@ function DraggableImage({
                     onPointerDown={(e) => e.stopPropagation()}
                   >
                     <TrashIcon className="ml-6 mr-4 size-4" />
-                    Delete
+                    {t('contextDelete')}
                   </Button>
                 }
-                description="This image will be permanently deleted."
+                description={t('deletePhotoDesc')}
                 onConfirm={async () => {
                   await deleteGalleryCategoryImage(item.id)
                   await mutate()

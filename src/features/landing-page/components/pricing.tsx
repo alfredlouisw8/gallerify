@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { CheckIcon, XIcon, Loader2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { getPricing } from '@/lib/pricing'
@@ -23,66 +24,23 @@ type Plan = {
   highlight: boolean
 }
 
-function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
-  const pricing = getPricing(isIndonesia)
-  return [
-    {
-      id: 'free_trial',
-      name: 'Free Trial',
-      price: '$0',
-      priceNote: '14 days',
-      description: 'Try Gallerify free — no credit card required.',
-      features: [
-        { label: 'Up to 3 galleries', included: true },
-        { label: '1 GB total storage', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Custom domain', included: false },
-        { label: 'Video uploads', included: false },
-      ],
-      cta: 'Start free trial',
-      ctaVariant: 'outline',
-      highlight: false,
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: billing === 'annual' ? pricing.pro.annual.perMonth : pricing.pro.monthly.amount,
-      priceNote: '/month',
-      billedAs: billing === 'annual' ? `Billed ${pricing.pro.annual.amount}/year` : undefined,
-      description: 'For photographers ready to grow.',
-      features: [
-        { label: 'Unlimited galleries', included: true },
-        { label: '10 GB total storage', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Custom domain', included: true },
-        { label: 'Video uploads (up to 1 hour)', included: true },
-      ],
-      cta: 'Upgrade to Pro',
-      ctaVariant: 'default',
-      highlight: true,
-    },
-    {
-      id: 'pro_max',
-      name: 'Pro Max',
-      price: billing === 'annual' ? pricing.pro_max.annual.perMonth : pricing.pro_max.monthly.amount,
-      priceNote: '/month',
-      billedAs: billing === 'annual' ? `Billed ${pricing.pro_max.annual.amount}/year` : undefined,
-      description: 'For full-service studios and videographers.',
-      features: [
-        { label: 'Unlimited galleries', included: true },
-        { label: '100 GB total storage', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Custom domain', included: true },
-        { label: 'Video uploads (up to 2 hours)', included: true },
-      ],
-      cta: 'Upgrade to Pro Max',
-      ctaVariant: 'outline',
-      highlight: false,
-    },
-  ]
-}
-
-function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing: BillingPeriod }) {
+function PlanCard({
+  plan,
+  delay,
+  billing,
+  mostPopular,
+  redirecting,
+  alreadyOnPlan,
+  downgradeViaPortal,
+}: {
+  plan: Plan
+  delay: number
+  billing: BillingPeriod
+  mostPopular: string
+  redirecting: string
+  alreadyOnPlan: string
+  downgradeViaPortal: string
+}) {
   const [loading, setLoading] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
 
@@ -102,11 +60,11 @@ function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing
       }
       const { url, error } = await res.json()
       if (error === 'already_subscribed') {
-        setHint("You're already on this plan.")
+        setHint(alreadyOnPlan)
         return
       }
       if (error === 'downgrade_via_portal') {
-        setHint('To downgrade, manage your plan in the billing portal.')
+        setHint(downgradeViaPortal)
         return
       }
       if (error || !url) return
@@ -134,7 +92,7 @@ function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing
     >
       {isFeatured && (
         <span className="absolute -top-3 left-6 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
-          Most popular
+          {mostPopular}
         </span>
       )}
 
@@ -206,7 +164,7 @@ function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing
             {loading ? (
               <>
                 <Loader2Icon className="mr-2 size-4 animate-spin" />
-                Redirecting…
+                {redirecting}
               </>
             ) : (
               plan.cta
@@ -224,8 +182,65 @@ function PlanCard({ plan, delay, billing }: { plan: Plan; delay: number; billing
 }
 
 export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean }) {
+  const t = useTranslations('Pricing')
   const [billing, setBilling] = useState<BillingPeriod>('monthly')
-  const plans = buildPlans(isIndonesia, billing)
+  const pricing = getPricing(isIndonesia)
+
+  const plans: Plan[] = [
+    {
+      id: 'free_trial',
+      name: t('freeTrial_name'),
+      price: '$0',
+      priceNote: t('freeTrial_priceNote'),
+      description: t('freeTrial_desc'),
+      features: [
+        { label: t('feat_3galleries'), included: true },
+        { label: t('feat_1gb'), included: true },
+        { label: t('feat_portfolio'), included: true },
+        { label: t('feat_customDomain'), included: false },
+        { label: t('feat_video'), included: false },
+      ],
+      cta: t('freeTrial_cta'),
+      ctaVariant: 'outline',
+      highlight: false,
+    },
+    {
+      id: 'pro',
+      name: t('pro_name'),
+      price: billing === 'annual' ? pricing.pro.annual.perMonth : pricing.pro.monthly.amount,
+      priceNote: '/month',
+      billedAs: billing === 'annual' ? t('billedAs', { amount: pricing.pro.annual.amount }) : undefined,
+      description: t('pro_desc'),
+      features: [
+        { label: t('feat_unlimited'), included: true },
+        { label: t('feat_10gb'), included: true },
+        { label: t('feat_portfolio'), included: true },
+        { label: t('feat_customDomain'), included: true },
+        { label: t('feat_video1h'), included: true },
+      ],
+      cta: t('pro_cta'),
+      ctaVariant: 'default',
+      highlight: true,
+    },
+    {
+      id: 'pro_max',
+      name: t('proMax_name'),
+      price: billing === 'annual' ? pricing.pro_max.annual.perMonth : pricing.pro_max.monthly.amount,
+      priceNote: '/month',
+      billedAs: billing === 'annual' ? t('billedAs', { amount: pricing.pro_max.annual.amount }) : undefined,
+      description: t('proMax_desc'),
+      features: [
+        { label: t('feat_unlimited'), included: true },
+        { label: t('feat_100gb'), included: true },
+        { label: t('feat_portfolio'), included: true },
+        { label: t('feat_customDomain'), included: true },
+        { label: t('feat_video2h'), included: true },
+      ],
+      cta: t('proMax_cta'),
+      ctaVariant: 'outline',
+      highlight: false,
+    },
+  ]
 
   return (
     <section id="pricing" className="bg-secondary/40 py-24 md:py-32">
@@ -239,14 +254,13 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
           className="mb-14 text-center"
         >
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Pricing
+            {t('label')}
           </p>
           <h2 className="font-display text-4xl font-semibold tracking-tighter md:text-5xl">
-            Simple, honest pricing.
+            {t('heading')}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Start free for 14 days — no credit card required. Upgrade when
-            you&apos;re ready.
+            {t('description')}
           </p>
 
           {/* Billing toggle */}
@@ -259,7 +273,7 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Monthly
+              {t('monthly')}
             </button>
             <button
               onClick={() => setBilling('annual')}
@@ -269,11 +283,11 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Annual
+              {t('annual')}
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 billing === 'annual' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
               }`}>
-                Save 17%
+                {t('save')}
               </span>
             </button>
           </div>
@@ -281,7 +295,16 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
 
         <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3">
           {plans.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} delay={0.08 + i * 0.08} billing={billing} />
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              delay={0.08 + i * 0.08}
+              billing={billing}
+              mostPopular={t('mostPopular')}
+              redirecting={t('redirecting')}
+              alreadyOnPlan={t('alreadyOnPlan')}
+              downgradeViaPortal={t('downgradeViaPortal')}
+            />
           ))}
         </div>
 

@@ -12,20 +12,13 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import { deleteVendorShare } from '@/features/gallery/actions/deleteVendorShare'
 import type { VendorShareListItem } from '@/features/gallery/actions/getGalleryVendorShares'
 import { VendorShareModal, type VendorShareImage, type VendorCategory } from './VendorShareModal'
-
-const VENDOR_TYPE_LABELS: Record<string, string> = {
-  florist: 'Florist',
-  mua: 'MUA',
-  venue: 'Venue',
-  planner: 'Planner',
-  other: 'Vendor',
-}
 
 const VENDOR_TYPE_COLORS: Record<string, string> = {
   florist: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
@@ -43,14 +36,24 @@ type Props = {
 }
 
 export function VendorSharesView({ galleryId, initialShares, allImages, categories }: Props) {
+  const t = useTranslations('VendorSharesView')
   const router = useRouter()
   const [shares, setShares] = useState(initialShares)
   const [modalOpen, setModalOpen] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Sync when server re-renders with fresh data after router.refresh()
   useEffect(() => { setShares(initialShares) }, [initialShares])
+
+  const vendorTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      florist: t('typeFlorist'),
+      mua: t('typeMUA'),
+      venue: t('typeVenue'),
+      planner: t('typePlanner'),
+    }
+    return map[type] ?? t('typeVendor')
+  }
 
   function shareUrl(token: string) {
     return `${window.location.origin}/v/${token}`
@@ -68,7 +71,7 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
     const result = await deleteVendorShare(share.id, galleryId)
     if (result.success) {
       setShares(prev => prev.filter(s => s.id !== share.id))
-      toast({ title: 'Vendor link deleted' })
+      toast({ title: t('deletedOk') })
     } else {
       toast({ title: result.error ?? 'Failed to delete', variant: 'destructive' })
     }
@@ -93,22 +96,22 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
       {shares.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Users2Icon className="mb-3 size-10 text-muted-foreground/40" />
-          <p className="font-medium text-muted-foreground">No vendor links yet</p>
+          <p className="font-medium text-muted-foreground">{t('noLinks')}</p>
           <p className="mt-1 text-sm text-muted-foreground/70">
-            Share a curated set of photos with a florist, MUA, venue, or other vendor.
+            {t('noLinksDesc')}
           </p>
           <Button size="sm" className="mt-4 gap-1.5" onClick={() => setModalOpen(true)}>
             <PlusIcon className="size-3.5" />
-            New vendor share
+            {t('newVendorShare')}
           </Button>
         </div>
       ) : (
         <div className="flex flex-col">
           <div className="flex items-center justify-between pb-3">
-            <p className="text-xs text-muted-foreground">{shares.length} link{shares.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground">{t('linkCount', { count: shares.length })}</p>
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setModalOpen(true)}>
               <PlusIcon className="size-3.5" />
-              New vendor share
+              {t('newVendorShare')}
             </Button>
           </div>
           <div className="flex flex-col divide-y divide-border rounded-lg border">
@@ -116,38 +119,36 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
               const expired = share.isExpired
               const expiryText = share.expiresAt
                 ? (() => {
-                    if (expired) return `Expired ${format(new Date(share.expiresAt), 'MMM d, yyyy')}`
+                    if (expired) return t('expiredOn', { date: format(new Date(share.expiresAt), 'MMM d, yyyy') })
                     const diff = Math.ceil((new Date(share.expiresAt).getTime() - Date.now()) / 86_400_000)
                     return diff <= 30
-                      ? `Expires in ${diff} day${diff !== 1 ? 's' : ''}`
-                      : `Expires ${format(new Date(share.expiresAt), 'MMM d, yyyy')}`
+                      ? t('expiresInDays', { days: diff })
+                      : t('expiresOn', { date: format(new Date(share.expiresAt), 'MMM d, yyyy') })
                   })()
-                : 'No expiry'
+                : t('noExpiry')
 
               return (
                 <div
                   key={share.id}
                   className={`px-4 py-3.5 transition-colors hover:bg-muted/30 ${expired ? 'opacity-60' : ''}`}
                 >
-                  {/* Row 1: badge + name + actions */}
                   <div className="flex items-center gap-2">
                     <span
                       className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${VENDOR_TYPE_COLORS[share.vendorType] ?? VENDOR_TYPE_COLORS.other}`}
                     >
-                      {VENDOR_TYPE_LABELS[share.vendorType] ?? 'Vendor'}
+                      {vendorTypeLabel(share.vendorType)}
                     </span>
 
                     <p className="min-w-0 flex-1 truncate text-sm font-medium">
                       {share.vendorName}
                     </p>
 
-                    {/* Actions */}
                     <div className="flex shrink-0 items-center gap-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="size-8"
-                        title="Copy link"
+                        title={t('copyLink')}
                         onClick={() => void handleCopy(share)}
                       >
                         {copiedId === share.id
@@ -158,7 +159,7 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
                         variant="ghost"
                         size="icon"
                         className="size-8"
-                        title="Open link"
+                        title={t('openLink')}
                         asChild
                       >
                         <a href={`/v/${share.token}`} target="_blank" rel="noopener noreferrer">
@@ -169,7 +170,7 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
                         variant="ghost"
                         size="icon"
                         className="size-8 text-muted-foreground hover:text-destructive"
-                        title="Delete link"
+                        title={t('deleteLink')}
                         disabled={deletingId === share.id}
                         onClick={() => void handleDelete(share)}
                       >
@@ -178,14 +179,13 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
                     </div>
                   </div>
 
-                  {/* Row 2: meta */}
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-0.5 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <ImageIcon className="size-3" />
-                      {share.imageCount} photo{share.imageCount !== 1 ? 's' : ''}
+                      {t('photoCount', { count: share.imageCount })}
                     </span>
                     {share.watermark && (
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">Watermarked</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">{t('watermarked')}</span>
                     )}
                     <span className={expired ? 'text-destructive' : ''}>{expiryText}</span>
                     <span className="hidden sm:inline">
@@ -193,11 +193,11 @@ export function VendorSharesView({ galleryId, initialShares, allImages, categori
                     </span>
                     {expired ? (
                       <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                        Expired
+                        {t('expired')}
                       </span>
                     ) : (
                       <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-500">
-                        Active
+                        {t('active')}
                       </span>
                     )}
                   </div>

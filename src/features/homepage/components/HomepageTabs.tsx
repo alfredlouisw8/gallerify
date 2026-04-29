@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Watermark } from '@/types'
 import { WatermarkTab } from './WatermarkTab'
@@ -10,14 +12,16 @@ type Props = {
 }
 
 export function HomepageTabs({ publicContent, initialWatermarks }: Props) {
+  const t = useTranslations('HomepageTabs')
+
   return (
     <Tabs defaultValue="public-page" className="space-y-5">
       <TabsList className="h-9 rounded-lg bg-muted p-1 gap-0.5">
         <TabsTrigger value="public-page" className="h-7 rounded-md px-4 text-xs">
-          Public page
+          {t('publicPage')}
         </TabsTrigger>
         <TabsTrigger value="watermarks" className="h-7 rounded-md px-4 text-xs">
-          Watermarks
+          {t('watermarks')}
         </TabsTrigger>
       </TabsList>
 

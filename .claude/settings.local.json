@@ -36,7 +36,9 @@
       "Bash(git *)",
       "WebFetch(domain:localhost)",
       "WebFetch(domain:127.0.0.1)",
-      "Bash(xargs -I{} basename {} .tsx)"
+      "Bash(xargs -I{} basename {} .tsx)",
+      "Skill(update-config)",
+      "Bash(bash -c 'f=$\\(jq -r \".tool_input.file_path // empty\"\\); if echo \"$f\" | grep -qE \"src/.+\\\\.\\(tsx?|ts\\)$\"; then printf \"{\\\\\"hookSpecificOutput\\\\\":{\\\\\"hookEventName\\\\\":\\\\\"PreToolUse\\\\\",\\\\\"additionalContext\\\\\":\\\\\"REMINDER: Any user-visible strings added must have entries in both src/messages/en.json and src/messages/ja.json\\\\\"}}\"; fi')"
     ]
   }
 }

@@ -9,15 +9,19 @@ import {
   EyeIcon,
   Globe,
   EyeOffIcon,
+  LanguagesIcon,
   LogOut,
   MenuIcon,
   MoreHorizontalIcon,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState, useTransition } from 'react'
 
+import { setLocale } from '@/actions/set-locale'
 import LogoutButton from '@/components/auth/logout-button'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { getStorageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase-browser'
@@ -47,6 +51,8 @@ export default function GalleryTopNavigationBar({
   onOpenSidebar,
 }: TopNavigationBarProps) {
   const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations('GalleryTopNav')
   const previewHref = `/${username}/${encodeURIComponent(galleryData.slug)}`
   const [origin, setOrigin] = useState('')
   useEffect(() => { setOrigin(window.location.origin) }, [])
@@ -60,8 +66,17 @@ export default function GalleryTopNavigationBar({
   )
 
   const [isPending, startTransition] = useTransition()
+  const [localePending, startLocaleTransition] = useTransition()
   const [optimisticPublished, setOptimisticPublished] = useState(galleryData.isPublished)
   const [copied, setCopied] = useState(false)
+
+  const handleToggleLocale = () => {
+    const next = locale === 'en' ? 'ja' : 'en'
+    startLocaleTransition(async () => {
+      await setLocale(next)
+      router.refresh()
+    })
+  }
 
   const handleTogglePublish = () => {
     const next = !optimisticPublished
@@ -72,7 +87,7 @@ export default function GalleryTopNavigationBar({
         setOptimisticPublished(!next)
         toast({ title: result.error, variant: 'destructive' })
       } else {
-        toast({ title: next ? 'Gallery published' : 'Gallery set to draft' })
+        toast({ title: next ? t('publishedOk') : t('draftOk') })
       }
     })
   }
@@ -120,16 +135,14 @@ export default function GalleryTopNavigationBar({
                 disabled={isPending}
               >
                 {optimisticPublished ? (
-                  <><Globe className="size-3.5" />Published</>
+                  <><Globe className="size-3.5" />{t('published')}</>
                 ) : (
-                  <><EyeOffIcon className="size-3.5" />Draft</>
+                  <><EyeOffIcon className="size-3.5" />{t('draft')}</>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {optimisticPublished
-                ? 'Click to unpublish — clients will no longer see this gallery'
-                : 'Click to publish — make visible to clients'}
+              {optimisticPublished ? t('tooltipUnpublish') : t('tooltipPublish')}
             </TooltipContent>
           </Tooltip>
 
@@ -138,14 +151,12 @@ export default function GalleryTopNavigationBar({
               <Button variant="ghost" size="sm" className="gap-1.5 text-xs" asChild>
                 <Link href={previewHref} target="_blank" rel="noopener noreferrer">
                   <EyeIcon className="size-3.5" />
-                  {optimisticPublished ? 'Preview' : 'Preview (draft)'}
+                  {optimisticPublished ? t('preview') : t('previewDraft')}
                 </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {optimisticPublished
-                ? 'Open public gallery in a new tab'
-                : 'Only you can see this. Publish to share with clients.'}
+              {optimisticPublished ? t('tooltipPreviewPublished') : t('tooltipPreviewDraft')}
             </TooltipContent>
           </Tooltip>
 
@@ -158,11 +169,22 @@ export default function GalleryTopNavigationBar({
             allImages={allImages}
           />
 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs text-muted-foreground"
+            onClick={handleToggleLocale}
+            disabled={localePending}
+          >
+            <LanguagesIcon className="size-3.5" />
+            {locale === 'en' ? '日本語' : 'EN'}
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="size-8 rounded-full">
                 <CircleUserIcon className="size-5" />
-                <span className="sr-only">Menu</span>
+                <span className="sr-only">{t('menuSr')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -180,30 +202,36 @@ export default function GalleryTopNavigationBar({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="size-8">
                 <MoreHorizontalIcon className="size-4" />
-                <span className="sr-only">Options</span>
+                <span className="sr-only">{t('options')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               {/* Published toggle */}
               <DropdownMenuItem onClick={handleTogglePublish} disabled={isPending}>
                 {optimisticPublished
-                  ? <><Globe className="mr-2 size-4" />Published</>
-                  : <><EyeOffIcon className="mr-2 size-4" />Draft</>}
+                  ? <><Globe className="mr-2 size-4" />{t('published')}</>
+                  : <><EyeOffIcon className="mr-2 size-4" />{t('draft')}</>}
               </DropdownMenuItem>
 
               {/* Preview */}
               <DropdownMenuItem asChild>
                 <Link href={previewHref} target="_blank" rel="noopener noreferrer">
                   <EyeIcon className="mr-2 size-4" />
-                  Preview
+                  {t('preview')}
                 </Link>
               </DropdownMenuItem>
 
               {/* Copy link */}
               <DropdownMenuItem onClick={() => void handleCopyLink()}>
                 {copied
-                  ? <><CheckIcon className="mr-2 size-4 text-green-500" />Copied!</>
-                  : <><ClipboardIcon className="mr-2 size-4" />Copy link</>}
+                  ? <><CheckIcon className="mr-2 size-4 text-green-500" />{t('copied')}</>
+                  : <><ClipboardIcon className="mr-2 size-4" />{t('copyLink')}</>}
+              </DropdownMenuItem>
+
+              {/* Language toggle */}
+              <DropdownMenuItem onClick={handleToggleLocale} disabled={localePending}>
+                <LanguagesIcon className="mr-2 size-4" />
+                {locale === 'en' ? '日本語' : 'EN'}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -211,7 +239,7 @@ export default function GalleryTopNavigationBar({
               {/* Logout */}
               <DropdownMenuItem onClick={() => void handleLogout()} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 size-4" />
-                Log out
+                {t('logOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

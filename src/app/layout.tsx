@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 
 import { Bodoni_Moda, Jost } from 'next/font/google'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 
 import './globals.css'
 import Providers from '@/components/providers'
@@ -82,18 +84,23 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${jost.variable} ${bodoniModa.variable} font-sans antialiased`}>
-        <Providers>
-          <Toaster />
-          {children}
-        </Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>
+            <Toaster />
+            {children}
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

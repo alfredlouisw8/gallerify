@@ -1,4 +1,5 @@
 import React from 'react'
+import { getTranslations } from 'next-intl/server'
 
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import GalleryCategoryDetail from '@/features/galleryCategory/components/gallery-category-detail'
@@ -9,10 +10,13 @@ type CollectionPageProps = {
 
 export default async function CollectionPage({ params }: CollectionPageProps) {
   const { galleryId, collectionId } = await params
-  const gallery = await getGalleryById(galleryId)
+  const [gallery, t] = await Promise.all([
+    getGalleryById(galleryId),
+    getTranslations('GalleryDetailPage'),
+  ])
 
   if (!gallery) {
-    return <div>Loading...</div>
+    return <div>{t('loading')}</div>
   }
 
   return (

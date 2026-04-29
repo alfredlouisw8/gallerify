@@ -5,11 +5,14 @@ import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { createClient } from '@/lib/supabase-browser'
 
 export default function Navbar() {
+  const t = useTranslations('Navbar')
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -27,6 +30,12 @@ export default function Navbar() {
     })
   }, [])
 
+  const navLinks = [
+    { label: t('features'), href: '/#features' },
+    { label: t('pricing'), href: '/pricing' },
+    { label: t('examples'), href: '/#examples' },
+  ]
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 flex justify-center px-4 pt-5">
       <motion.nav
@@ -38,7 +47,7 @@ export default function Navbar() {
             ? 'border border-black/[0.07] bg-background/[0.92] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] backdrop-blur-md'
             : 'border border-black/[0.04] bg-background/70 backdrop-blur-sm'
         }`}
-        style={{ width: 'min(700px, calc(100vw - 2rem))' }}
+        style={{ width: 'min(760px, calc(100vw - 2rem))' }}
       >
         <Link href="/" className="flex shrink-0 items-center">
           <Image
@@ -52,13 +61,9 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">
-          {[
-            { label: 'Features', href: '/#features' },
-            { label: 'Pricing', href: '/pricing' },
-            { label: 'Examples', href: '/#examples' },
-          ].map((item) => (
+          {navLinks.map((item) => (
             <Link
-              key={item.label}
+              key={item.href}
               href={item.href}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -68,9 +73,10 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <LanguageSwitcher />
           {isAuthenticated ? (
             <Button size="sm" asChild className="rounded-full px-4">
-              <Link href="/dashboard">Go to Dashboard</Link>
+              <Link href="/dashboard">{t('goToDashboard')}</Link>
             </Button>
           ) : (
             <>
@@ -78,10 +84,10 @@ export default function Navbar() {
                 href="/login"
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                Log in
+                {t('login')}
               </Link>
               <Button size="sm" asChild className="rounded-full px-4">
-                <Link href="/login">Get started</Link>
+                <Link href="/login">{t('getStarted')}</Link>
               </Button>
             </>
           )}
@@ -106,13 +112,9 @@ export default function Navbar() {
           id="mobile-nav"
           className="absolute left-4 right-4 top-20 flex flex-col gap-1 rounded-2xl border border-black/[0.07] bg-background/95 p-3 shadow-xl backdrop-blur-md"
         >
-          {[
-            { label: 'Features', href: '/#features' },
-            { label: 'Pricing', href: '/pricing' },
-            { label: 'Examples', href: '/#examples' },
-          ].map((item) => (
+          {navLinks.map((item) => (
             <Link
-              key={item.label}
+              key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
               className="rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-secondary"
@@ -121,20 +123,22 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="mt-1 flex flex-col gap-2 border-t pt-3">
+            <LanguageSwitcher className="px-3 py-2 text-left" />
             {isAuthenticated ? (
               <Button size="sm" asChild className="rounded-full">
-                <Link href="/dashboard">Go to Dashboard</Link>
+                <Link href="/dashboard">{t('goToDashboard')}</Link>
               </Button>
             ) : (
               <>
                 <Link
                   href="/login"
+                  onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-secondary"
                 >
-                  Log in
+                  {t('login')}
                 </Link>
                 <Button size="sm" asChild className="rounded-full">
-                  <Link href="/login">Get started free</Link>
+                  <Link href="/login">{t('getStartedFree')}</Link>
                 </Button>
               </>
             )}

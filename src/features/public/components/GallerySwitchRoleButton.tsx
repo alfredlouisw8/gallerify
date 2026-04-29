@@ -2,6 +2,7 @@
 
 import { LogOutIcon } from 'lucide-react'
 import { useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { clearGalleryRole } from '@/features/public/actions/clearGalleryRole'
 
@@ -12,6 +13,7 @@ interface Props {
 
 export default function GallerySwitchRoleButton({ galleryId, redirectPath }: Props) {
   const [isPending, startTransition] = useTransition()
+  const t = useTranslations('GallerySwitchRole')
 
   const handleClick = () => {
     startTransition(async () => {
@@ -23,11 +25,11 @@ export default function GallerySwitchRoleButton({ galleryId, redirectPath }: Pro
     <button
       onClick={handleClick}
       disabled={isPending}
-      title="Switch role"
+      title={t('switchRole')}
       className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-xs font-medium text-white backdrop-blur-sm transition-opacity hover:bg-black/80 disabled:opacity-50"
     >
       <LogOutIcon className="size-3.5" />
-      {isPending ? 'Leaving…' : 'Switch role'}
+      {isPending ? t('leaving') : t('switchRole')}
     </button>
   )
 }

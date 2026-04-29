@@ -2,12 +2,15 @@
 
 import { ShieldCheckIcon, ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface OwnerBannerProps {
   galleryId: string
 }
 
 export default function OwnerBanner({ galleryId }: OwnerBannerProps) {
+  const t = useTranslations('OwnerBanner')
+
   return (
     <div
       className="fixed inset-x-0 top-0 z-[100] flex items-center justify-between px-5 py-2"
@@ -24,7 +27,7 @@ export default function OwnerBanner({ galleryId }: OwnerBannerProps) {
         style={{ color: 'oklch(0.65 0.015 260)' }}
       >
         <ArrowLeftIcon className="size-3.5" />
-        Back to editor
+        {t('backToEditor')}
       </Link>
 
       <div
@@ -36,7 +39,7 @@ export default function OwnerBanner({ galleryId }: OwnerBannerProps) {
         }}
       >
         <ShieldCheckIcon className="size-3" />
-        Viewing as Owner — not published yet
+        {t('viewingAsOwner')}
       </div>
 
       {/* Spacer to keep badge centred */}

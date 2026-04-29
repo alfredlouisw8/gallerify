@@ -2,6 +2,7 @@
 
 import { useController } from 'react-hook-form'
 import { SaveIcon } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
@@ -40,6 +41,7 @@ function SettingsRow({
 }
 
 export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
+  const t = useTranslations('GalleryUpdateForm')
   const { form, handleSubmit } = useGalleryForm({ type: 'update', galleryData })
 
   const isDirty = form.formState.isDirty
@@ -55,9 +57,9 @@ export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
         {/* Page header */}
         <div className=" p-6 lg:p-8">
           <div className="max-w-lg">
-            <h2 className="text-base font-semibold">General Settings</h2>
+            <h2 className="text-base font-semibold">{t('sectionTitle')}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Basic information about this gallery.
+              {t('sectionDesc')}
             </p>
           </div>
         </div>
@@ -67,12 +69,12 @@ export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
           <div className="max-w-lg">
           {/* Gallery Name */}
           <SettingsRow
-            label="Gallery Name"
-            description="The name your clients will see when viewing this gallery."
+            label={t('nameLabel')}
+            description={t('nameDesc')}
           >
             <Input
               {...titleField}
-              placeholder="e.g. Sarah & James Wedding"
+              placeholder={t('namePlaceholder')}
               className={titleState.error ? 'border-destructive' : ''}
             />
             {titleState.error && (
@@ -82,12 +84,12 @@ export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
 
           {/* Slug */}
           <SettingsRow
-            label="URL Slug"
-            description="Used in the public gallery URL. Changing this will break existing links."
+            label={t('slugLabel')}
+            description={t('slugDesc')}
           >
             <Input
               {...slugField}
-              placeholder="sarah-james-wedding"
+              placeholder={t('slugPlaceholder')}
               className={`font-mono text-sm ${slugState.error ? 'border-destructive' : ''}`}
             />
             {slugState.error && (
@@ -97,16 +99,16 @@ export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
 
           {/* Event Date */}
           <SettingsRow
-            label="Event Date"
-            description="The date of the photographed event."
+            label={t('dateLabel')}
+            description={t('dateDesc')}
           >
             <DatePickerFormField name="date" />
           </SettingsRow>
 
           {/* Watermark */}
           <SettingsRow
-            label="Watermark"
-            description="Applied to photos when sharing or viewing this gallery."
+            label={t('watermarkLabel')}
+            description={t('watermarkDesc')}
           >
             <WatermarkPicker
               watermarks={watermarks}
@@ -121,14 +123,14 @@ export default function GalleryUpdateForm({ galleryData, watermarks }: Props) {
         {isDirty && (
           <div className="sticky bottom-0 z-10 border-t bg-background/95 px-6 py-3.5 backdrop-blur-sm lg:px-8">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-xs text-muted-foreground">You have unsaved changes</p>
+              <p className="text-xs text-muted-foreground">{t('unsavedChanges')}</p>
               <Button size="sm" type="submit" disabled={isSubmitting} className="gap-1.5">
                 {isSubmitting ? (
-                  'Saving…'
+                  t('saving')
                 ) : (
                   <>
                     <SaveIcon className="size-3.5" />
-                    Save changes
+                    {t('saveChanges')}
                   </>
                 )}
               </Button>

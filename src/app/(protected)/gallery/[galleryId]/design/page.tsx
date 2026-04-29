@@ -1,4 +1,5 @@
 import { Bodoni_Moda, Cormorant_Garamond, Inter, Jost, Outfit, Playfair_Display } from 'next/font/google'
+import { getTranslations } from 'next-intl/server'
 
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
 import supabaseAdmin from '@/lib/supabase'
@@ -68,7 +69,8 @@ export default async function GalleryDesignPage({ params }: Props) {
       .maybeSingle(),
   ])
 
-  if (!gallery) return <div className="p-8 text-sm text-muted-foreground">Gallery not found.</div>
+  const t = await getTranslations('GalleryPage')
+  if (!gallery) return <div className="p-8 text-sm text-muted-foreground">{t('notFound')}</div>
 
   const username = metaResult.data?.username ?? ''
 

@@ -10,6 +10,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import type React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
@@ -49,6 +50,7 @@ function useIsMobile() {
 
 /* ── Secondary options sidebar ── */
 function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: string | null }) {
+  const t = useTranslations('GalleryDesign')
   const { prefs, setPrefs, selectedPanel, setSelectedPanel, isDirty, setIsDirty } = useGalleryDesign()
   const [isPending, startTransition] = useTransition()
   const isMobile = useIsMobile()
@@ -65,7 +67,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
       const [jsonUrl] = await onImagesUpload([file], 'banners')
       await updateGalleryBanner(galleryId, jsonUrl)
       router.refresh()
-      toast({ title: 'Cover updated.' })
+      toast({ title: t('coverUpdated') })
     } catch (err) {
       toast({ title: err instanceof Error ? err.message : 'Failed to update cover', variant: 'destructive' })
     } finally {
@@ -81,15 +83,15 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
     startTransition(async () => {
       await updateGalleryPreferences(galleryId, prefs)
       setIsDirty(false)
-      toast({ title: 'Design saved', description: 'Your gallery design has been updated.' })
+      toast({ title: t('designSaved'), description: t('designSavedDesc') })
     })
   }
 
   const titles: Record<string, string> = {
-    cover:  'Cover',
-    style:  'Style',
-    color:  'Color',
-    layout: 'Layout',
+    cover:  t('panelCover'),
+    style:  t('panelStyle'),
+    color:  t('panelColor'),
+    layout: t('panelLayout'),
   }
 
   return (
@@ -123,14 +125,14 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
 
             {/* ── COVER: design layout + focal point ── */}
             {selectedPanel === 'cover' && (<>
-              <Section label="Banner image">
+              <Section label={t('bannerImage')}>
                 <button
                   onClick={() => !isUploadingBanner && bannerFileRef.current?.click()}
                   className="flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-all hover:bg-muted/30"
                   style={{ borderColor: 'hsl(var(--border))' }}
                 >
                   <UploadCloudIcon className="size-4 shrink-0 text-muted-foreground" />
-                  <span>{isUploadingBanner ? 'Uploading…' : 'Change Banner'}</span>
+                  <span>{isUploadingBanner ? t('uploading') : t('changeBanner')}</span>
                   {isUploadingBanner && <LoaderIcon className="ml-auto size-3.5 animate-spin text-muted-foreground" />}
                 </button>
                 <input ref={bannerFileRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
@@ -141,8 +143,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                   [
                     {
                       value: 'classic' as const,
-                      label: 'Classic',
-                      desc: 'Title bottom-left',
+                      label: t('coverClassicLabel'),
+                      desc: t('coverClassicDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }}>
                           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 45%, transparent 75%)' }} />
@@ -156,8 +158,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'centered' as const,
-                      label: 'Centered',
-                      desc: 'Title centered',
+                      label: t('coverCenteredLabel'),
+                      desc: t('coverCenteredDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }}>
                           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.44)' }} />
@@ -172,8 +174,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'minimal' as const,
-                      label: 'Minimal',
-                      desc: 'Half banner',
+                      label: t('coverMinimalLabel'),
+                      desc: t('coverMinimalDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#111' }}>
                           <div style={{ height: '52%', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }} />
@@ -192,8 +194,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'bold' as const,
-                      label: 'Bold',
-                      desc: 'Title left panel',
+                      label: t('coverBoldLabel'),
+                      desc: t('coverBoldDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }}>
                           <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(10,9,8,0.92) 0%, rgba(10,9,8,0.6) 40%, transparent 68%)' }} />
@@ -208,8 +210,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'framed' as const,
-                      label: 'Framed',
-                      desc: 'Padded banner, title above',
+                      label: t('coverFramedLabel'),
+                      desc: t('coverFramedDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0e0d0c' }}>
                           {/* padded photo frame */}
@@ -227,8 +229,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'journal' as const,
-                      label: 'Journal',
-                      desc: 'Image left, text right',
+                      label: t('coverJournalLabel'),
+                      desc: t('coverJournalDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden flex" style={{ aspectRatio: '16/9', background: '#0e0d0c' }}>
                           {/* left 50% photo */}
@@ -249,8 +251,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'vintage' as const,
-                      label: 'Vintage',
-                      desc: 'Sepia banner, title below',
+                      label: t('coverVintageLabel'),
+                      desc: t('coverVintageDesc'),
                       preview: (
                         <div className="w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#1a1510', display: 'flex', flexDirection: 'column' }}>
                           {/* photo — 75% height */}
@@ -273,8 +275,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'cinematic' as const,
-                      label: 'Cinematic',
-                      desc: 'Letterbox, title on bar',
+                      label: t('coverCinematicLabel'),
+                      desc: t('coverCinematicDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
                           {/* photo strip in the middle */}
@@ -295,8 +297,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'video-classic' as const,
-                      label: 'Video Classic',
-                      desc: 'YouTube, title bottom-left',
+                      label: t('coverVideoClassicLabel'),
+                      desc: t('coverVideoClassicDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
                           <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,#1a1510 0%,#0a0908 100%)' }} />
@@ -317,8 +319,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                     },
                     {
                       value: 'video-centered' as const,
-                      label: 'Video Centered',
-                      desc: 'YouTube, title centered',
+                      label: t('coverVideoCenteredLabel'),
+                      desc: t('coverVideoCenteredDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
                           <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,#1a1510 0%,#0a0908 100%)' }} />
@@ -370,30 +372,30 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
               </div>
 
               {(prefs.coverDesign === 'video-classic' || prefs.coverDesign === 'video-centered') && (
-                <Section label="YouTube URL">
+                <Section label={t('youtubeUrl')}>
                   <input
                     type="url"
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder={t('youtubePlaceholder')}
                     value={prefs.bannerVideoUrl ?? ''}
                     onChange={(e) => update('bannerVideoUrl', e.target.value)}
                     className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[oklch(0.78_0.09_80)]"
                     style={{ borderColor: 'hsl(var(--border))' }}
                   />
                   <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                    Paste a YouTube link — video plays muted and looped
+                    {t('youtubeHint')}
                   </p>
                 </Section>
               )}
 
               {bannerUrl && (
-                <Section label="Focal point">
+                <Section label={t('focalPoint')}>
                   <FocalPointPicker
                     bannerUrl={bannerUrl}
                     value={prefs.bannerFocalPoint ?? { x: 50, y: 50 }}
                     onChange={(v) => update('bannerFocalPoint', v)}
                   />
                   <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                    Click or drag to set where the image is anchored
+                    {t('focalPointHint')}
                   </p>
                 </Section>
               )}
@@ -402,7 +404,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
             {/* ── STYLE: font + overlay ── */}
             {selectedPanel === 'style' && (<>
 
-              <Section label="Font pairing">
+              <Section label={t('fontPairing')}>
                 <div className="flex flex-col gap-1.5">
                   {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
                     const active = prefs.fontPairing === key
@@ -431,13 +433,13 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Overlay">
+              <Section label={t('overlay')}>
                 <div className="flex flex-col gap-1.5">
                   {(
                     [
-                      { value: 'subtle' as const, label: 'Subtle', desc: 'Photo-forward' },
-                      { value: 'medium' as const, label: 'Medium', desc: 'Balanced' },
-                      { value: 'strong' as const, label: 'Strong', desc: 'Cinematic' },
+                      { value: 'subtle' as const, label: t('overlaySubtleLabel'), desc: t('overlaySubtleDesc') },
+                      { value: 'medium' as const, label: t('overlayMediumLabel'), desc: t('overlayMediumDesc') },
+                      { value: 'strong' as const, label: t('overlayStrongLabel'), desc: t('overlayStrongDesc') },
                     ]
                   ).map((opt) => {
                     const active = prefs.overlayIntensity === opt.value
@@ -463,13 +465,13 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Grain">
+              <Section label={t('grain')}>
                 <div className="flex flex-col gap-1.5">
                   {(
                     [
-                      { value: 'none'   as const, label: 'None',   desc: 'Clean & digital' },
-                      { value: 'subtle' as const, label: 'Subtle', desc: 'Light film feel' },
-                      { value: 'strong' as const, label: 'Strong', desc: 'Analog texture' },
+                      { value: 'none'   as const, label: t('grainNoneLabel'),   desc: t('grainNoneDesc') },
+                      { value: 'subtle' as const, label: t('grainSubtleLabel'), desc: t('grainSubtleDesc') },
+                      { value: 'strong' as const, label: t('grainStrongLabel'), desc: t('grainStrongDesc') },
                     ]
                   ).map((opt) => {
                     const active = prefs.grainIntensity === opt.value
@@ -498,15 +500,15 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
 
             {/* ── COLOR: theme + accent ── */}
             {selectedPanel === 'color' && (<>
-              <Section label="Theme">
+              <Section label={t('theme')}>
                 <div className="flex flex-col gap-1.5">
                   {(
                     [
-                      { value: 'dark'  as const, label: 'Dark',  swatch: 'oklch(0.11 0.008 60)' },
-                      { value: 'light' as const, label: 'Light', swatch: 'oklch(0.97 0.006 70)' },
-                      { value: 'rose'  as const, label: 'Rose',  swatch: 'oklch(0.58 0.18 10)'  },
-                      { value: 'sand'  as const, label: 'Sand',  swatch: 'oklch(0.72 0.10 75)'  },
-                      { value: 'olive' as const, label: 'Olive', swatch: 'oklch(0.55 0.14 130)' },
+                      { value: 'dark'  as const, label: t('themeDark'),  swatch: 'oklch(0.11 0.008 60)' },
+                      { value: 'light' as const, label: t('themeLight'), swatch: 'oklch(0.97 0.006 70)' },
+                      { value: 'rose'  as const, label: t('themeRose'),  swatch: 'oklch(0.58 0.18 10)'  },
+                      { value: 'sand'  as const, label: t('themeSand'),  swatch: 'oklch(0.72 0.10 75)'  },
+                      { value: 'olive' as const, label: t('themeOlive'), swatch: 'oklch(0.55 0.14 130)' },
                     ]
                   ).map((t) => {
                     const active = prefs.colorTheme === t.value
@@ -552,7 +554,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                             }}
                           />
                         </span>
-                        Custom
+                        {t('themeCustom')}
                         {active && <CheckIcon className="ml-auto size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
                       </label>
                     )
@@ -560,15 +562,15 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Accent">
+              <Section label={t('accent')}>
                 <div className="flex flex-col gap-1.5">
                   {(
                     [
-                      { value: 'gold'  as const, label: 'Gold' },
-                      { value: 'ivory' as const, label: 'Ivory' },
-                      { value: 'sage'  as const, label: 'Sage' },
-                      { value: 'rose'  as const, label: 'Rose' },
-                      { value: 'slate' as const, label: 'Slate' },
+                      { value: 'gold'  as const, label: t('accentGold') },
+                      { value: 'ivory' as const, label: t('accentIvory') },
+                      { value: 'sage'  as const, label: t('accentSage') },
+                      { value: 'rose'  as const, label: t('accentRose') },
+                      { value: 'slate' as const, label: t('accentSlate') },
                     ]
                   ).map((ac) => {
                     const active = prefs.accentColor === ac.value
@@ -614,7 +616,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                             }}
                           />
                         </span>
-                        Custom
+                        {t('accentCustom')}
                         {active && <CheckIcon className="ml-auto size-3" />}
                       </label>
                     )
@@ -625,13 +627,13 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
 
             {/* ── LAYOUT: photo layout + spacing ── */}
             {selectedPanel === 'layout' && (<>
-              <Section label="Grid">
+              <Section label={t('grid')}>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
                       {
                         value: 'masonry' as const,
-                        label: 'Masonry',
+                        label: t('gridMasonry'),
                         preview: (active: boolean) => {
                           const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
                           return (
@@ -652,7 +654,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                       },
                       {
                         value: 'grid' as const,
-                        label: 'Grid',
+                        label: t('gridGrid'),
                         preview: (active: boolean) => {
                           const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
                           return (
@@ -666,7 +668,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                       },
                       {
                         value: 'editorial' as const,
-                        label: 'Editorial',
+                        label: t('gridEditorial'),
                         preview: (active: boolean) => {
                           const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
                           return (
@@ -683,7 +685,7 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                       },
                       {
                         value: 'blog' as const,
-                        label: 'Blog',
+                        label: t('gridBlog'),
                         preview: (active: boolean) => {
                           const c = active ? 'oklch(0.78 0.09 80 / 0.55)' : 'hsl(var(--border))'
                           const cd = active ? 'oklch(0.78 0.09 80 / 0.25)' : 'hsl(var(--border) / 0.5)'
@@ -733,13 +735,13 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Spacing">
+              <Section label={t('spacing')}>
                 <div className="grid grid-cols-3 gap-2">
                   {(
                     [
-                      { value: 'tight'   as const, label: 'Tight',   gap: '2px'  },
-                      { value: 'relaxed' as const, label: 'Relaxed', gap: '5px'  },
-                      { value: 'airy'    as const, label: 'Airy',    gap: '10px' },
+                      { value: 'tight'   as const, label: t('spacingTight'),   gap: '2px'  },
+                      { value: 'relaxed' as const, label: t('spacingRelaxed'), gap: '5px'  },
+                      { value: 'airy'    as const, label: t('spacingAiry'),    gap: '10px' },
                     ]
                   ).map((opt) => {
                     const active = prefs.photoSpacing === opt.value
@@ -769,12 +771,12 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Thumbnail size">
+              <Section label={t('thumbnailSize')}>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      { value: 'regular' as const, label: 'Regular', desc: '4 / 2 cols' },
-                      { value: 'large'   as const, label: 'Large',   desc: '3 / 1 cols' },
+                      { value: 'regular' as const, label: t('thumbnailRegularLabel'), desc: t('thumbnailRegularDesc') },
+                      { value: 'large'   as const, label: t('thumbnailLargeLabel'),   desc: t('thumbnailLargeDesc') },
                     ]
                   ).map((opt) => {
                     const active = prefs.thumbnailSize === opt.value
@@ -803,13 +805,13 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
                 </div>
               </Section>
 
-              <Section label="Category bar">
+              <Section label={t('categoryBar')}>
                 <div className="flex flex-col gap-1.5">
                   {(
                     [
-                      { value: 'pills'     as const, label: 'Pills',     desc: 'Rounded filled tabs' },
-                      { value: 'underline' as const, label: 'Underline', desc: 'Minimal underline' },
-                      { value: 'text'      as const, label: 'Text',      desc: 'Plain text links' },
+                      { value: 'pills'     as const, label: t('categoryBarPillsLabel'),     desc: t('categoryBarPillsDesc') },
+                      { value: 'underline' as const, label: t('categoryBarUnderlineLabel'), desc: t('categoryBarUnderlineDesc') },
+                      { value: 'text'      as const, label: t('categoryBarTextLabel'),      desc: t('categoryBarTextDesc') },
                     ]
                   ).map((opt) => {
                     const active = prefs.categoryBarStyle === opt.value
@@ -839,8 +841,8 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
             {isDirty && !isMobile && (
               <Button onClick={handleSave} disabled={isPending} size="sm" className="mt-auto w-full">
                 {isPending
-                  ? <><LoaderIcon className="mr-2 size-3.5 animate-spin" />Saving…</>
-                  : <><CheckIcon className="mr-2 size-3.5" />Save changes</>
+                  ? <><LoaderIcon className="mr-2 size-3.5 animate-spin" />{t('saving')}</>
+                  : <><CheckIcon className="mr-2 size-3.5" />{t('saveChanges')}</>
                 }
               </Button>
             )}
@@ -864,6 +866,7 @@ function PreviewCard({
   device: Device
   previewUrl: string
 }) {
+  const t = useTranslations('GalleryDesign')
   const screenRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ w: 0, h: 0 })
 
@@ -900,7 +903,7 @@ function PreviewCard({
             <iframe
               key={previewUrl}
               src={previewUrl}
-              title="Mobile preview"
+              title={t('mobilePreview')}
               style={{
                 position: 'absolute', top: 0, left: 0,
                 width: `${VIRTUAL_W}px`, height: `${iframeH}px`,
@@ -940,7 +943,7 @@ function PreviewCard({
           <iframe
             key={previewUrl}
             src={previewUrl}
-            title="Desktop preview"
+            title={t('desktopPreview')}
             style={{
               position: 'absolute', top: 0, left: 0,
               width: `${VIRTUAL_W}px`, height: `${iframeH}px`,
@@ -1022,6 +1025,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 /* ── Root ── */
 export default function GalleryDesignPreview({ gallery, username }: Props) {
+  const t = useTranslations('GalleryDesign')
   const [device, setDevice] = useState<Device>('desktop')
   const { prefs, selectedPanel, isDirty, setIsDirty } = useGalleryDesign()
   const isMobile = useIsMobile()
@@ -1031,7 +1035,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
     startSaveTransition(async () => {
       await updateGalleryPreferences(gallery.id, prefs)
       setIsDirty(false)
-      toast({ title: 'Design saved', description: 'Your gallery design has been updated.' })
+      toast({ title: t('designSaved'), description: t('designSavedDesc') })
     })
   }
 
@@ -1076,8 +1080,8 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
             className="w-full gap-1.5 shadow-2xl"
           >
             {isSaving
-              ? <><LoaderIcon className="size-3.5 animate-spin" />Saving…</>
-              : <><CheckIcon className="size-3.5" />Save changes</>}
+              ? <><LoaderIcon className="size-3.5 animate-spin" />{t('saving')}</>
+              : <><CheckIcon className="size-3.5" />{t('saveChanges')}</>}
           </Button>
         </div>
       )}
@@ -1086,9 +1090,9 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
       {!selectedPanel && (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center lg:hidden">
           <PaletteIcon className="mb-1 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium text-muted-foreground">Design your gallery</p>
+          <p className="text-sm font-medium text-muted-foreground">{t('designYourGallery')}</p>
           <p className="text-xs text-muted-foreground/60">
-            Tap ☰ and choose Cover, Style, Color, or Layout
+            {t('designHint')}
           </p>
         </div>
       )}
@@ -1106,8 +1110,8 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
           >
             {(
               [
-                { id: 'desktop', icon: <MonitorIcon className="size-3.5" />, label: 'Desktop' },
-                { id: 'mobile',  icon: <SmartphoneIcon className="size-3.5" />, label: 'Mobile' },
+                { id: 'desktop', icon: <MonitorIcon className="size-3.5" />, label: t('deviceDesktop') },
+                { id: 'mobile',  icon: <SmartphoneIcon className="size-3.5" />, label: t('deviceMobile') },
               ] as const
             ).map((d) => (
               <button

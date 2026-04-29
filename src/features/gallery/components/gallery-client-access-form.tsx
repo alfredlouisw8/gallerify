@@ -2,6 +2,7 @@
 
 import { CheckIcon, ClipboardIcon, EyeIcon, EyeOffIcon, HeartIcon, UsersIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -22,6 +23,7 @@ export default function GalleryClientAccessForm({
   isClientPasswordProtected,
   showClientSelects,
 }: Props) {
+  const t = useTranslations('GalleryClientAccess')
   const [enabled, setEnabled] = useState(clientAccessEnabled)
   const [hasPassword, setHasPassword] = useState(isClientPasswordProtected)
   const [password, setPassword] = useState('')
@@ -31,7 +33,6 @@ export default function GalleryClientAccessForm({
   const [selectsEnabled, setSelectsEnabled] = useState(showClientSelects)
   const [isSelectsSaving, setIsSelectsSaving] = useState(false)
 
-  // Re-fetch on mount to get the real DB value, bypassing Next.js router cache
   useEffect(() => {
     getClientAccessSettings(galleryId).then((s) => {
       setEnabled(s.clientAccessEnabled)
@@ -47,9 +48,9 @@ export default function GalleryClientAccessForm({
       const result = await updateShowClientSelects(galleryId, checked)
       if (result.error) throw new Error(result.error)
       setSelectsEnabled(checked)
-      toast({ title: checked ? 'Client selects visible to viewers.' : 'Client selects hidden from viewers.' })
+      toast({ title: checked ? t('selectsVisible') : t('selectsHidden') })
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to update', variant: 'destructive' })
+      toast({ title: err instanceof Error ? err.message : t('updateFail'), variant: 'destructive' })
     } finally {
       setIsSelectsSaving(false)
     }
@@ -62,15 +63,15 @@ export default function GalleryClientAccessForm({
       if (result.error) throw new Error(result.error)
       if (checked) {
         setEnabled(true)
-        toast({ title: 'Client access enabled.' })
+        toast({ title: t('enabledOk') })
       } else {
         setEnabled(false)
         setPassword('')
-        toast({ title: 'Client access disabled.' })
+        toast({ title: t('disabledOk') })
       }
     } catch (err) {
       toast({
-        title: err instanceof Error ? err.message : 'Failed to update',
+        title: err instanceof Error ? err.message : t('updateFail'),
         variant: 'destructive',
       })
     } finally {
@@ -84,10 +85,10 @@ export default function GalleryClientAccessForm({
     try {
       const result = await updateClientAccess(galleryId, true, password)
       if (result.error) throw new Error(result.error)
-      toast({ title: 'Client access enabled.' })
+      toast({ title: t('enabledOk') })
     } catch (err) {
       toast({
-        title: err instanceof Error ? err.message : 'Failed to save',
+        title: err instanceof Error ? err.message : t('saveFail'),
         variant: 'destructive',
       })
     } finally {
@@ -104,14 +105,13 @@ export default function GalleryClientAccessForm({
 
   return (
     <div className="space-y-4">
-      {/* Toggle row */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <UsersIcon className="size-4 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium">Client access</p>
+            <p className="text-sm font-medium">{t('title')}</p>
             <p className="text-xs text-muted-foreground">
-              Give your client a private password to heart and hide photos.
+              {t('description')}
             </p>
           </div>
         </div>
@@ -134,11 +134,8 @@ export default function GalleryClientAccessForm({
         </button>
       </div>
 
-      {/* Sub-settings — shown when enabled */}
       {enabled && (
         <div className="ml-7 space-y-4">
-
-          {/* Password */}
           <div className="space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -147,7 +144,7 @@ export default function GalleryClientAccessForm({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void handleSave() }}
-                placeholder="Set client password"
+                placeholder={t('placeholder')}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-20 text-sm outline-none focus:ring-1 focus:ring-ring"
               />
               <div className="absolute inset-y-0 right-2 flex items-center gap-1">
@@ -173,17 +170,16 @@ export default function GalleryClientAccessForm({
               onClick={() => void handleSave()}
               disabled={!password.trim() || isSaving}
             >
-              {isSaving ? 'Saving…' : 'Save'}
+              {isSaving ? t('saving') : t('save')}
             </Button>
           </div>
-          {/* Show client selects toggle */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <HeartIcon className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Show client selects</p>
+                <p className="text-sm font-medium">{t('showSelectsTitle')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Display hearted photos as a &quot;Client Selects&quot; category for all viewers.
+                  {t('showSelectsDesc')}
                 </p>
               </div>
             </div>

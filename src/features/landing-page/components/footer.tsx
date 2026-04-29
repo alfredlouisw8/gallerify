@@ -1,10 +1,19 @@
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 
 export default function Footer() {
+  const t = useTranslations('Footer')
+
+  const footerLinks = [
+    { label: t('terms'), href: '#' },
+    { label: t('privacy'), href: '#' },
+    { label: t('contact'), href: '/contact' },
+  ]
+
   return (
     <>
       {/* CTA band */}
@@ -13,10 +22,10 @@ export default function Footer() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
             <div>
               <h2 className="font-display text-3xl font-semibold tracking-tighter text-background md:text-4xl">
-                Your work is too good for a Drive link.
+                {t('ctaHeading')}
               </h2>
               <p className="mt-2 text-background/60">
-                Join 12,400+ photographers delivering work their clients actually love opening.
+                {t('ctaDesc')}
               </p>
             </div>
             <Button
@@ -25,7 +34,7 @@ export default function Footer() {
               className="group rounded-full bg-background text-foreground hover:bg-background/90"
             >
               <Link href="/login">
-                Get started free
+                {t('ctaButton')}
                 <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </Button>
@@ -46,13 +55,9 @@ export default function Footer() {
             />
 
             <nav className="flex flex-wrap gap-5">
-              {[
-                { label: 'Terms', href: '#' },
-                { label: 'Privacy', href: '#' },
-                { label: 'Contact', href: '/contact' },
-              ].map((item) => (
+              {footerLinks.map((item) => (
                 <Link
-                  key={item.label}
+                  key={item.href}
                   href={item.href}
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
@@ -62,7 +67,7 @@ export default function Footer() {
             </nav>
 
             <p className="text-sm text-muted-foreground">
-              © 2026 Gallerify. All rights reserved.
+              {t('copyright')}
             </p>
           </div>
         </div>
