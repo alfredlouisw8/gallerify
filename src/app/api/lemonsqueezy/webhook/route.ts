@@ -5,6 +5,16 @@ import { NextResponse } from 'next/server'
 import { Plan, PlanType, SubscriptionStatus, SubscriptionStatusType } from '@/lib/plans'
 import supabase from '@/lib/supabase'
 
+function getBillingPeriodFromVariantId(variantId: string): 'monthly' | 'annual' {
+  const annualIds = [
+    process.env.LEMONSQUEEZY_PRO_ANNUAL_VARIANT_ID,
+    process.env.LEMONSQUEEZY_PRO_ANNUAL_VARIANT_ID_ID,
+    process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID,
+    process.env.LEMONSQUEEZY_PRO_MAX_ANNUAL_VARIANT_ID_ID,
+  ].filter(Boolean)
+  return annualIds.includes(variantId) ? 'annual' : 'monthly'
+}
+
 // Map Lemon Squeezy subscription statuses to our internal plan
 function getPlanFromVariantId(variantId: string): PlanType {
   const proMaxIds = [
@@ -61,6 +71,7 @@ export async function POST(request: Request) {
     case 'subscription_updated': {
       const variantId = String(attributes.variant_id ?? '')
       const plan = getPlanFromVariantId(variantId)
+      const billingPeriod = getBillingPeriodFromVariantId(variantId)
       const status = getSubscriptionStatus(attributes.status)
       const lsCustomerId = String(attributes.customer_id ?? '')
       const lsSubscriptionId = String(payload.data?.id ?? '')
@@ -79,6 +90,7 @@ export async function POST(request: Request) {
         .from('user_metadata')
         .update({
           plan,
+          billing_period: billingPeriod,
           subscription_status: status,
           ls_customer_id: lsCustomerId,
           ls_subscription_id: lsSubscriptionId,

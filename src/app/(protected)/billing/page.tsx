@@ -19,7 +19,7 @@ export default async function BillingPage() {
   const { data: meta } = await supabase
     .from('user_metadata')
     .select(
-      'plan, subscription_status, trial_ends_at, storage_used_bytes, video_used_seconds, current_period_end, ls_subscription_id'
+      'plan, billing_period, subscription_status, trial_ends_at, storage_used_bytes, video_used_seconds, current_period_end, ls_subscription_id'
     )
     .eq('user_id', user.id)
     .single()

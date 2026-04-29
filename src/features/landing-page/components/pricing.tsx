@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
-import { getPricing } from '@/lib/pricing'
+import { getPricing, getSavePercent } from '@/lib/pricing'
 
 type BillingPeriod = 'monthly' | 'annual'
 
@@ -287,7 +287,7 @@ export default function Pricing({ isIndonesia = false }: { isIndonesia?: boolean
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 billing === 'annual' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
               }`}>
-                {t('save')}
+                {t('save', { pct: getSavePercent(isIndonesia) })}
               </span>
             </button>
           </div>

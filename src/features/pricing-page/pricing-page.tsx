@@ -11,7 +11,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { getPricing } from '@/lib/pricing'
+import { getPricing, getSavePercent } from '@/lib/pricing'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -344,7 +344,7 @@ function PlanCard({ plan, billing, delay }: { plan: Plan; billing: BillingPeriod
 
 // ─── Billing toggle ───────────────────────────────────────────────────────────
 
-function BillingToggle({ billing, onChange }: { billing: BillingPeriod; onChange: (b: BillingPeriod) => void }) {
+function BillingToggle({ billing, onChange, savePercent }: { billing: BillingPeriod; onChange: (b: BillingPeriod) => void; savePercent: number }) {
   return (
     <div className="inline-flex items-center rounded-full border border-border bg-card p-1">
       {(['monthly', 'annual'] as const).map((b) => (
@@ -360,7 +360,7 @@ function BillingToggle({ billing, onChange }: { billing: BillingPeriod; onChange
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
               billing === 'annual' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
             }`}>
-              Save 17%
+              Save {savePercent}%
             </span>
           )}
         </button>
@@ -468,6 +468,7 @@ function FaqSection() {
 export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boolean }) {
   const [billing, setBilling] = useState<BillingPeriod>('monthly')
   const plans = buildPlans(isIndonesia, billing)
+  const savePercent = getSavePercent(isIndonesia)
 
   return (
     <>
@@ -494,7 +495,7 @@ export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boo
             </p>
 
             <div className="mt-8 flex justify-center">
-              <BillingToggle billing={billing} onChange={setBilling} />
+              <BillingToggle billing={billing} onChange={setBilling} savePercent={savePercent} />
             </div>
           </motion.div>
         </div>

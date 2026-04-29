@@ -76,9 +76,19 @@ export async function POST(request: Request) {
   // Check for an existing active paid subscription
   const { data: meta } = await supabase
     .from('user_metadata')
-    .select('plan, subscription_status, ls_subscription_id')
+    .select('plan, billing_period, subscription_status, ls_subscription_id')
     .eq('user_id', user.id)
     .single()
+
+  // Cancelled sub: user must reactivate via the portal, not create a new checkout
+  if (
+    meta &&
+    meta.subscription_status === SubscriptionStatus.CANCELLED &&
+    meta.plan !== Plan.FREE_TRIAL &&
+    !!meta.ls_subscription_id
+  ) {
+    return NextResponse.json({ error: 'reactivate_via_portal' }, { status: 409 })
+  }
 
   const hasActivePaidSub =
     meta &&
@@ -90,17 +100,17 @@ export async function POST(request: Request) {
     const currentLevel = PLAN_LEVELS[meta.plan] ?? 0
     const requestedLevel = PLAN_LEVELS[plan] ?? 0
 
-    // Same plan — nothing to do
-    if (currentLevel === requestedLevel) {
+    // Same plan tier and same billing period — nothing to do
+    if (currentLevel === requestedLevel && meta.billing_period === billing) {
       return NextResponse.json({ error: 'already_subscribed' }, { status: 409 })
     }
 
-    // Downgrade — must go through the portal
+    // Downgrade (by tier) — must go through the portal
     if (requestedLevel < currentLevel) {
       return NextResponse.json({ error: 'downgrade_via_portal' }, { status: 409 })
     }
 
-    // Upgrade — swap the variant immediately via LemonSqueezy API
+    // Upgrade or same-tier billing period change — swap the variant via LemonSqueezy API
     try {
       configureLemonSqueezy()
       const { error: updateError } = await updateSubscription(

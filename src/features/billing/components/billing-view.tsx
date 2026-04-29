@@ -21,6 +21,7 @@ import { getPricing } from '@/lib/pricing'
 
 type BillingMeta = {
   plan: string
+  billing_period: string | null
   subscription_status: string
   trial_ends_at: string | null
   storage_used_bytes: number
@@ -41,6 +42,7 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
   const searchParams = useSearchParams()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly')
 
   const autoPlan = searchParams.get('plan')
   const limits = getPlanLimits(meta.plan)
@@ -65,10 +67,17 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
       const res = await fetch('/api/lemonsqueezy/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, billingPeriod }),
       })
       const { url, error } = await res.json()
-      if (res.status === 409 || error || !url) {
+      if (res.status === 409) {
+        if (error === 'reactivate_via_portal') {
+          void handleManageSubscription()
+        }
+        setLoadingPlan(null)
+        return
+      }
+      if (error || !url) {
         setLoadingPlan(null)
         return
       }
@@ -151,9 +160,16 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                 <CrownIcon className="size-4 text-amber-600" />
               </div>
               <div>
-                <p className="font-semibold">
-                  {PLANS[meta.plan as keyof typeof PLANS]?.label ?? meta.plan}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold">
+                    {PLANS[meta.plan as keyof typeof PLANS]?.label ?? meta.plan}
+                  </p>
+                  {hasPaidPlan && meta.billing_period && (
+                    <Badge variant="secondary" className="rounded-full text-xs capitalize">
+                      {meta.billing_period}
+                    </Badge>
+                  )}
+                </div>
                 {periodText && (
                   <p className="text-xs text-muted-foreground">{periodText}</p>
                 )}
@@ -262,9 +278,33 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
       {/* Upgrade section */}
       {meta.plan !== Plan.PRO_MAX && (
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {isTrialExpired ? t('chooseAPlan') : t('upgradeTitle')}
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              {isTrialExpired ? t('chooseAPlan') : t('upgradeTitle')}
+            </h2>
+            <div className="flex items-center rounded-lg border p-0.5 text-xs">
+              <button
+                onClick={() => setBillingPeriod('monthly')}
+                className={`rounded-md px-3 py-1 transition-colors ${
+                  billingPeriod === 'monthly'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('monthly')}
+              </button>
+              <button
+                onClick={() => setBillingPeriod('annual')}
+                className={`rounded-md px-3 py-1 transition-colors ${
+                  billingPeriod === 'annual'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('annual')}
+              </button>
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {meta.plan !== Plan.PRO && (
@@ -273,8 +313,15 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
                   {t('mostPopular')}
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-semibold tracking-tight">{pricing.pro.monthly.amount}</span>
-                  <span className="text-xs text-muted-foreground">{pricing.pro.monthly.note}</span>
+                  <span className="text-2xl font-semibold tracking-tight">
+                    {billingPeriod === 'annual' ? pricing.pro.annual.amount : pricing.pro.monthly.amount}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {billingPeriod === 'annual' ? pricing.pro.annual.note : pricing.pro.monthly.note}
+                  </span>
+                  {billingPeriod === 'annual' && (
+                    <span className="ml-1 text-xs text-muted-foreground">({pricing.pro.annual.perMonth}/mo)</span>
+                  )}
                 </div>
                 <p className="mt-0.5 font-medium">Pro</p>
                 <ul className="mt-4 space-y-1.5 text-sm">
@@ -308,8 +355,15 @@ export default function BillingView({ meta, isIndonesia = false }: { meta: Billi
 
             <div className="rounded-2xl border bg-card p-5">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-semibold tracking-tight">{pricing.pro_max.monthly.amount}</span>
-                <span className="text-xs text-muted-foreground">{pricing.pro_max.monthly.note}</span>
+                <span className="text-2xl font-semibold tracking-tight">
+                  {billingPeriod === 'annual' ? pricing.pro_max.annual.amount : pricing.pro_max.monthly.amount}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {billingPeriod === 'annual' ? pricing.pro_max.annual.note : pricing.pro_max.monthly.note}
+                </span>
+                {billingPeriod === 'annual' && (
+                  <span className="ml-1 text-xs text-muted-foreground">({pricing.pro_max.annual.perMonth}/mo)</span>
+                )}
               </div>
               <p className="mt-0.5 font-medium">Pro Max</p>
               <ul className="mt-4 space-y-1.5 text-sm">
