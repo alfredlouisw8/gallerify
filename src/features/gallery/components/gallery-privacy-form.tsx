@@ -2,6 +2,7 @@
 
 import { CheckIcon, ClipboardIcon, EyeIcon, EyeOffIcon, LockIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -14,13 +15,13 @@ type Props = {
 }
 
 export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: Props) {
+  const t = useTranslations('GalleryPrivacy')
   const [enabled, setEnabled] = useState(isPasswordProtected)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Re-fetch on mount to get the real DB value, bypassing Next.js router cache
   useEffect(() => {
     getPrivacySettings(galleryId).then((s) => {
       setEnabled(s.isPasswordProtected)
@@ -36,10 +37,10 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
         if (result.error) throw new Error(result.error)
         setEnabled(false)
         setPassword('')
-        toast({ title: 'Password protection removed.' })
+        toast({ title: t('removedOk') })
       } catch (err) {
         toast({
-          title: err instanceof Error ? err.message : 'Failed to remove password',
+          title: err instanceof Error ? err.message : t('removeFail'),
           variant: 'destructive',
         })
       } finally {
@@ -56,10 +57,10 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
     try {
       const result = await updateGalleryPassword(galleryId, password)
       if (result.error) throw new Error(result.error)
-      toast({ title: 'Password saved.' })
+      toast({ title: t('savedOk') })
     } catch (err) {
       toast({
-        title: err instanceof Error ? err.message : 'Failed to set password',
+        title: err instanceof Error ? err.message : t('saveFail'),
         variant: 'destructive',
       })
     } finally {
@@ -76,14 +77,13 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
 
   return (
     <div className="space-y-4">
-      {/* Toggle row */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <LockIcon className="size-4 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium">Password protection</p>
+            <p className="text-sm font-medium">{t('title')}</p>
             <p className="text-xs text-muted-foreground">
-              Visitors must enter a password to view this gallery.
+              {t('description')}
             </p>
           </div>
         </div>
@@ -106,7 +106,6 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
         </button>
       </div>
 
-      {/* Password field — shown when enabled (always visible if password already set) */}
       {enabled && (
         <div className="ml-7 space-y-2">
           <div className="flex gap-2">
@@ -116,7 +115,7 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void handleSave() }}
-                placeholder="Set a password"
+                placeholder={t('placeholder')}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-20 text-sm outline-none focus:ring-1 focus:ring-ring"
               />
               <div className="absolute inset-y-0 right-2 flex items-center gap-1">
@@ -142,7 +141,7 @@ export default function GalleryPrivacyForm({ galleryId, isPasswordProtected }: P
               onClick={() => void handleSave()}
               disabled={!password.trim() || isSaving}
             >
-              {isSaving ? 'Saving…' : 'Save'}
+              {isSaving ? t('saving') : t('save')}
             </Button>
           </div>
         </div>

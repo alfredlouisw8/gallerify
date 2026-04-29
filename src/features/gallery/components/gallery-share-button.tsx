@@ -3,6 +3,7 @@
 import { CheckIcon, ClipboardIcon, DownloadIcon, KeyIcon, LinkIcon, LockIcon, QrCodeIcon, Share2Icon, UserIcon, UsersIcon, XIcon } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useCallback, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -59,6 +60,7 @@ function CopyField({ label, icon, value }: { label: string; icon: React.ReactNod
 }
 
 export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordPlain, clientPasswordPlain, galleryId, allImages }: Props) {
+  const t = useTranslations('GalleryShare')
   const [qrOpen, setQrOpen] = useState(false)
   const [vendorOpen, setVendorOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -90,27 +92,26 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
             <Share2Icon className="size-3.5" />
-            Share
+            {t('share')}
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-72 p-3" onCloseAutoFocus={(e) => e.preventDefault()}>
-          {/* Direct link section */}
           <div className="space-y-3">
             <p className="flex items-center gap-1.5 text-xs font-medium">
               <LinkIcon className="size-3" />
-              Direct link
+              {t('directLink')}
             </p>
 
             <CopyField
-              label="Gallery URL"
+              label={t('galleryUrl')}
               icon={<LinkIcon className="size-3" />}
               value={galleryUrl}
             />
 
             {passwordPlain && (
               <CopyField
-                label="Gallery password"
+                label={t('galleryPassword')}
                 icon={<LockIcon className="size-3" />}
                 value={passwordPlain}
               />
@@ -118,7 +119,7 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
 
             {clientPasswordPlain && (
               <CopyField
-                label="Client password"
+                label={t('clientPassword')}
                 icon={<UserIcon className="size-3" />}
                 value={clientPasswordPlain}
               />
@@ -127,36 +128,33 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
             {!passwordPlain && !clientPasswordPlain && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <KeyIcon className="size-3" />
-                No passwords set
+                {t('noPasswords')}
               </p>
             )}
           </div>
 
           <div className="my-3 border-t border-border" />
 
-          {/* QR code trigger */}
           <button
             type="button"
             onClick={handleOpenQr}
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
           >
             <QrCodeIcon className="size-4" />
-            Get QR code
+            {t('getQrCode')}
           </button>
 
-          {/* Vendor share */}
           <button
             type="button"
             onClick={handleOpenVendor}
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
           >
             <UsersIcon className="size-4" />
-            Share with Vendor
+            {t('shareWithVendor')}
           </button>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Vendor share modal */}
       <VendorShareModal
         open={vendorOpen}
         onClose={() => setVendorOpen(false)}
@@ -164,11 +162,10 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
         allImages={allImages}
       />
 
-      {/* QR code dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="text-sm">QR Code</DialogTitle>
+            <DialogTitle className="text-sm">{t('qrCode')}</DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col items-center gap-4 py-2">
@@ -186,11 +183,11 @@ export default function GalleryShareButton({ galleryUrl, galleryTitle, passwordP
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setQrOpen(false)}>
               <XIcon className="size-3.5" />
-              Cancel
+              {t('cancel')}
             </Button>
             <Button className="flex-1" onClick={handleDownloadQr}>
               <DownloadIcon className="size-3.5" />
-              Download
+              {t('download')}
             </Button>
           </div>
         </DialogContent>

@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+
 import { Gallery } from '@/types'
 import GalleryClientAccessForm from './gallery-client-access-form'
 import GalleryDownloadForm from './gallery-download-form'
@@ -7,23 +9,24 @@ type Props = {
   gallery: Gallery
 }
 
-export default function GallerySecurityLayout({ gallery }: Props) {
+export default async function GallerySecurityLayout({ gallery }: Props) {
+  const t = await getTranslations('GallerySecurity')
+
   return (
     <div className="overflow-auto p-6 lg:p-8">
       <div className="max-w-lg">
         <div className="mb-6">
-          <h2 className="text-lg font-semibold">Security</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">
-            Control access and privacy for this gallery.
+            {t('description')}
           </p>
         </div>
 
         <div className="space-y-8">
-          {/* Privacy — viewer password */}
           <div>
             <div className="mb-5">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Privacy
+                {t('privacy')}
               </h3>
             </div>
             <GalleryPrivacyForm
@@ -34,11 +37,10 @@ export default function GallerySecurityLayout({ gallery }: Props) {
 
           <div className="border-t" />
 
-          {/* Client access */}
           <div>
             <div className="mb-5">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Client Access
+                {t('clientAccess')}
               </h3>
             </div>
             <GalleryClientAccessForm
@@ -51,11 +53,10 @@ export default function GallerySecurityLayout({ gallery }: Props) {
 
           <div className="border-t" />
 
-          {/* Download */}
           <div>
             <div className="mb-5">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Downloads
+                {t('downloads')}
               </h3>
             </div>
             <GalleryDownloadForm

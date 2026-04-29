@@ -2,39 +2,38 @@
 
 import { motion } from 'framer-motion'
 import { Layers, Globe, Lock, Zap } from 'lucide-react'
-
-const features = [
-  {
-    icon: Layers,
-    title: 'Organized galleries',
-    description:
-      'Create unlimited galleries with nested collections. Group shoots by client, event, or theme — every project exactly where you expect it.',
-    stat: '3× faster delivery',
-  },
-  {
-    icon: Globe,
-    title: 'A portfolio that wins bookings',
-    description:
-      'Your work lives at yourname.gallerify.com. Clean, fast, and designed to convert visitors into clients. They notice the difference the moment they land.',
-    stat: '94% client approval',
-  },
-  {
-    icon: Lock,
-    title: 'Privacy you control',
-    description:
-      'Keep galleries in draft until the moment is right. Publish in one click when you\'re ready. Your work, your timing, your rules.',
-    stat: '100% in your hands',
-  },
-  {
-    icon: Zap,
-    title: 'Built for speed',
-    description:
-      'Galleries load in under a second on any device. Clients on mobile get the same flawless experience as desktop. No excuses.',
-    stat: '<1s load time',
-  },
-]
+import { useTranslations } from 'next-intl'
 
 export default function Features() {
+  const t = useTranslations('Features')
+
+  const features = [
+    {
+      icon: Layers,
+      title: t('galleries_title'),
+      description: t('galleries_desc'),
+      stat: t('galleries_stat'),
+    },
+    {
+      icon: Globe,
+      title: t('portfolio_title'),
+      description: t('portfolio_desc'),
+      stat: t('portfolio_stat'),
+    },
+    {
+      icon: Lock,
+      title: t('privacy_title'),
+      description: t('privacy_desc'),
+      stat: t('privacy_stat'),
+    },
+    {
+      icon: Zap,
+      title: t('speed_title'),
+      description: t('speed_desc'),
+      stat: t('speed_stat'),
+    },
+  ]
+
   return (
     <section id="features" className="py-24 md:py-32">
       <div className="container px-4 md:px-6">
@@ -49,12 +48,12 @@ export default function Features() {
               viewport={{ once: true }}
             >
               <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                What you get
+                {t('label')}
               </p>
               <h2 className="font-display text-4xl font-semibold leading-[1.1] tracking-tighter md:text-5xl">
-                Every tool a photographer needs.
+                {t('heading')}
               </h2>
-              <p className="mt-4 text-muted-foreground">Nothing you don&apos;t.</p>
+              <p className="mt-4 text-muted-foreground">{t('subheading')}</p>
             </motion.div>
           </div>
 

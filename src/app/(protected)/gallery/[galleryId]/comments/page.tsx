@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+
 import { getGalleryComments } from '@/features/gallery/actions/getGalleryComments'
 import GalleryCommentsView from '@/features/gallery/components/GalleryCommentsView'
 
@@ -17,13 +19,15 @@ export default async function GalleryCommentsPage({
     // Table may not exist yet (migration pending) — show empty state
   }
 
+  const t = await getTranslations('CommentsPage')
+
   return (
     <div className="overflow-auto p-6 lg:p-8">
       <div className="max-w-5xl">
         <div className="mb-6">
-          <h2 className="text-lg font-semibold">Client Feedback</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">
-            Comments, feedback, and requests left by your client on individual photos.
+            {t('description')}
           </p>
         </div>
         <GalleryCommentsView galleryId={galleryId} initialComments={comments} />

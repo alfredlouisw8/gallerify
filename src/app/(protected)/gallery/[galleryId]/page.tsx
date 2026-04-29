@@ -1,5 +1,6 @@
 import { PlusCircleIcon } from 'lucide-react'
 import React from 'react'
+import { getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
 import getGalleryById from '@/features/gallery/actions/getGalleryById'
@@ -11,19 +12,22 @@ export default async function GalleryPage({
   params: Promise<{ galleryId: string }>
 }) {
   const { galleryId } = await params
-  const gallery = await getGalleryById(galleryId)
+  const [gallery, t] = await Promise.all([
+    getGalleryById(galleryId),
+    getTranslations('GalleryDetailPage'),
+  ])
 
   if (!gallery) {
-    return <div>Loading...</div>
+    return <div>{t('loading')}</div>
   }
   return (
     <main className="flex flex-1 flex-col gap-4 overflow-auto p-4 lg:gap-6 lg:p-6">
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-5">
-          <h1 className="text-2xl">Gallery</h1>
+          <h1 className="text-2xl">{t('title')}</h1>
           <Button variant="ghost">
             <PlusCircleIcon className="mr-2 size-3" />
-            Add Media
+            {t('addMedia')}
           </Button>
         </div>
         <GalleryDetailMain galleryData={gallery} />
