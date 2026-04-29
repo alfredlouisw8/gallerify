@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { getProfileByUsername } from '@/features/public/actions/getProfileByUsername'
 import { getPublishedGalleriesByUsername } from '@/features/public/actions/getPublishedGalleriesByUsername'
 import CustomerPageView from '@/features/public/components/CustomerPageView'
+import { isGalleryAccessible } from '@/lib/plans'
+import supabase from '@/lib/supabase'
 import { createClient } from '@/lib/supabase-server'
 import type { HomepagePreferences } from '@/types'
 
@@ -43,6 +45,19 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   ])
   if (!profile) {
     notFound()
+  }
+
+  // ── Subscription access gate ─────────────────────────────────────────────────
+  const { data: ownerMeta } = await supabase
+    .from('user_metadata')
+    .select('plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end')
+    .eq('user_id', profile.userId)
+    .maybeSingle()
+
+  if (ownerMeta && !isGalleryAccessible(ownerMeta)) {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user || user.id !== profile.userId) notFound()
   }
 
   // ── Design preview bypass (owner only) ──────────────────────────────────────

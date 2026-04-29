@@ -134,6 +134,34 @@ export function isDataDeletionDue(
   return false
 }
 
+export function isGalleryAccessible(meta: {
+  plan: string
+  subscription_status: string
+  subscription_expired_at: string | null
+  trial_ends_at: string | null
+  current_period_end: string | null
+}): boolean {
+  const { plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end } = meta
+
+  if (subscription_status === SubscriptionStatus.ACTIVE) return true
+  if (
+    subscription_status === SubscriptionStatus.CANCELLED &&
+    current_period_end &&
+    new Date() < new Date(current_period_end)
+  ) return true
+
+  if (subscription_status === SubscriptionStatus.TRIALING && !isTrialExpired(trial_ends_at)) return true
+
+  if (
+    subscription_status === SubscriptionStatus.EXPIRED ||
+    subscription_status === SubscriptionStatus.PAST_DUE
+  ) {
+    return isPaidGalleryGraceActive(plan, subscription_expired_at)
+  }
+
+  return false
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
   const k = 1024

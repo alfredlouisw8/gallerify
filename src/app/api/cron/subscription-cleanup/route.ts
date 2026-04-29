@@ -20,6 +20,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  console.log('[cron] subscription-cleanup started', new Date().toISOString())
+
   const results = {
     backfilled: 0,
     deleted: 0,
@@ -60,6 +62,7 @@ export async function GET(request: Request) {
 
   if (candidatesErr) {
     results.errors.push(`candidates-query: ${candidatesErr.message}`)
+    console.error('[cron] subscription-cleanup failed fetching candidates', results)
     return NextResponse.json(results, { status: 207 })
   }
 
@@ -77,6 +80,7 @@ export async function GET(request: Request) {
     }
   }
 
+  console.log('[cron] subscription-cleanup finished', results)
   return NextResponse.json(results, { status: 200 })
 }
 

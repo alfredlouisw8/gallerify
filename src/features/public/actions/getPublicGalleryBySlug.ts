@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache'
 
+import { isGalleryAccessible } from '@/lib/plans'
 import supabase from '@/lib/supabase'
 import {
   GalleryWithCategory,
@@ -14,7 +15,7 @@ import {
 export async function getPublicGalleryBySlug(
   username: string,
   slug: string
-): Promise<{ gallery: GalleryWithCategory; passwordHash: string | null } | null> {
+): Promise<{ gallery: GalleryWithCategory; passwordHash: string | null; ownerIsAccessible: boolean } | null> {
   noStore()
 
   // Next.js route params are URL-decoded, but encode/decode defensively
@@ -22,12 +23,14 @@ export async function getPublicGalleryBySlug(
 
   const { data: meta, error: metaError } = await supabase
     .from('user_metadata')
-    .select('user_id')
+    .select('user_id, plan, subscription_status, subscription_expired_at, trial_ends_at, current_period_end')
     .eq('username', username)
     .maybeSingle()
 
   if (metaError) throw new Error(metaError.message)
   if (!meta) return null
+
+  const ownerIsAccessible = isGalleryAccessible(meta)
 
   // Do NOT filter by is_published in the DB query — let the result speak for
   // itself and filter in JS (mirrors getPublishedGalleriesByUsername behaviour).
@@ -79,5 +82,5 @@ export async function getPublicGalleryBySlug(
     })),
   }
 
-  return { gallery, passwordHash: (typedRow as GalleryRow & { password_hash?: string | null }).password_hash ?? null }
+  return { gallery, passwordHash: (typedRow as GalleryRow & { password_hash?: string | null }).password_hash ?? null, ownerIsAccessible }
 }

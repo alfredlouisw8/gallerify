@@ -90,7 +90,7 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
   const result = await getPublicGalleryBySlug(username, slug)
   if (!result) notFound()
 
-  const { gallery, passwordHash } = result
+  const { gallery, passwordHash, ownerIsAccessible } = result
 
   const watermark = gallery.watermarkId
     ? await getWatermarkById(gallery.watermarkId)
@@ -118,6 +118,15 @@ export default async function PublicGalleryPage({ params, searchParams }: Props)
   const redirectPath = (isSubdomain ? `/${slug}` : `/${username}/${slug}`) + imageParam
   const backgroundImage = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : undefined
   const profilePath = isSubdomain ? '/' : `/${username}`
+
+  // ── Subscription access gate ─────────────────────────────────────────────────
+  // Block public access when the owner's subscription has expired.
+  // Owners can still view their own galleries regardless of status.
+  if (!ownerIsAccessible) {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user || user.id !== gallery.userId) notFound()
+  }
 
   // ── Owner preview bypass ─────────────────────────────────────────────────────
   let isOwnerPreview = false
