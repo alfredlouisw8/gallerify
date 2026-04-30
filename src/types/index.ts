@@ -99,6 +99,8 @@ export type GalleryPreferences = {
   categoryBarStyle: 'pills' | 'underline' | 'text'
   bannerFocalPoint: { x: number; y: number }
   bannerVideoUrl?: string
+  collectionHeaderStyle?: 'none' | 'text-center' | 'text-left' | 'image-center'
+  categoryCovers?: Record<string, string>
 }
 
 export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
@@ -434,6 +436,12 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
     ) ? raw!.bannerFocalPoint as { x: number; y: number }
       : DEFAULT_GALLERY_PREFERENCES.bannerFocalPoint,
     bannerVideoUrl: typeof raw?.bannerVideoUrl === 'string' ? raw.bannerVideoUrl : undefined,
+    collectionHeaderStyle: (['none', 'text-center', 'text-left', 'image-center'].includes(raw?.collectionHeaderStyle as string)
+      ? raw!.collectionHeaderStyle
+      : undefined) as GalleryPreferences['collectionHeaderStyle'],
+    categoryCovers: (raw?.categoryCovers !== null && typeof raw?.categoryCovers === 'object' && !Array.isArray(raw.categoryCovers))
+      ? raw.categoryCovers as Record<string, string>
+      : undefined,
   }
 }
 

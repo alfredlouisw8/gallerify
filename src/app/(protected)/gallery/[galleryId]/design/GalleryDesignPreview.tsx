@@ -49,9 +49,10 @@ function useIsMobile() {
 }
 
 /* ── Secondary options sidebar ── */
-function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: string | null }) {
+function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; bannerUrl: string | null }) {
   const t = useTranslations('GalleryDesign')
   const { prefs, setPrefs, selectedPanel, setSelectedPanel, isDirty, setIsDirty } = useGalleryDesign()
+  const galleryId = gallery.id
   const [isPending, startTransition] = useTransition()
   const isMobile = useIsMobile()
   const router = useRouter()
@@ -88,10 +89,11 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
   }
 
   const titles: Record<string, string> = {
-    cover:  t('panelCover'),
-    style:  t('panelStyle'),
-    color:  t('panelColor'),
-    layout: t('panelLayout'),
+    cover:               t('panelCover'),
+    style:               t('panelStyle'),
+    color:               t('panelColor'),
+    layout:              t('panelLayout'),
+    'collection-header': t('panelCollectionHeader'),
   }
 
   return (
@@ -838,6 +840,11 @@ function OptionsPanel({ galleryId, bannerUrl }: { galleryId: string; bannerUrl: 
               </Section>
             </>)}
 
+            {/* ── COLLECTION HEADER ── */}
+            {selectedPanel === 'collection-header' && (
+              <CollectionHeaderPanel gallery={gallery} prefs={prefs} update={update} t={t} />
+            )}
+
             {isDirty && !isMobile && (
               <Button onClick={handleSave} disabled={isPending} size="sm" className="mt-auto w-full">
                 {isPending
@@ -1011,6 +1018,174 @@ function FocalPointPicker({
   )
 }
 
+/* ── Collection header template mini-preview ── */
+function HeaderStylePreview({ style, active }: { style: string; active: boolean }) {
+  const bg     = active ? 'oklch(0.16 0.015 60)'         : 'hsl(var(--muted))'
+  const line   = active ? 'oklch(0.78 0.09 80 / 0.5)'   : 'hsl(var(--muted-foreground) / 0.25)'
+  const text   = active ? 'rgba(240,237,232,0.75)'       : 'hsl(var(--muted-foreground) / 0.3)'
+  const imgBg  = active ? 'oklch(0.78 0.09 80 / 0.12)'  : 'hsl(var(--muted-foreground) / 0.08)'
+
+  if (style === 'text-center') return (
+    <div style={{ height: 60, background: bg, display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8 }}>
+      <div style={{ flex: 1, height: 1, background: line }} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+        <div style={{ width: 44, height: 2.5, borderRadius: 1, background: text }} />
+        <div style={{ width: 26, height: 1.5, borderRadius: 1, background: line }} />
+      </div>
+      <div style={{ flex: 1, height: 1, background: line }} />
+    </div>
+  )
+
+  if (style === 'text-left') return (
+    <div style={{ height: 60, background: bg, display: 'flex' }}>
+      <div style={{ flex: '0 0 55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 10%', gap: 3 }}>
+        <div style={{ width: 6, height: 1, background: line }} />
+        <div style={{ width: 36, height: 2.5, borderRadius: 1, background: text }} />
+        <div style={{ width: 22, height: 1.5, borderRadius: 1, background: line }} />
+      </div>
+      <div style={{ flex: 1, background: imgBg, borderLeft: `1px solid ${line}` }} />
+    </div>
+  )
+
+  return (
+    <div style={{ height: 60, position: 'relative', overflow: 'hidden', background: imgBg }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.5) 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 3 }}>
+        <div style={{ width: 44, height: 2.5, borderRadius: 1, background: 'rgba(255,255,255,0.65)' }} />
+        <div style={{ width: 26, height: 1.5, borderRadius: 1, background: 'rgba(255,255,255,0.35)' }} />
+      </div>
+    </div>
+  )
+}
+
+/* ── Collection header design panel ── */
+function CollectionHeaderPanel({
+  gallery,
+  prefs,
+  update,
+  t,
+}: {
+  gallery: GalleryWithCategory
+  prefs: GalleryPreferences
+  update: <K extends keyof GalleryPreferences>(key: K, value: GalleryPreferences[K]) => void
+  t: ReturnType<typeof useTranslations<'GalleryDesign'>>
+}) {
+  const [activeTab, setActiveTab] = useState<'design' | 'media'>('design')
+  const currentStyle = prefs.collectionHeaderStyle ?? 'none'
+
+  const STYLE_OPTIONS: { value: 'none' | 'text-center' | 'text-left' | 'image-center'; labelKey: string; descKey: string }[] = [
+    { value: 'none',         labelKey: 'headerStyleNoneLabel',        descKey: 'headerStyleNoneDesc' },
+    { value: 'text-center',  labelKey: 'headerStyleTextCenterLabel',  descKey: 'headerStyleTextCenterDesc' },
+    { value: 'text-left',    labelKey: 'headerStyleTextLeftLabel',    descKey: 'headerStyleTextLeftDesc' },
+    { value: 'image-center', labelKey: 'headerStyleImageCenterLabel', descKey: 'headerStyleImageCenterDesc' },
+  ]
+
+  const realCategories = gallery.GalleryCategory.filter((c) => c.id !== '__client_selects__')
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Tab switcher */}
+      <div className="flex overflow-hidden rounded-lg border border-border">
+        {(['design', 'media'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 text-xs font-medium transition-colors ${
+              activeTab === tab
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab === 'design' ? t('tabDesignHeader') : t('tabMedia')}
+          </button>
+        ))}
+      </div>
+
+      {/* Design tab — template picker */}
+      {activeTab === 'design' && (
+        <div className="flex flex-col gap-2">
+          {STYLE_OPTIONS.map((opt) => {
+            const active = currentStyle === opt.value
+            return (
+              <button
+                key={opt.value}
+                onClick={() => update('collectionHeaderStyle', opt.value === 'none' ? undefined : opt.value)}
+                className="flex flex-col overflow-hidden rounded-xl border transition-all text-left"
+                style={{
+                  borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                  background:  active ? 'oklch(0.78 0.09 80 / 0.05)' : 'transparent',
+                  boxShadow:   active ? '0 0 0 1px oklch(0.78 0.09 80 / 0.25)' : 'none',
+                }}
+              >
+                {opt.value !== 'none' && (
+                  <div className="w-full overflow-hidden" style={{ borderBottom: `1px solid ${active ? 'oklch(0.78 0.09 80 / 0.25)' : 'hsl(var(--border))'}` }}>
+                    <HeaderStylePreview style={opt.value} active={active} />
+                  </div>
+                )}
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[11px] font-semibold leading-tight" style={{ color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
+                      {t(opt.labelKey as Parameters<typeof t>[0])}
+                    </span>
+                    <span className="text-[9px] leading-tight" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                      {t(opt.descKey as Parameters<typeof t>[0])}
+                    </span>
+                  </div>
+                  {active && <CheckIcon className="size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Media tab — per-category cover picker */}
+      {activeTab === 'media' && (
+        <div className="flex flex-col gap-5">
+          <p className="text-[10px] text-muted-foreground">{t('selectCoverHint')}</p>
+          {realCategories.map((cat) => (
+            <div key={cat.id} className="flex flex-col gap-2">
+              <p className="text-xs font-medium">{cat.name}</p>
+              {cat.GalleryCategoryImage.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground">{t('noCoverSet')}</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-1">
+                  {cat.GalleryCategoryImage.slice(0, 8).map((img) => {
+                    const imgUrl = getStorageUrl(img.imageUrl)
+                    const selected = (prefs.categoryCovers ?? {})[cat.id] === img.imageUrl
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        onClick={() =>
+                          update('categoryCovers', { ...(prefs.categoryCovers ?? {}), [cat.id]: img.imageUrl })
+                        }
+                        className="relative aspect-square overflow-hidden rounded-md transition-all"
+                        style={{
+                          outline: selected ? '2px solid oklch(0.78 0.09 80)' : '2px solid transparent',
+                          outlineOffset: '1px',
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={imgUrl} alt="" className="size-full object-cover" draggable={false} />
+                        {selected && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                            <CheckIcon className="size-3.5 text-white drop-shadow" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Section sub-header ── */
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -1063,13 +1238,14 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
         ? { customColorTheme: prefs.customColorTheme }
         : {}),
       ...(prefs.bannerVideoUrl ? { bannerVideoUrl: prefs.bannerVideoUrl } : {}),
+      ...(prefs.collectionHeaderStyle ? { collectionHeaderStyle: prefs.collectionHeaderStyle } : {}),
     })
     return `/${username}/${gallery.slug}?${params.toString()}`
   }, [prefs, username, gallery.slug])
 
   return (
     <div className="flex h-full overflow-hidden">
-      <OptionsPanel galleryId={gallery.id} bannerUrl={bannerUrl} />
+      <OptionsPanel gallery={gallery} bannerUrl={bannerUrl} />
 
       {/* Mobile floating save — outside motion.div so fixed positioning isn't broken by transforms */}
       {isDirty && isMobile && selectedPanel && (
