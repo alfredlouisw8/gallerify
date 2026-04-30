@@ -2,6 +2,7 @@
 
 import {
   CheckIcon,
+  ChevronDownIcon,
   LoaderIcon,
   MonitorIcon,
   PaletteIcon,
@@ -9,7 +10,7 @@ import {
   UploadCloudIcon,
   XIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import type React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -24,6 +25,7 @@ import { useGalleryDesign } from '@/features/gallery/context/gallery-design-cont
 import { ACCENTS, FONT_PAIRS } from '@/features/gallery/constants/preferences'
 import { onImagesUpload } from '@/utils/functions'
 import type { GalleryPreferences, GalleryWithCategory } from '@/types'
+import GalleryPageView from '@/features/public/components/GalleryPageView'
 
 interface Props {
   gallery: GalleryWithCategory
@@ -58,6 +60,7 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
   const router = useRouter()
   const bannerFileRef = useRef<HTMLInputElement>(null)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const [fontOpen, setFontOpen] = useState(false)
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -103,11 +106,11 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
           key={selectedPanel}
           className="shrink-0 overflow-hidden border-r"
           initial={{ width: 0 }}
-          animate={{ width: isMobile ? '100%' : 340 }}
+          animate={{ width: isMobile ? '100%' : 420 }}
           exit={{ width: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 340 }}>
+          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 420 }}>
             {/* Mobile close bar */}
             {isMobile && (
               <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
@@ -140,7 +143,7 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                 <input ref={bannerFileRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
               </Section>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {(
                   [
                     {
@@ -320,6 +323,28 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                       ),
                     },
                     {
+                      value: 'magazine' as const,
+                      label: t('coverMagazineLabel'),
+                      desc: t('coverMagazineDesc'),
+                      preview: (
+                        <div className="relative w-full overflow-hidden flex" style={{ aspectRatio: '16/9', background: '#f5f5f5' }}>
+                          {/* Left text column */}
+                          <div className="flex flex-col justify-between" style={{ width: '50%', padding: '8px', background: '#f5f5f5' }}>
+                            <div className="flex justify-between">
+                              <div style={{ width: '28px', height: '1.5px', background: '#aaa' }} />
+                              <div style={{ width: '18px', height: '1.5px', background: '#aaa' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div style={{ width: '70%', height: '6px', borderRadius: '1px', background: '#222', opacity: 0.9 }} />
+                              <div style={{ width: '55%', height: '6px', borderRadius: '1px', background: '#222', opacity: 0.9 }} />
+                            </div>
+                          </div>
+                          {/* Right image column */}
+                          <div style={{ width: '50%', background: '#888' }} />
+                        </div>
+                      ),
+                    },
+                    {
                       value: 'video-centered' as const,
                       label: t('coverVideoCenteredLabel'),
                       desc: t('coverVideoCenteredDesc'),
@@ -407,31 +432,53 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
             {selectedPanel === 'style' && (<>
 
               <Section label={t('fontPairing')}>
-                <div className="flex flex-col gap-1.5">
-                  {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
-                    const active = prefs.fontPairing === key
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => update('fontPairing', key)}
-                        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition-all"
-                        style={{
-                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                        }}
-                      >
-                        <span className="flex flex-1 flex-col gap-0.5">
-                          <span className="text-sm leading-tight" style={{ fontFamily: pair.display, color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
-                            {pair.displayLabel}
-                          </span>
-                          <span className="text-[10px] tracking-wide" style={{ fontFamily: pair.body, color: 'hsl(var(--muted-foreground))' }}>
-                            {pair.bodyLabel}
-                          </span>
-                        </span>
-                        {active && <CheckIcon className="ml-auto size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
-                      </button>
-                    )
-                  })}
+                <div className="relative">
+                  {/* Trigger */}
+                  <button
+                    onClick={() => setFontOpen(o => !o)}
+                    className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted/30"
+                    style={{ borderColor: fontOpen ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))', background: 'hsl(var(--background))' }}
+                  >
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-sm leading-tight" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].display }}>
+                        {FONT_PAIRS[prefs.fontPairing].displayLabel}
+                      </span>
+                      <span className="text-[10px] tracking-wide" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].body, color: 'hsl(var(--muted-foreground))' }}>
+                        {FONT_PAIRS[prefs.fontPairing].bodyLabel}
+                      </span>
+                    </span>
+                    <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: fontOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                  </button>
+
+                  {/* Dropdown list */}
+                  {fontOpen && (
+                    <div
+                      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-lg border shadow-lg"
+                      style={{ background: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
+                    >
+                      {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
+                        const active = prefs.fontPairing === key
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => { update('fontPairing', key); setFontOpen(false) }}
+                            className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                            style={{ background: active ? 'oklch(0.78 0.09 80 / 0.08)' : undefined }}
+                          >
+                            <span className="flex flex-1 flex-col gap-0.5">
+                              <span className="text-sm leading-tight" style={{ fontFamily: pair.display, color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
+                                {pair.displayLabel}
+                              </span>
+                              <span className="text-[10px] tracking-wide" style={{ fontFamily: pair.body, color: 'hsl(var(--muted-foreground))' }}>
+                                {pair.bodyLabel}
+                              </span>
+                            </span>
+                            {active && <CheckIcon className="size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               </Section>
 
@@ -630,7 +677,7 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
             {/* ── LAYOUT: photo layout + spacing ── */}
             {selectedPanel === 'layout' && (<>
               <Section label={t('grid')}>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {(
                     [
                       {
@@ -774,7 +821,7 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
               </Section>
 
               <Section label={t('thumbnailSize')}>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {(
                     [
                       { value: 'regular' as const, label: t('thumbnailRegularLabel'), desc: t('thumbnailRegularDesc') },
@@ -861,19 +908,17 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
   )
 }
 
-/* ── Preview card (iframe) ── */
+/* ── Preview card (live component) ── */
 function PreviewCard({
   gallery,
   username,
   device,
-  previewUrl,
 }: {
   gallery: GalleryWithCategory
   username: string
   device: Device
-  previewUrl: string
 }) {
-  const t = useTranslations('GalleryDesign')
+  const { prefs } = useGalleryDesign()
   const screenRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ w: 0, h: 0 })
 
@@ -887,38 +932,47 @@ function PreviewCard({
     return () => ro.disconnect()
   }, [])
 
-  // iframe renders at VIRTUAL_W — its own viewport — so sm:/lg: breakpoints fire correctly.
+  // Component renders at VIRTUAL_W so sm:/lg: breakpoints fire correctly, then scales to fit the card.
   const VIRTUAL_W = device === 'mobile' ? 390 : 1280
   const scale = dims.w > 0 ? dims.w / VIRTUAL_W : 0
-  const iframeH = scale > 0 ? Math.ceil(dims.h / scale) : 1200
+  const virtualH = scale > 0 ? Math.ceil(dims.h / scale) : 1200
+
+  const livePreview = scale > 0 ? (
+    <div
+      style={{
+        position: 'absolute', top: 0, left: 0,
+        width: `${VIRTUAL_W}px`, height: `${virtualH}px`,
+        transform: `scale(${scale})`, transformOrigin: 'top left',
+        pointerEvents: 'none', overflow: 'hidden',
+      }}
+    >
+      <GalleryPageView
+        gallery={gallery}
+        username={username}
+        profilePath={`/${username}`}
+        preferences={prefs}
+        previewMode
+        noScrollLock
+        watermark={null}
+      />
+    </div>
+  ) : null
 
   if (device === 'mobile') {
     return (
       <div
         className="flex flex-col overflow-hidden shadow-2xl"
-        style={{ height: '100%', aspectRatio: '9 / 30', borderRadius: 32, border: '6px solid #222', background: '#222' }}
+        style={{ height: '100%', aspectRatio: '9 / 30', borderRadius: 32, border: '6px solid #222', background: '#222', minHeight: 0 }}
       >
         <div className="flex shrink-0 items-center justify-center py-2" style={{ background: '#222' }}>
           <div className="h-1.5 w-16 rounded-full" style={{ background: '#444' }} />
         </div>
         <div
           ref={screenRef}
-          className="relative flex-1 overflow-hidden"
+          className="relative min-h-0 flex-1 overflow-hidden"
           style={{ borderRadius: '0 0 26px 26px', background: '#111' }}
         >
-          {scale > 0 && (
-            <iframe
-              key={previewUrl}
-              src={previewUrl}
-              title={t('mobilePreview')}
-              style={{
-                position: 'absolute', top: 0, left: 0,
-                width: `${VIRTUAL_W}px`, height: `${iframeH}px`,
-                transform: `scale(${scale})`, transformOrigin: 'top left',
-                border: 'none', pointerEvents: 'none',
-              }}
-            />
-          )}
+          {livePreview}
         </div>
         <div className="flex shrink-0 items-center justify-center py-2.5" style={{ background: '#222' }}>
           <div className="h-1 w-20 rounded-full" style={{ background: '#555' }} />
@@ -945,20 +999,8 @@ function PreviewCard({
           /{username}/{gallery.slug}
         </div>
       </div>
-      <div ref={screenRef} className="relative flex-1 overflow-hidden">
-        {scale > 0 && (
-          <iframe
-            key={previewUrl}
-            src={previewUrl}
-            title={t('desktopPreview')}
-            style={{
-              position: 'absolute', top: 0, left: 0,
-              width: `${VIRTUAL_W}px`, height: `${iframeH}px`,
-              transform: `scale(${scale})`, transformOrigin: 'top left',
-              border: 'none', pointerEvents: 'none',
-            }}
-          />
-        )}
+      <div ref={screenRef} className="relative min-h-0 flex-1 overflow-hidden">
+        {livePreview}
       </div>
     </div>
   )
@@ -1216,33 +1258,6 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
 
   const bannerUrl = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : null
 
-  const previewUrl = useMemo(() => {
-    const params = new URLSearchParams({
-      _preview: '1',
-      coverDesign:      prefs.coverDesign,
-      colorTheme:       prefs.colorTheme,
-      photoLayout:      prefs.photoLayout,
-      accentColor:      prefs.accentColor,
-      fontPairing:      prefs.fontPairing,
-      photoSpacing:     prefs.photoSpacing,
-      overlayIntensity: prefs.overlayIntensity,
-      thumbnailSize:    prefs.thumbnailSize,
-      grainIntensity:   prefs.grainIntensity,
-      categoryBarStyle: prefs.categoryBarStyle,
-      focalX:           String(prefs.bannerFocalPoint?.x ?? 50),
-      focalY:           String(prefs.bannerFocalPoint?.y ?? 50),
-      ...(prefs.accentColor === 'custom' && prefs.customAccentColor
-        ? { customAccentColor: prefs.customAccentColor }
-        : {}),
-      ...(prefs.colorTheme === 'custom' && prefs.customColorTheme
-        ? { customColorTheme: prefs.customColorTheme }
-        : {}),
-      ...(prefs.bannerVideoUrl ? { bannerVideoUrl: prefs.bannerVideoUrl } : {}),
-      ...(prefs.collectionHeaderStyle ? { collectionHeaderStyle: prefs.collectionHeaderStyle } : {}),
-    })
-    return `/${username}/${gallery.slug}?${params.toString()}`
-  }, [prefs, username, gallery.slug])
-
   return (
     <div className="flex h-full overflow-hidden">
       <OptionsPanel gallery={gallery} bannerUrl={bannerUrl} />
@@ -1308,18 +1323,17 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
         </div>
 
         {/* Preview card — fills remaining height */}
-        <div className="flex flex-1 items-start justify-center overflow-hidden">
+        <div className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={device}
-              className="flex h-full items-start justify-center"
-              style={{ width: '100%' }}
+              className="flex h-full w-full justify-center"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
             >
-              <PreviewCard gallery={gallery} username={username} device={device} previewUrl={previewUrl} />
+              <PreviewCard gallery={gallery} username={username} device={device} />
             </motion.div>
           </AnimatePresence>
         </div>

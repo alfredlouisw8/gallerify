@@ -728,6 +728,8 @@
     "coverVideoClassicDesc": "YouTube、タイトル左下",
     "coverVideoCenteredLabel": "ビデオセンタード",
     "coverVideoCenteredDesc": "YouTube、タイトル中央",
+    "coverMagazineLabel": "マガジン",
+    "coverMagazineDesc": "エディトリアル分割、大タイトル",
     "youtubeUrl": "YouTube URL",
     "youtubePlaceholder": "https://www.youtube.com/watch?v=...",
     "youtubeHint": "YouTubeリンクを貼り付け — 動画はミュートでループ再生",
