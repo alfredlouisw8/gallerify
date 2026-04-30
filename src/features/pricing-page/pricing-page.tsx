@@ -5,10 +5,10 @@ import {
   CheckIcon,
   MinusIcon,
   Loader2Icon,
-  ArrowRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { getPricing, getSavePercent } from '@/lib/pricing'
@@ -33,14 +33,11 @@ type Plan = {
   features: { label: string; included: boolean }[]
 }
 
-// ─── Comparison table data ────────────────────────────────────────────────────
-
 type TableRow = {
   label: string
   free: FeatureValue
   pro: FeatureValue
   pro_max: FeatureValue
-  note?: string
 }
 
 type TableGroup = {
@@ -48,152 +45,79 @@ type TableGroup = {
   rows: TableRow[]
 }
 
-const COMPARISON: TableGroup[] = [
-  {
-    category: 'Galleries & Storage',
-    rows: [
-      { label: 'Number of galleries',    free: '3',          pro: 'Unlimited',   pro_max: 'Unlimited' },
-      { label: 'Storage',                free: '1 GB',       pro: '10 GB',       pro_max: '100 GB' },
-      { label: 'Photo uploads',          free: true,         pro: true,          pro_max: true },
-      { label: 'Video uploads',          free: false,        pro: '1 hour',      pro_max: '2 hours' },
-      { label: 'Watermark protection',   free: true,         pro: true,          pro_max: true },
-    ],
-  },
-  {
-    category: 'Client Experience',
-    rows: [
-      { label: 'Public portfolio page',      free: true,  pro: true,  pro_max: true },
-      { label: 'Gallery password protection',free: true,  pro: true,  pro_max: true },
-      { label: 'Client comments & feedback', free: true,  pro: true,  pro_max: true },
-      { label: 'Photo annotations',          free: true,  pro: true,  pro_max: true },
-      { label: 'Client selects',             free: true,  pro: true,  pro_max: true },
-      { label: 'No login required for clients', free: true, pro: true, pro_max: true },
-    ],
-  },
-  {
-    category: 'Customisation',
-    rows: [
-      { label: 'All gallery themes',         free: true,  pro: true,  pro_max: true },
-      { label: 'Live preview editor',        free: true,  pro: true,  pro_max: true },
-      { label: 'Custom domain',              free: false, pro: true,  pro_max: true },
-      { label: 'Remove Gallerify branding',  free: false, pro: true,  pro_max: true },
-    ],
-  },
-  {
-    category: 'Support',
-    rows: [
-      { label: 'Email support',    free: true,  pro: true,  pro_max: true },
-      { label: 'Priority support', free: false, pro: false, pro_max: true },
-    ],
-  },
-]
-
-// ─── FAQ data ─────────────────────────────────────────────────────────────────
-
-const FAQ = [
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel from your billing portal whenever you like. Your plan stays active until the end of the current paid period — no proration, no surprise charges.',
-  },
-  {
-    q: 'What happens when my trial ends?',
-    a: "Your galleries become view-only and upload access is paused. Nothing gets deleted — upgrade at any time to restore full access and pick up exactly where you left off.",
-  },
-  {
-    q: 'Can I switch between monthly and annual billing?',
-    a: 'Yes. Switching from monthly to annual is prorated to your current period, so you only pay the difference. Switching back to monthly takes effect at your next renewal.',
-  },
-  {
-    q: 'Do you offer refunds?',
-    a: "We offer a 7-day refund window from the date of your first charge. If you're not happy, contact support@gallerify.com and we'll sort it out.",
-  },
-  {
-    q: 'Is the custom domain included or an add-on?',
-    a: 'Custom domain is included at no extra cost on Pro and Pro Max. Connect any domain you own — no third-party fees from us.',
-  },
-  {
-    q: 'Can my clients download photos?',
-    a: 'Downloads are fully under your control. You can enable or disable downloads per gallery, and optionally require clients to request them.',
-  },
-  {
-    q: 'What payment methods do you accept?',
-    a: 'All major credit and debit cards (Visa, Mastercard, Amex), PayPal, and Apple Pay — processed securely through our payment provider.',
-  },
-  {
-    q: 'Do you offer discounts for students or non-profits?',
-    a: 'Yes — reach out at support@gallerify.com with details and we handle these case by case.',
-  },
-]
-
 // ─── Plan builder ─────────────────────────────────────────────────────────────
 
-function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
+function buildPlans(
+  t: ReturnType<typeof useTranslations<'PricingPage'>>,
+  isIndonesia: boolean,
+  billing: BillingPeriod
+): Plan[] {
   const pricing = getPricing(isIndonesia)
   return [
     {
       id: 'free_trial',
-      name: 'Free Trial',
+      name: t('freeTrial_name'),
       price: '$0',
-      priceNote: '14 days',
-      description: 'Explore everything Gallerify has to offer — no card needed.',
+      priceNote: t('freeTrial_14days'),
+      description: t('freeTrial_desc'),
       highlight: false,
-      cta: 'Start free trial',
+      cta: t('freeTrial_cta'),
       ctaHref: '/login?next=/dashboard',
       features: [
-        { label: 'Up to 3 galleries', included: true },
-        { label: '1 GB storage', included: true },
-        { label: 'Photo uploads', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Gallery password protection', included: true },
-        { label: 'Client comments & feedback', included: true },
-        { label: 'All gallery themes & live preview', included: true },
-        { label: 'Custom domain', included: false },
-        { label: 'Remove Gallerify branding', included: false },
-        { label: 'Video uploads', included: false },
+        { label: t('feat_upTo3'),             included: true },
+        { label: t('feat_1gb'),               included: true },
+        { label: t('comp_photoUploads'),      included: true },
+        { label: t('comp_portfolio'),         included: true },
+        { label: t('comp_passwordProtection'),included: true },
+        { label: t('comp_comments'),          included: true },
+        { label: t('feat_allThemes'),         included: true },
+        { label: t('comp_customDomain'),      included: false },
+        { label: t('comp_removeBranding'),    included: false },
+        { label: t('comp_videoUploads'),      included: false },
       ],
     },
     {
       id: 'pro',
-      name: 'Pro',
+      name: t('pro_name'),
       price: billing === 'annual' ? pricing.pro.annual.perMonth : pricing.pro.monthly.amount,
-      priceNote: '/month',
-      billedAs: billing === 'annual' ? `Billed ${pricing.pro.annual.amount}/year` : undefined,
-      description: 'For working photographers ready to grow their client base.',
+      priceNote: t('priceMonth'),
+      billedAs: billing === 'annual' ? t('billedAs', { amount: pricing.pro.annual.amount }) : undefined,
+      description: t('pro_desc'),
       highlight: true,
-      cta: 'Get started with Pro',
+      cta: t('pro_cta'),
       features: [
-        { label: 'Unlimited galleries', included: true },
-        { label: '10 GB storage', included: true },
-        { label: 'Photo uploads', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Gallery password protection', included: true },
-        { label: 'Client comments & feedback', included: true },
-        { label: 'All gallery themes & live preview', included: true },
-        { label: 'Custom domain', included: true },
-        { label: 'Remove Gallerify branding', included: true },
-        { label: 'Video uploads (up to 1 hour)', included: true },
+        { label: t('feat_unlimited'),         included: true },
+        { label: t('feat_10gb'),              included: true },
+        { label: t('comp_photoUploads'),      included: true },
+        { label: t('comp_portfolio'),         included: true },
+        { label: t('comp_passwordProtection'),included: true },
+        { label: t('comp_comments'),          included: true },
+        { label: t('feat_allThemes'),         included: true },
+        { label: t('comp_customDomain'),      included: true },
+        { label: t('comp_removeBranding'),    included: true },
+        { label: t('feat_video1h'),           included: true },
       ],
     },
     {
       id: 'pro_max',
-      name: 'Pro Max',
+      name: t('proMax_name'),
       price: billing === 'annual' ? pricing.pro_max.annual.perMonth : pricing.pro_max.monthly.amount,
-      priceNote: '/month',
-      billedAs: billing === 'annual' ? `Billed ${pricing.pro_max.annual.amount}/year` : undefined,
-      description: 'For full-service studios, videographers, and high-volume work.',
+      priceNote: t('priceMonth'),
+      billedAs: billing === 'annual' ? t('billedAs', { amount: pricing.pro_max.annual.amount }) : undefined,
+      description: t('proMax_desc'),
       highlight: false,
-      cta: 'Get started with Pro Max',
+      cta: t('proMax_cta'),
       features: [
-        { label: 'Unlimited galleries', included: true },
-        { label: '100 GB storage', included: true },
-        { label: 'Video uploads (up to 2 hours)', included: true },
-        { label: 'Public portfolio page', included: true },
-        { label: 'Gallery password protection', included: true },
-        { label: 'Client comments & feedback', included: true },
-        { label: 'All gallery themes & live preview', included: true },
-        { label: 'Custom domain', included: true },
-        { label: 'Remove Gallerify branding', included: true },
-        { label: 'Priority support', included: true },
+        { label: t('feat_unlimited'),         included: true },
+        { label: t('feat_100gb'),             included: true },
+        { label: t('feat_video2h'),           included: true },
+        { label: t('comp_portfolio'),         included: true },
+        { label: t('comp_passwordProtection'),included: true },
+        { label: t('comp_comments'),          included: true },
+        { label: t('feat_allThemes'),         included: true },
+        { label: t('comp_customDomain'),      included: true },
+        { label: t('comp_removeBranding'),    included: true },
+        { label: t('comp_prioritySupport'),   included: true },
       ],
     },
   ]
@@ -202,6 +126,7 @@ function buildPlans(isIndonesia: boolean, billing: BillingPeriod): Plan[] {
 // ─── Checkout handler ─────────────────────────────────────────────────────────
 
 function useCheckout(planId: PlanId, billing: BillingPeriod) {
+  const t = useTranslations('PricingPage')
   const [loading, setLoading] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
 
@@ -220,8 +145,8 @@ function useCheckout(planId: PlanId, billing: BillingPeriod) {
         return
       }
       const { url, error } = await res.json()
-      if (error === 'already_subscribed') { setHint("You're already on this plan."); return }
-      if (error === 'downgrade_via_portal') { setHint('To downgrade, manage your plan in the billing portal.'); return }
+      if (error === 'already_subscribed') { setHint(t('alreadyOnPlan')); return }
+      if (error === 'downgrade_via_portal') { setHint(t('downgradeViaPortal')); return }
       if (error || !url) return
       window.location.href = url
     } catch {
@@ -231,7 +156,7 @@ function useCheckout(planId: PlanId, billing: BillingPeriod) {
     }
   }
 
-  return { loading, hint, handleUpgrade }
+  return { loading, hint, handleUpgrade, t }
 }
 
 // ─── Cell renderer (comparison table) ────────────────────────────────────────
@@ -261,7 +186,7 @@ function Cell({ value, featured }: { value: FeatureValue; featured?: boolean }) 
 // ─── Plan card ────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, billing, delay }: { plan: Plan; billing: BillingPeriod; delay: number }) {
-  const { loading, hint, handleUpgrade } = useCheckout(plan.id, billing)
+  const { loading, hint, handleUpgrade, t } = useCheckout(plan.id, billing)
   const f = plan.highlight
 
   return (
@@ -275,7 +200,7 @@ function PlanCard({ plan, billing, delay }: { plan: Plan; billing: BillingPeriod
     >
       {f && (
         <span className="absolute -top-3 left-6 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
-          Most popular
+          {t('mostPopular')}
         </span>
       )}
 
@@ -331,7 +256,9 @@ function PlanCard({ plan, billing, delay }: { plan: Plan; billing: BillingPeriod
             onClick={() => void handleUpgrade()}
             disabled={loading}
           >
-            {loading ? <><Loader2Icon className="mr-2 size-4 animate-spin" />Redirecting…</> : plan.cta}
+            {loading
+              ? <><Loader2Icon className="mr-2 size-4 animate-spin" />{t('redirecting')}</>
+              : plan.cta}
           </Button>
         )}
         {hint && (
@@ -345,6 +272,8 @@ function PlanCard({ plan, billing, delay }: { plan: Plan; billing: BillingPeriod
 // ─── Billing toggle ───────────────────────────────────────────────────────────
 
 function BillingToggle({ billing, onChange, savePercent }: { billing: BillingPeriod; onChange: (b: BillingPeriod) => void; savePercent: number }) {
+  const t = useTranslations('PricingPage')
+
   return (
     <div className="inline-flex items-center rounded-full border border-border bg-card p-1">
       {(['monthly', 'annual'] as const).map((b) => (
@@ -355,12 +284,12 @@ function BillingToggle({ billing, onChange, savePercent }: { billing: BillingPer
             billing === b ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          {b}
+          {b === 'monthly' ? t('monthly') : t('annual')}
           {b === 'annual' && (
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
               billing === 'annual' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
             }`}>
-              Save {savePercent}%
+              {t('save', { pct: savePercent })}
             </span>
           )}
         </button>
@@ -372,6 +301,48 @@ function BillingToggle({ billing, onChange, savePercent }: { billing: BillingPer
 // ─── Comparison table ─────────────────────────────────────────────────────────
 
 function ComparisonTable({ plans }: { plans: Plan[] }) {
+  const t = useTranslations('PricingPage')
+
+  const comparison: TableGroup[] = [
+    {
+      category: t('comp_galleriesStorage'),
+      rows: [
+        { label: t('comp_galleries'),    free: t('val_3'),       pro: t('val_unlimited'), pro_max: t('val_unlimited') },
+        { label: t('comp_storage'),      free: t('val_1gb'),     pro: t('val_10gb'),      pro_max: t('val_100gb') },
+        { label: t('comp_photoUploads'), free: true,             pro: true,               pro_max: true },
+        { label: t('comp_videoUploads'), free: false,            pro: t('val_1hour'),     pro_max: t('val_2hours') },
+        { label: t('comp_watermark'),    free: true,             pro: true,               pro_max: true },
+      ],
+    },
+    {
+      category: t('comp_clientExperience'),
+      rows: [
+        { label: t('comp_portfolio'),          free: true,  pro: true,  pro_max: true },
+        { label: t('comp_passwordProtection'), free: true,  pro: true,  pro_max: true },
+        { label: t('comp_comments'),           free: true,  pro: true,  pro_max: true },
+        { label: t('comp_annotations'),        free: true,  pro: true,  pro_max: true },
+        { label: t('comp_selects'),            free: true,  pro: true,  pro_max: true },
+        { label: t('comp_noLogin'),            free: true,  pro: true,  pro_max: true },
+      ],
+    },
+    {
+      category: t('comp_customisation'),
+      rows: [
+        { label: t('comp_themes'),       free: true,  pro: true,  pro_max: true },
+        { label: t('comp_livePreview'),  free: true,  pro: true,  pro_max: true },
+        { label: t('comp_customDomain'), free: false, pro: true,  pro_max: true },
+        { label: t('comp_removeBranding'), free: false, pro: true, pro_max: true },
+      ],
+    },
+    {
+      category: t('comp_support'),
+      rows: [
+        { label: t('comp_emailSupport'),    free: true,  pro: true,  pro_max: true },
+        { label: t('comp_prioritySupport'), free: false, pro: false, pro_max: true },
+      ],
+    },
+  ]
+
   return (
     <div className="hidden overflow-hidden rounded-2xl border border-border lg:block">
       <table className="w-full border-collapse text-sm">
@@ -385,14 +356,14 @@ function ComparisonTable({ plans }: { plans: Plan[] }) {
               >
                 <div className={`font-semibold ${plan.highlight ? 'text-background' : ''}`}>{plan.name}</div>
                 <div className={`mt-1 text-xs ${plan.highlight ? 'text-background/50' : 'text-muted-foreground'}`}>
-                  {plan.price}{plan.id !== 'free_trial' ? plan.priceNote : ' · 14 days'}
+                  {plan.price}{plan.id !== 'free_trial' ? plan.priceNote : t('pricePer14days')}
                 </div>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {COMPARISON.map((group) => (
+          {comparison.map((group) => (
             <>
               <tr key={group.category} className="border-t border-border bg-secondary/30">
                 <td colSpan={4} className="px-6 py-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -421,28 +392,43 @@ function ComparisonTable({ plans }: { plans: Plan[] }) {
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 function FaqSection() {
+  const t = useTranslations('PricingPage')
+
+  const faq = [
+    { q: t('faq_q1'), a: t('faq_a1') },
+    { q: t('faq_q2'), a: t('faq_a2') },
+    { q: t('faq_q3'), a: t('faq_a3') },
+    { q: t('faq_q4'), a: t('faq_a4') },
+    { q: t('faq_q5'), a: t('faq_a5') },
+    { q: t('faq_q6'), a: t('faq_a6') },
+    { q: t('faq_q7'), a: t('faq_a7') },
+    { q: t('faq_q8'), a: t('faq_a8') },
+  ]
+
   return (
     <section className="py-24 md:py-32">
       <div className="container px-4 md:px-6">
         <div className="grid gap-16 lg:grid-cols-[1fr_2fr]">
 
           <div>
-            <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">FAQ</p>
+            <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              {t('faq_label')}
+            </p>
             <h2 className="font-display text-3xl font-semibold leading-tight tracking-tighter md:text-4xl">
-              Questions
+              {t('faq_heading1')}
               <br />
-              <span className="italic text-muted-foreground">answered.</span>
+              <span className="italic text-muted-foreground">{t('faq_heading2')}</span>
             </h2>
             <p className="mt-4 text-sm text-muted-foreground">
-              Still unsure?{' '}
+              {t('faq_stillUnsure')}{' '}
               <Link href="/contact" className="underline underline-offset-2 transition-colors hover:text-foreground">
-                Drop us a line.
+                {t('faq_dropUsLine')}
               </Link>
             </p>
           </div>
 
           <div className="divide-y divide-border">
-            {FAQ.map((item, i) => (
+            {faq.map((item, i) => (
               <motion.div
                 key={item.q}
                 initial={{ opacity: 0, y: 12 }}
@@ -466,9 +452,17 @@ function FaqSection() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boolean }) {
+  const t = useTranslations('PricingPage')
   const [billing, setBilling] = useState<BillingPeriod>('monthly')
-  const plans = buildPlans(isIndonesia, billing)
+  const plans = buildPlans(t, isIndonesia, billing)
   const savePercent = getSavePercent(isIndonesia)
+
+  const trustItems = [
+    { stat: t('trust_freeTrial'),  label: t('trust_freeTrial_label') },
+    { stat: t('trust_refund'),     label: t('trust_refund_label') },
+    { stat: t('trust_cancel'),     label: t('trust_cancel_label') },
+    { stat: t('trust_users'),      label: t('trust_users_label') },
+  ]
 
   return (
     <>
@@ -482,16 +476,15 @@ export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boo
             className="text-center"
           >
             <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Pricing
+              {t('label')}
             </p>
             <h1 className="font-display mx-auto max-w-2xl text-5xl font-semibold leading-[1.06] tracking-tighter md:text-6xl">
-              Simple, honest
+              {t('heading1')}
               <br />
-              <span className="italic text-muted-foreground">pricing.</span>
+              <span className="italic text-muted-foreground">{t('heading2')}</span>
             </h1>
             <p className="mx-auto mt-5 max-w-md text-muted-foreground">
-              14 days free to explore everything — no credit card, no commitment.
-              Upgrade only when you&apos;re ready.
+              {t('description')}
             </p>
 
             <div className="mt-8 flex justify-center">
@@ -511,7 +504,7 @@ export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boo
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            All prices in USD. Taxes may apply based on your location.
+            {t('allPricesNote')}
           </p>
         </div>
       </section>
@@ -527,18 +520,17 @@ export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boo
             className="mb-10"
           >
             <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Compare plans
+              {t('comparePlans')}
             </p>
             <h2 className="font-display text-3xl font-semibold tracking-tighter md:text-4xl">
-              Everything, side by side.
+              {t('sideBySide')}
             </h2>
           </motion.div>
 
           <ComparisonTable plans={plans} />
 
-          {/* Mobile note */}
           <p className="mt-6 text-center text-xs text-muted-foreground lg:hidden">
-            Full comparison table visible on desktop.
+            {t('mobileTableNote')}
           </p>
         </div>
       </section>
@@ -547,12 +539,7 @@ export default function PricingPage({ isIndonesia = false }: { isIndonesia?: boo
       <section className="border-y border-border bg-secondary/30 py-10">
         <div className="container px-4 md:px-6">
           <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
-            {[
-              { stat: '14 days',   label: 'Free trial, no card' },
-              { stat: '7-day',     label: 'Refund window' },
-              { stat: 'Anytime',   label: 'Cancel, no questions' },
-              { stat: '12,400+',   label: 'Photographers trust us' },
-            ].map((item) => (
+            {trustItems.map((item) => (
               <div key={item.label} className="flex flex-col items-center gap-1">
                 <span className="font-display text-2xl font-semibold tracking-tight">{item.stat}</span>
                 <span className="text-xs text-muted-foreground">{item.label}</span>

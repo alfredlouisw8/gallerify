@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 import { type GalleryPreferences, DEFAULT_GALLERY_PREFERENCES } from '@/types'
 
-export type DesignPanel = 'cover' | 'style' | 'color' | 'layout'
+export type DesignPanel = 'cover' | 'style' | 'color' | 'layout' | 'collection-header'
 
 type GalleryDesignContextValue = {
   prefs: GalleryPreferences

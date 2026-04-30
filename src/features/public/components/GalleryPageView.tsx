@@ -266,6 +266,13 @@ export default function GalleryPageView({
   }).format(new Date(gallery.date))
 
   const hasCategories = gallery.GalleryCategory.length > 0
+  const showGroupedHeaders =
+    activeCategory === ALL_CATEGORY &&
+    !!prefs.collectionHeaderStyle &&
+    prefs.collectionHeaderStyle !== 'none'
+  const realCategories = gallery.GalleryCategory
+    .filter((c) => c.id !== '__client_selects__')
+    .sort((a, b) => a.displayOrder - b.displayOrder)
 
   const BackLink = (
     <motion.div
@@ -302,7 +309,7 @@ export default function GalleryPageView({
       {/* ── HERO ── */}
       {coverDesign === 'classic' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh' }}>
             {bannerImage ? (
               <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
             ) : (
@@ -332,7 +339,7 @@ export default function GalleryPageView({
 
       {coverDesign === 'centered' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh' }}>
             {bannerImage ? (
               <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
             ) : (
@@ -366,7 +373,7 @@ export default function GalleryPageView({
           <section className="relative" style={{ paddingTop: '72px' }}>
             {BackLink}
             {bannerImage && (
-              <div className="relative overflow-hidden" style={{ height: previewMode ? '32vh' : '52vh' }}>
+              <div className="relative overflow-hidden" style={{ height: previewMode ? '24vh' : '52vh' }}>
                 <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
                 <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.6 }} />
               </div>
@@ -397,7 +404,7 @@ export default function GalleryPageView({
 
       {coverDesign === 'bold' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh' }}>
             {bannerImage ? (
               <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover object-center" sizes="100vw" />
             ) : (
@@ -432,7 +439,7 @@ export default function GalleryPageView({
           <section
             className="relative flex flex-col items-center justify-center"
             style={{
-              minHeight: previewMode ? '55vh' : '100vh',
+              minHeight: previewMode ? '40vh' : '100vh',
               backgroundColor: theme.bg,
               padding: previewMode ? '3vh 5vw' : '6vh 6vw',
             }}
@@ -482,7 +489,7 @@ export default function GalleryPageView({
         <>
           <section
             className="flex flex-col sm:flex-row"
-            style={{ height: previewMode ? '55vh' : '100svh', backgroundColor: theme.bg }}
+            style={{ height: previewMode ? '40vh' : '100svh', backgroundColor: theme.bg }}
           >
             {/* Photo — top 50% on mobile, left 50% on desktop */}
             <div className="relative h-1/2 w-full overflow-hidden sm:h-full sm:w-1/2">
@@ -529,7 +536,7 @@ export default function GalleryPageView({
         <>
           <section style={{ backgroundColor: theme.bg }}>
             {/* Banner — 80vh */}
-            <div className="relative overflow-hidden" style={{ height: previewMode ? '44vh' : '80vh' }}>
+            <div className="relative overflow-hidden" style={{ height: previewMode ? '35vh' : '80vh' }}>
               {bannerImage ? (
                 <Image
                   src={bannerImage} alt={gallery.title} fill priority
@@ -599,7 +606,7 @@ export default function GalleryPageView({
 
       {coverDesign === 'cinematic' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh', backgroundColor: '#050403' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh', backgroundColor: '#050403' }}>
             {/* Photo strip — middle 52% of viewport */}
             <div
               className="absolute left-0 right-0 overflow-hidden"
@@ -669,7 +676,7 @@ export default function GalleryPageView({
       {/* ── VIDEO CLASSIC ── */}
       {coverDesign === 'video-classic' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh' }}>
             <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
               {videoId ? (
                 <iframe
@@ -713,7 +720,7 @@ export default function GalleryPageView({
       {/* ── VIDEO CENTERED ── */}
       {coverDesign === 'video-centered' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '55vh' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? '40vh' : '100vh' }}>
             <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
               {videoId ? (
                 <iframe
@@ -807,9 +814,84 @@ export default function GalleryPageView({
         </div>
       )}
 
-      {/* ── PHOTO GRID ── */}
+      {/* ── GROUPED COLLECTION VIEW ── */}
+      {showGroupedHeaders && (
+        <div className="pb-24 pt-10" style={{ display: 'flex', flexDirection: 'column', gap: `calc(${spacing.gap} + 4rem)` }}>
+          {realCategories.map((cat) => {
+            const catImages = cat.GalleryCategoryImage
+            const coverUrl = prefs.categoryCovers?.[cat.id]
+              ? getStorageUrl(prefs.categoryCovers[cat.id])
+              : catImages[0] ? getStorageUrl(catImages[0].imageUrl) : undefined
+            const allCatImages = catImages
+            return (
+              <div key={cat.id}>
+                {/* Full-width collection header */}
+                <CollectionHeader
+                  title={cat.name}
+                  style={prefs.collectionHeaderStyle as 'text-center' | 'text-left' | 'image-center'}
+                  coverImageUrl={coverUrl}
+                  theme={theme}
+                  accent={accent}
+                  fontPair={fontPair}
+                  paddingX={spacing.padding}
+                />
+                {/* Category images */}
+                {catImages.length > 0 && (
+                  <div
+                    style={{ paddingLeft: spacing.padding, paddingRight: spacing.padding, paddingTop: `calc(${spacing.gap} + 1.5rem)`, paddingBottom: spacing.padding }}
+                  >
+                    {prefs.photoLayout === 'grid' ? (
+                      <div className={`grid ${gridColClass}`} style={{ gap: spacing.gap }}>
+                        {catImages.map((img, i) => (
+                          <GridItem
+                            key={img.id} image={img} index={i}
+                            onClick={() => openLightbox(allCatImages, i)}
+                            isClient={isClient}
+                            isFavorited={favoritedIds.has(img.id)}
+                            isHidden={hiddenIds.has(img.id)}
+                            onToggleFavorite={() => void handleToggleFavorite(img.id)}
+                            onToggleHidden={() => void handleToggleHidden(img.id)}
+                            downloadEnabled={downloadEnabled}
+                            onDownload={() => handleDownload(img.imageUrl, img.id)}
+                            shareUrl={galleryUrl ? `${galleryUrl}?image=${img.id}` : ''}
+                            shareTitle={gallery.title}
+                            watermark={watermark}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={colClass} style={{ columnFill: 'balance', columnGap: spacing.gap }}>
+                        {catImages.map((img, i) => (
+                          <MasonryItem
+                            key={img.id} image={img} index={i}
+                            bottomMargin={spacing.gap}
+                            onClick={() => openLightbox(allCatImages, i)}
+                            isClient={isClient}
+                            isFavorited={favoritedIds.has(img.id)}
+                            isHidden={hiddenIds.has(img.id)}
+                            onToggleFavorite={() => void handleToggleFavorite(img.id)}
+                            onToggleHidden={() => void handleToggleHidden(img.id)}
+                            downloadEnabled={downloadEnabled}
+                            onDownload={() => handleDownload(img.imageUrl, img.id)}
+                            shareUrl={galleryUrl ? `${galleryUrl}?image=${img.id}` : ''}
+                            shareTitle={gallery.title}
+                            watermark={watermark}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── PHOTO GRID (flat) ── */}
+      {!showGroupedHeaders && (
       <section
-        className="mx-auto max-w-7xl pb-24 pt-10"
+        className="w-full pb-24 pt-10"
         style={{ paddingLeft: spacing.padding, paddingRight: spacing.padding }}
       >
         <AnimatePresence mode="wait">
@@ -941,6 +1023,7 @@ export default function GalleryPageView({
         {/* Infinite scroll sentinel */}
         {hasMore && <div ref={sentinelRef} aria-hidden className="h-1" />}
       </section>
+      )}
 
       {/* ── GRAIN TEXTURE OVERLAY ── */}
       {prefs.grainIntensity !== 'none' && (
@@ -1179,6 +1262,151 @@ function BlogLayout({
 
         return null
       })}
+    </div>
+  )
+}
+
+/* ── Collection Header ── */
+function CollectionHeader({
+  title,
+  style,
+  coverImageUrl,
+  theme,
+  accent,
+  fontPair,
+  paddingX = '0px',
+}: {
+  title: string
+  style: 'text-center' | 'text-left' | 'image-center'
+  coverImageUrl?: string
+  theme: (typeof THEMES)[keyof typeof THEMES]
+  accent: string
+  fontPair: { display: string; body: string }
+  paddingX?: string
+}) {
+  if (style === 'text-center') {
+    return (
+      <div
+        className="w-full"
+        style={{ paddingLeft: paddingX, paddingRight: paddingX, paddingTop: 'clamp(36px,6vw,72px)', paddingBottom: 'clamp(36px,6vw,72px)', display: 'flex', alignItems: 'center', gap: 20 }}
+      >
+        <div style={{ flex: 1, height: 1, background: theme.border }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <span style={{ color: accent, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' as const, opacity: 0.8 }}>
+            ✦
+          </span>
+          <h2
+            style={{
+              fontFamily: fontPair.display,
+              fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)',
+              color: theme.text,
+              letterSpacing: '0.09em',
+              textTransform: 'uppercase' as const,
+              fontWeight: 500,
+              margin: 0,
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+        <div style={{ flex: 1, height: 1, background: theme.border }} />
+      </div>
+    )
+  }
+
+  if (style === 'text-left') {
+    return (
+      <div
+        className="w-full overflow-hidden"
+        style={{ paddingLeft: paddingX, paddingRight: paddingX, height: 'clamp(180px, 22vw, 300px)', display: 'flex' }}
+      >
+        {/* Text side */}
+        <div
+          style={{
+            flex: '0 0 50%',
+            display: 'flex',
+            flexDirection: 'column' as const,
+            justifyContent: 'center',
+            paddingRight: '5%',
+            gap: 10,
+          }}
+        >
+          <span style={{ color: accent, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase' as const }}>
+            — Collection
+          </span>
+          <h2
+            style={{
+              fontFamily: fontPair.display,
+              fontSize: 'clamp(1.5rem, 3.5vw, 2.75rem)',
+              color: theme.text,
+              lineHeight: 1.08,
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+        {/* Image side */}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          {coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImageUrl}
+              alt={title}
+              className="size-full object-cover"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          ) : (
+            <div className="size-full" style={{ background: theme.bgDim }} />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // image-center — outer div holds the horizontal spacing, inner div is the positioned root for absolute children
+  return (
+    <div className="w-full" style={{ paddingLeft: paddingX, paddingRight: paddingX }}>
+      <div
+        className="relative overflow-hidden"
+        style={{ height: 'clamp(220px, 28vw, 380px)' }}
+      >
+        {coverImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverImageUrl}
+            alt={title}
+            className="absolute inset-0 size-full object-cover"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ background: theme.bgDim }} />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.58) 100%)' }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <h2
+            style={{
+              fontFamily: fontPair.display,
+              fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
+              color: 'oklch(0.97 0.006 80)',
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase' as const,
+              fontWeight: 500,
+              textShadow: '0 2px 24px rgba(0,0,0,0.45)',
+              margin: 0,
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+      </div>
     </div>
   )
 }

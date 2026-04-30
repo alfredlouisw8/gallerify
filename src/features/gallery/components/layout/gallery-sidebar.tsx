@@ -7,6 +7,7 @@ import {
   FrameIcon,
   GridIcon,
   ImageIcon,
+  LayoutTemplateIcon,
   ListIcon,
   MessageSquareIcon,
   PaletteIcon,
@@ -62,10 +63,11 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
   const t = useTranslations('GallerySidebar')
 
   const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
-    { id: 'cover',  label: t('cover'),  icon: <FrameIcon className="size-3.5" /> },
-    { id: 'style',  label: t('style'),  icon: <SlidersHorizontalIcon className="size-3.5" /> },
-    { id: 'color',  label: t('color'),  icon: <PaletteIcon className="size-3.5" /> },
-    { id: 'layout', label: t('layout'), icon: <GridIcon className="size-3.5" /> },
+    { id: 'cover',             label: t('cover'),            icon: <FrameIcon className="size-3.5" /> },
+    { id: 'style',             label: t('style'),            icon: <SlidersHorizontalIcon className="size-3.5" /> },
+    { id: 'color',             label: t('color'),            icon: <PaletteIcon className="size-3.5" /> },
+    { id: 'layout',            label: t('layout'),           icon: <GridIcon className="size-3.5" /> },
+    { id: 'collection-header', label: t('collectionHeader'), icon: <LayoutTemplateIcon className="size-3.5" /> },
   ]
 
   const SETTINGS_ITEMS = [

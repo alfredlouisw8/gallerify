@@ -60,6 +60,9 @@ function prefsFromParams(
       y: s('focalY') !== undefined ? Math.min(100, Math.max(0, Number(s('focalY')))) : stored.bannerFocalPoint.y,
     },
     bannerVideoUrl: s('bannerVideoUrl') ?? stored.bannerVideoUrl,
+    collectionHeaderStyle: (['none', 'text-center', 'text-left', 'image-center'].includes(s('collectionHeaderStyle') ?? '')
+      ? s('collectionHeaderStyle')! : stored.collectionHeaderStyle) as GalleryPreferences['collectionHeaderStyle'],
+    categoryCovers: stored.categoryCovers,
   }
 }
 
