@@ -89,7 +89,7 @@ export default function CustomerPageView({
           backgroundColor: theme.bg,
           color: theme.text,
           fontFamily: fontPair.body,
-        } as React.CSSProperties
+        } as unknown as React.CSSProperties
       }
     >
       {/* ── HERO ── */}
