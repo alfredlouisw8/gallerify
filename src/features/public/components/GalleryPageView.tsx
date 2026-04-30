@@ -307,7 +307,7 @@ export default function GalleryPageView({
         color: theme.text,
         fontFamily: fontPair.body,
         ...(previewMode ? { height: '100%', overflow: 'hidden' } : { minHeight: '100dvh' }),
-      } as React.CSSProperties}
+      } as unknown as React.CSSProperties}
     >
       {/* ── HERO ── */}
       {coverDesign === 'classic' && (
