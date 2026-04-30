@@ -728,6 +728,8 @@
     "coverVideoClassicDesc": "YouTube, title bottom-left",
     "coverVideoCenteredLabel": "Video Centered",
     "coverVideoCenteredDesc": "YouTube, title centered",
+    "coverMagazineLabel": "Magazine",
+    "coverMagazineDesc": "Editorial split, large title",
     "youtubeUrl": "YouTube URL",
     "youtubePlaceholder": "https://www.youtube.com/watch?v=...",
     "youtubeHint": "Paste a YouTube link — video plays muted and looped",

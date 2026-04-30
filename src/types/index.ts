@@ -71,7 +71,7 @@ export type UserMetadata = {
 export type HomepagePreferences = {
   colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive'
   accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate'
-  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit'
+  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit' | 'dm-serif-dm-sans' | 'fraunces-nunito-sans' | 'eb-garamond-lato' | 'cinzel-raleway' | 'lora-montserrat' | 'spectral-karla' | 'libre-baskerville-source-sans' | 'italiana-open-sans' | 'tenor-sans-mulish' | 'forum-nunito'
   overlayIntensity: 'subtle' | 'medium' | 'strong'
   coverPosition: 'left' | 'center' | 'right'
 }
@@ -85,13 +85,13 @@ export const DEFAULT_HOMEPAGE_PREFERENCES: HomepagePreferences = {
 }
 
 export type GalleryPreferences = {
-  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic' | 'video-classic' | 'video-centered'
+  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic' | 'video-classic' | 'video-centered' | 'magazine'
   colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive' | 'custom'
   customColorTheme?: string
   photoLayout: 'masonry' | 'grid' | 'editorial' | 'blog'
   accentColor: 'gold' | 'ivory' | 'sage' | 'rose' | 'slate' | 'custom'
   customAccentColor?: string
-  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit'
+  fontPairing: 'bodoni-jost' | 'playfair-inter' | 'cormorant-outfit' | 'dm-serif-dm-sans' | 'fraunces-nunito-sans' | 'eb-garamond-lato' | 'cinzel-raleway' | 'lora-montserrat' | 'spectral-karla' | 'libre-baskerville-source-sans' | 'italiana-open-sans' | 'tenor-sans-mulish' | 'forum-nunito'
   photoSpacing: 'tight' | 'relaxed' | 'airy'
   overlayIntensity: 'subtle' | 'medium' | 'strong'
   thumbnailSize: 'regular' | 'large'
@@ -378,7 +378,7 @@ function parseHomepagePreferences(raw: Record<string, unknown> | null | undefine
     accentColor: (['gold', 'ivory', 'sage', 'rose', 'slate'].includes(raw?.accentColor as string)
       ? raw!.accentColor
       : DEFAULT_HOMEPAGE_PREFERENCES.accentColor) as HomepagePreferences['accentColor'],
-    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(raw?.fontPairing as string)
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit', 'dm-serif-dm-sans', 'fraunces-nunito-sans', 'eb-garamond-lato', 'cinzel-raleway', 'lora-montserrat', 'spectral-karla', 'libre-baskerville-source-sans', 'italiana-open-sans', 'tenor-sans-mulish', 'forum-nunito'].includes(raw?.fontPairing as string)
       ? raw!.fontPairing
       : DEFAULT_HOMEPAGE_PREFERENCES.fontPairing) as HomepagePreferences['fontPairing'],
     overlayIntensity: (['subtle', 'medium', 'strong'].includes(raw?.overlayIntensity as string)
@@ -392,7 +392,7 @@ function parseHomepagePreferences(raw: Record<string, unknown> | null | undefine
 
 function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
   return {
-    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered'].includes(raw?.coverDesign as string)
+    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered', 'magazine'].includes(raw?.coverDesign as string)
       ? raw!.coverDesign
       : (['left', 'center', 'right'].includes(raw?.titleAlign as string) ? 'classic' : DEFAULT_GALLERY_PREFERENCES.coverDesign)) as GalleryPreferences['coverDesign'],
     colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(raw?.colorTheme as string)
@@ -410,7 +410,7 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
     customAccentColor: typeof raw?.customAccentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.customAccentColor)
       ? raw.customAccentColor
       : undefined,
-    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit'].includes(raw?.fontPairing as string)
+    fontPairing: (['bodoni-jost', 'playfair-inter', 'cormorant-outfit', 'dm-serif-dm-sans', 'fraunces-nunito-sans', 'eb-garamond-lato', 'cinzel-raleway', 'lora-montserrat', 'spectral-karla', 'libre-baskerville-source-sans', 'italiana-open-sans', 'tenor-sans-mulish', 'forum-nunito'].includes(raw?.fontPairing as string)
       ? raw!.fontPairing
       : DEFAULT_GALLERY_PREFERENCES.fontPairing) as GalleryPreferences['fontPairing'],
     photoSpacing: (['tight', 'relaxed', 'airy'].includes(raw?.photoSpacing as string)

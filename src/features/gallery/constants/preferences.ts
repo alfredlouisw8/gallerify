@@ -124,9 +124,19 @@ export const FONT_PAIRS: Record<
   GalleryPreferences['fontPairing'],
   { display: string; body: string; displayLabel: string; bodyLabel: string }
 > = {
-  'bodoni-jost':      { display: 'var(--font-bodoni)',    body: 'var(--font-jost)',     displayLabel: 'Bodoni Moda',       bodyLabel: 'Jost' },
-  'playfair-inter':   { display: 'var(--font-playfair)',  body: 'var(--font-inter)',    displayLabel: 'Playfair Display',  bodyLabel: 'Inter' },
-  'cormorant-outfit': { display: 'var(--font-cormorant)', body: 'var(--font-outfit)',   displayLabel: 'Cormorant Garamond', bodyLabel: 'Outfit' },
+  'bodoni-jost':                   { display: 'var(--font-bodoni)',              body: 'var(--font-jost)',           displayLabel: 'Bodoni Moda',          bodyLabel: 'Jost' },
+  'playfair-inter':                { display: 'var(--font-playfair)',             body: 'var(--font-inter)',          displayLabel: 'Playfair Display',     bodyLabel: 'Inter' },
+  'cormorant-outfit':              { display: 'var(--font-cormorant)',            body: 'var(--font-outfit)',         displayLabel: 'Cormorant Garamond',   bodyLabel: 'Outfit' },
+  'dm-serif-dm-sans':              { display: 'var(--font-dm-serif)',             body: 'var(--font-dm-sans)',        displayLabel: 'DM Serif Display',     bodyLabel: 'DM Sans' },
+  'fraunces-nunito-sans':          { display: 'var(--font-fraunces)',             body: 'var(--font-nunito-sans)',    displayLabel: 'Fraunces',             bodyLabel: 'Nunito Sans' },
+  'eb-garamond-lato':              { display: 'var(--font-eb-garamond)',          body: 'var(--font-lato)',           displayLabel: 'EB Garamond',          bodyLabel: 'Lato' },
+  'cinzel-raleway':                { display: 'var(--font-cinzel)',               body: 'var(--font-raleway)',        displayLabel: 'Cinzel',               bodyLabel: 'Raleway' },
+  'lora-montserrat':               { display: 'var(--font-lora)',                 body: 'var(--font-montserrat)',     displayLabel: 'Lora',                 bodyLabel: 'Montserrat' },
+  'spectral-karla':                { display: 'var(--font-spectral)',             body: 'var(--font-karla)',          displayLabel: 'Spectral',             bodyLabel: 'Karla' },
+  'libre-baskerville-source-sans': { display: 'var(--font-libre-baskerville)',   body: 'var(--font-source-sans)',    displayLabel: 'Libre Baskerville',    bodyLabel: 'Source Sans 3' },
+  'italiana-open-sans':            { display: 'var(--font-italiana)',             body: 'var(--font-open-sans)',      displayLabel: 'Italiana',             bodyLabel: 'Open Sans' },
+  'tenor-sans-mulish':             { display: 'var(--font-tenor-sans)',           body: 'var(--font-mulish)',         displayLabel: 'Tenor Sans',           bodyLabel: 'Mulish' },
+  'forum-nunito':                  { display: 'var(--font-forum)',                body: 'var(--font-nunito)',         displayLabel: 'Forum',                bodyLabel: 'Nunito' },
 }
 
 export const SPACING: Record<GalleryPreferences['photoSpacing'], { gap: string; padding: string }> = {
