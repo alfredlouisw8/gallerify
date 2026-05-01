@@ -6,9 +6,9 @@ export const GallerySchema = z.object({
       z.custom<File>((v) => v instanceof File, {
         message: 'Please select an image',
       }),
-      z.string(), // Allow Cloudinary URLs
+      z.string(),
     ])
-  ),
+  ).optional(),
   title: z.string(),
   date: z.string(),
   isPublished: z.boolean(),

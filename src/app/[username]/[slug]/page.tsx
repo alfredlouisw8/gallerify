@@ -29,7 +29,7 @@ function prefsFromParams(
 ): GalleryPreferences {
   const s = (k: string) => (typeof p[k] === 'string' ? (p[k] as string) : undefined)
   return {
-    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered', 'magazine'].includes(s('coverDesign') ?? '')
+    coverDesign: (['classic', 'centered', 'bold', 'framed', 'journal', 'ticker', 'video-classic', 'video-centered', 'magazine', 'editorial'].includes(s('coverDesign') ?? '')
       ? s('coverDesign')! : stored.coverDesign) as GalleryPreferences['coverDesign'],
     colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(s('colorTheme') ?? '')
       ? s('colorTheme')! : stored.colorTheme) as GalleryPreferences['colorTheme'],
@@ -63,6 +63,12 @@ function prefsFromParams(
     collectionHeaderStyle: (['none', 'text-center', 'text-left', 'image-center'].includes(s('collectionHeaderStyle') ?? '')
       ? s('collectionHeaderStyle')! : stored.collectionHeaderStyle) as GalleryPreferences['collectionHeaderStyle'],
     categoryCovers: stored.categoryCovers,
+    bannerTitleColor: stored.bannerTitleColor,
+    bannerTitleCustomColor: stored.bannerTitleCustomColor,
+    bannerTitleWeight: stored.bannerTitleWeight,
+    bannerTitleLetterSpacing: stored.bannerTitleLetterSpacing,
+    bannerBgColor: stored.bannerBgColor,
+    syncBannerWithTheme: stored.syncBannerWithTheme,
   }
 }
 

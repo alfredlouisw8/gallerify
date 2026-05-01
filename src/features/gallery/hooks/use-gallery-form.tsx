@@ -74,17 +74,11 @@ export default function useGalleryForm({
   })
 
   const handleSubmit = form.handleSubmit(async (data: Inputs) => {
-    const images = data.bannerImage || []
-
-    // Separate existing URLs and new files
-    const existingUrls = images.filter(
-      (img) => typeof img === 'string'
-    ) as string[]
+    const images = data.bannerImage ?? []
+    const existingUrls = images.filter((img) => typeof img === 'string') as string[]
     const newFiles = images.filter((img) => img instanceof File) as File[]
 
     let uploadedUrls: string[] = []
-
-    // Upload new files if any
     if (newFiles.length > 0) {
       try {
         uploadedUrls = await onImagesUpload(newFiles)
@@ -97,13 +91,7 @@ export default function useGalleryForm({
       }
     }
 
-    // Merge old and new URLs
-    const updatedData = {
-      ...data,
-      bannerImage: [...existingUrls, ...uploadedUrls],
-    }
-
-    await execute(updatedData)
+    await execute({ ...data, bannerImage: [...existingUrls, ...uploadedUrls] })
 
     if (fieldErrors) {
       for (const [key, value] of Object.entries(fieldErrors)) {

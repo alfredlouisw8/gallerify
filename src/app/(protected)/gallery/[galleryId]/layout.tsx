@@ -8,7 +8,7 @@ import {
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-const bodoniModa     = Bodoni_Moda({ subsets: ['latin'], variable: '--font-bodoni', weight: ['400','500','600','700','900'], style: ['normal','italic'], display: 'swap' })
+const bodoniModa     = Bodoni_Moda({ subsets: ['latin'], variable: '--font-bodoni', weight: ['400','500','600','700','900'], style: ['normal','italic'], display: 'swap', adjustFontFallback: false })
 const jost           = Jost({ subsets: ['latin'], variable: '--font-jost', weight: ['300','400','500','600'], display: 'swap' })
 const playfair       = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', weight: ['400','500','600','700'], style: ['normal','italic'], display: 'swap' })
 const inter          = Inter({ subsets: ['latin'], variable: '--font-inter', weight: ['300','400','500','600'], display: 'swap' })
@@ -17,7 +17,7 @@ const outfit         = Outfit({ subsets: ['latin'], variable: '--font-outfit', w
 const dmSerifDisplay = DM_Serif_Display({ subsets: ['latin'], variable: '--font-dm-serif', weight: ['400'], display: 'swap' })
 const dmSans         = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', weight: ['300','400','500','600'], display: 'swap' })
 const fraunces       = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', weight: ['300','400','500','600','700'], display: 'swap' })
-const nunitoSans     = Nunito_Sans({ subsets: ['latin'], variable: '--font-nunito-sans', weight: ['300','400','500','600'], display: 'swap' })
+const nunitoSans     = Nunito_Sans({ subsets: ['latin'], variable: '--font-nunito-sans', weight: ['300','400','500','600'], display: 'swap', adjustFontFallback: false })
 const ebGaramond     = EB_Garamond({ subsets: ['latin'], variable: '--font-eb-garamond', weight: ['400','500','600'], style: ['normal','italic'], display: 'swap' })
 const lato           = Lato({ subsets: ['latin'], variable: '--font-lato', weight: ['300','400','700'], display: 'swap' })
 const cinzel         = Cinzel({ subsets: ['latin'], variable: '--font-cinzel', weight: ['400','500','600'], display: 'swap' })

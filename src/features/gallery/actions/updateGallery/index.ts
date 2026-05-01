@@ -31,7 +31,7 @@ const handler = async (data: InputType): Promise<ReturnType> => {
 
     // Delete removed banner images from Supabase Storage and decrement usage
     const removedImages = existingGallery.bannerImage.filter(
-      (img) => !bannerImage.includes(img)
+      (img) => !(bannerImage ?? []).includes(img)
     )
     if (removedImages.length > 0) {
       const paths = removedImages.map(getStoragePath).filter(Boolean)
