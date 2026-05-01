@@ -14,6 +14,7 @@ const bodoniModa = Bodoni_Moda({
   weight: ['400', '500', '600', '700', '900'],
   style: ['normal', 'italic'],
   display: 'swap',
+  adjustFontFallback: false,
 })
 const jost = Jost({
   subsets: ['latin'],

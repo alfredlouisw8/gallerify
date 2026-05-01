@@ -85,7 +85,7 @@ export const DEFAULT_HOMEPAGE_PREFERENCES: HomepagePreferences = {
 }
 
 export type GalleryPreferences = {
-  coverDesign: 'classic' | 'centered' | 'minimal' | 'bold' | 'framed' | 'journal' | 'vintage' | 'cinematic' | 'video-classic' | 'video-centered' | 'magazine'
+  coverDesign: 'classic' | 'centered' | 'bold' | 'framed' | 'journal' | 'ticker' | 'video-classic' | 'video-centered' | 'magazine' | 'editorial'
   colorTheme: 'dark' | 'light' | 'rose' | 'sand' | 'olive' | 'custom'
   customColorTheme?: string
   photoLayout: 'masonry' | 'grid' | 'editorial' | 'blog'
@@ -101,6 +101,13 @@ export type GalleryPreferences = {
   bannerVideoUrl?: string
   collectionHeaderStyle?: 'none' | 'text-center' | 'text-left' | 'image-center'
   categoryCovers?: Record<string, string>
+  bannerTitleColor?: 'white' | 'black' | 'custom'
+  bannerTitleCustomColor?: string
+  bannerTitleWeight?: 'light' | 'bold'
+  bannerTitleLetterSpacing?: number
+  bannerBgColor?: string
+  syncBannerWithTheme?: boolean
+  bannerTitleSize?: number
 }
 
 export const DEFAULT_GALLERY_PREFERENCES: GalleryPreferences = {
@@ -392,7 +399,7 @@ function parseHomepagePreferences(raw: Record<string, unknown> | null | undefine
 
 function parsePreferences(raw: Record<string, unknown> | null | undefined): GalleryPreferences {
   return {
-    coverDesign: (['classic', 'centered', 'minimal', 'bold', 'framed', 'journal', 'vintage', 'cinematic', 'video-classic', 'video-centered', 'magazine'].includes(raw?.coverDesign as string)
+    coverDesign: (['classic', 'centered', 'bold', 'framed', 'journal', 'ticker', 'video-classic', 'video-centered', 'magazine', 'editorial'].includes(raw?.coverDesign as string)
       ? raw!.coverDesign
       : (['left', 'center', 'right'].includes(raw?.titleAlign as string) ? 'classic' : DEFAULT_GALLERY_PREFERENCES.coverDesign)) as GalleryPreferences['coverDesign'],
     colorTheme: (['dark', 'light', 'rose', 'sand', 'olive', 'custom'].includes(raw?.colorTheme as string)
@@ -441,6 +448,25 @@ function parsePreferences(raw: Record<string, unknown> | null | undefined): Gall
       : undefined) as GalleryPreferences['collectionHeaderStyle'],
     categoryCovers: (raw?.categoryCovers !== null && typeof raw?.categoryCovers === 'object' && !Array.isArray(raw.categoryCovers))
       ? raw.categoryCovers as Record<string, string>
+      : undefined,
+    bannerTitleColor: (['white', 'black', 'custom'].includes(raw?.bannerTitleColor as string)
+      ? raw!.bannerTitleColor
+      : undefined) as GalleryPreferences['bannerTitleColor'],
+    bannerTitleCustomColor: typeof raw?.bannerTitleCustomColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.bannerTitleCustomColor)
+      ? raw.bannerTitleCustomColor
+      : undefined,
+    bannerTitleWeight: (['light', 'bold'].includes(raw?.bannerTitleWeight as string)
+      ? raw!.bannerTitleWeight
+      : undefined) as GalleryPreferences['bannerTitleWeight'],
+    bannerTitleLetterSpacing: typeof raw?.bannerTitleLetterSpacing === 'number'
+      ? raw.bannerTitleLetterSpacing
+      : undefined,
+    bannerBgColor: typeof raw?.bannerBgColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.bannerBgColor)
+      ? raw.bannerBgColor
+      : undefined,
+    syncBannerWithTheme: raw?.syncBannerWithTheme === true ? true : undefined,
+    bannerTitleSize: typeof raw?.bannerTitleSize === 'number' && raw.bannerTitleSize >= 50 && raw.bannerTitleSize <= 200
+      ? raw.bannerTitleSize
       : undefined,
   }
 }

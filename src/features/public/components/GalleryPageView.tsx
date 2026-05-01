@@ -25,8 +25,6 @@ interface GalleryPageViewProps {
   narrowPhotoGrid?: boolean
   /** When true, hero is shortened so banner + grid both appear in one viewport (design preview) */
   previewMode?: boolean
-  /** When true, suppresses the scroll-lock side-effect (used when rendered inline rather than in an iframe) */
-  noScrollLock?: boolean
   /** Enables client-mode UI (heart + hide buttons) */
   isClient?: boolean
   clientInteractions?: { favoritedIds: string[]; hiddenIds: string[] }
@@ -45,16 +43,15 @@ export default function GalleryPageView({
   preferences,
   narrowPhotoGrid = false,
   previewMode = false,
-  noScrollLock = false,
   isClient = false,
   clientInteractions,
   watermark,
 }: GalleryPageViewProps) {
   useEffect(() => {
-    if (!previewMode || noScrollLock) return
+    if (!previewMode) return
     document.documentElement.style.overflow = 'hidden'
     return () => { document.documentElement.style.overflow = '' }
-  }, [previewMode, noScrollLock])
+  }, [previewMode])
 
   const downloadEnabled = gallery.downloadEnabled
   const downloadPinRequired = gallery.downloadPinRequired
@@ -76,6 +73,32 @@ export default function GalleryPageView({
     return m?.[1] ?? null
   })()
   const objectPosition = `${focalPoint.x}% ${focalPoint.y}%`
+  const titleColor = prefs.bannerTitleColor === 'black' ? '#111'
+    : prefs.bannerTitleColor === 'custom' ? (prefs.bannerTitleCustomColor ?? 'oklch(0.97 0.006 80)')
+    : 'oklch(0.97 0.006 80)'
+  const titleFontWeight = prefs.bannerTitleWeight === 'bold' ? 700 : 300
+  const titleLetterSpacing = prefs.bannerTitleLetterSpacing !== undefined
+    ? `${prefs.bannerTitleLetterSpacing}em`
+    : undefined
+  const THEME_BG_HEX: Record<string, string> = {
+    dark: '#1a1714', light: '#f5f0e8', rose: '#7a3232', sand: '#c8a06a', olive: '#5c6e2c',
+  }
+  const titleScale = (prefs.bannerTitleSize ?? 80) / 100
+  const sfs = (base: string) => titleScale === 1 ? base : `calc(${titleScale} * (${base}))`
+  const bannerBg: string | null = prefs.syncBannerWithTheme
+    ? (prefs.colorTheme === 'custom' ? (prefs.customColorTheme ?? null) : (THEME_BG_HEX[prefs.colorTheme] ?? null))
+    : (prefs.bannerBgColor ?? null)
+  // Banner preview scaling: renders banner at 100vh inside a shorter preview section
+  const previewScale = narrowPhotoGrid ? 0.55 : 0.45
+  const bannerInner: React.CSSProperties = previewMode ? {
+    position: 'absolute', top: 0, left: '50%',
+    transform: `translateX(-50%) scale(${previewScale})`,
+    transformOrigin: 'top center',
+    width: `${100 / previewScale}%`,
+    height: '100vh',
+  } : {
+    position: 'absolute', inset: 0,
+  }
   const isLarge = prefs.thumbnailSize === 'large'
   // narrowPhotoGrid = design preview pane (always narrow, no responsive needed)
   // full gallery = use sm: breakpoint so mobile gets 2/1 and desktop gets 4/3
@@ -306,13 +329,14 @@ export default function GalleryPageView({
         backgroundColor: theme.bg,
         color: theme.text,
         fontFamily: fontPair.body,
-        ...(previewMode ? { height: '100%', overflow: 'hidden' } : { minHeight: '100dvh' }),
-      } as unknown as React.CSSProperties}
+        minHeight: '100dvh',
+      } as React.CSSProperties}
     >
       {/* ── HERO ── */}
       {coverDesign === 'classic' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
             {bannerImage ? (
               <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
             ) : (
@@ -328,25 +352,25 @@ export default function GalleryPageView({
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
             >
               <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>{formattedDate}</p>
-              <h1 className="max-w-2xl uppercase leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', fontSize: narrowPhotoGrid ? '3rem' : 'clamp(2.5rem, 5.6vw, 4.5rem)', textShadow: prefs.colorTheme !== 'light' ? '0 2px 40px oklch(0 0 0 / 0.4)' : 'none' }}>
+              <h1 className="max-w-2xl leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '3rem' : 'clamp(3rem, 5.6vw, 4.5rem)'), textShadow: prefs.colorTheme !== 'light' ? '0 2px 40px oklch(0 0 0 / 0.4)' : 'none' }}>
                 {gallery.title}
               </h1>
               <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
-              {galleryUrl && <div className="mt-4"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
             </motion.div>
+            </div>
           </section>
         </>
       )}
 
       {coverDesign === 'centered' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
             {bannerImage ? (
               <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
             ) : (
               <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
             )}
-            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: Math.max(overlayAlpha, 0.45) }} />
             {BackLink}
             <motion.div
               className="absolute inset-0 flex flex-col items-center justify-center text-center px-8"
@@ -356,51 +380,23 @@ export default function GalleryPageView({
             >
               <p className="mb-4 text-xs uppercase tracking-[0.3em]" style={{ color: accent }}>{formattedDate}</p>
               <div className="mb-4 w-12 border-t" style={{ borderColor: accent }} />
-              <h1 className="max-w-3xl uppercase leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', fontSize: narrowPhotoGrid ? '2.25rem' : 'clamp(2rem, 4.5vw, 3.75rem)' }}>
+              <h1 className="max-w-3xl leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '2.25rem' : 'clamp(2.25rem, 4.5vw, 3.75rem)') }}>
                 {gallery.title}
               </h1>
               <div className="mt-4 w-12 border-t" style={{ borderColor: accent }} />
               <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
-              {galleryUrl && <div className="mt-5"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
             </motion.div>
-          </section>
-        </>
-      )}
-
-      {coverDesign === 'minimal' && (
-        <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
-            {bannerImage ? (
-              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
-            ) : (
-              <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
-            )}
-            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
-            {BackLink}
-            <motion.div
-              className="absolute left-8 sm:left-12 lg:left-16"
-              style={{ bottom: '8%', ...(narrowPhotoGrid ? { left: '2rem' } : {}) }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-            >
-              <h1
-                className="max-w-2xl uppercase leading-[1.05]"
-                style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', color: 'oklch(0.97 0.006 80)', textShadow: '0 2px 32px rgba(0,0,0,0.35)', fontSize: narrowPhotoGrid ? '3rem' : 'clamp(2.5rem, 5.6vw, 4.5rem)' }}
-              >
-                {gallery.title}
-              </h1>
-              <p className="mt-3 text-xs uppercase tracking-[0.22em]" style={{ color: 'oklch(0.82 0.06 80 / 0.85)' }}>{formattedDate}</p>
-            </motion.div>
+            </div>
           </section>
         </>
       )}
 
       {coverDesign === 'bold' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
             {bannerImage ? (
-              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover object-center" sizes="100vw" />
+              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
             ) : (
               <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
             )}
@@ -414,13 +410,13 @@ export default function GalleryPageView({
               transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
             >
               <p className="mb-3 text-xs uppercase tracking-[0.3em]" style={{ color: accent }}>{formattedDate}</p>
-              <h1 className="uppercase leading-[0.95]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.03em', fontSize: narrowPhotoGrid ? '2.75rem' : 'clamp(2.5rem, 5.6vw, 4.5rem)' }}>
+              <h1 className="leading-[0.95]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.03em', fontSize: sfs(narrowPhotoGrid ? '2.75rem' : 'clamp(2.75rem, 5.6vw, 4.5rem)') }}>
                 {gallery.title}
               </h1>
               <div className="mt-6 w-16 border-t-2" style={{ borderColor: accent }} />
               <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
-              {galleryUrl && <div className="mt-5"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
             </motion.div>
+            </div>
           </section>
         </>
       )}
@@ -428,13 +424,10 @@ export default function GalleryPageView({
       {coverDesign === 'framed' && (
         <>
           <section
-            className="relative flex flex-col items-center justify-center overflow-hidden"
-            style={{
-              height: previewMode ? '40%' : '100vh',
-              backgroundColor: theme.bg,
-              padding: previewMode ? '3vh 5vw' : '6vh 6vw',
-            }}
+            className="relative overflow-hidden"
+            style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh' }}
           >
+            <div style={{ ...bannerInner, backgroundColor: bannerBg ?? theme.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: narrowPhotoGrid ? '3rem 1.5rem' : '6vh 6vw' }}>
             {BackLink}
             {/* Title row above the frame */}
             <motion.div
@@ -444,8 +437,8 @@ export default function GalleryPageView({
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
             >
               <h1
-                className="uppercase leading-tight"
-                style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', fontSize: narrowPhotoGrid ? '2.25rem' : 'clamp(2rem, 4.5vw, 3.75rem)' }}
+                className="leading-tight"
+                style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '2.25rem' : 'clamp(2.25rem, 4.5vw, 3.75rem)') }}
               >
                 {gallery.title}
               </h1>
@@ -454,13 +447,12 @@ export default function GalleryPageView({
                 <span style={{ opacity: 0.5 }}>|</span>
                 <span>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</span>
               </div>
-              {galleryUrl && <div className="mt-2"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
             </motion.div>
 
             {/* Framed banner */}
             <motion.div
               className="w-full max-w-5xl overflow-hidden"
-              style={{ borderRadius: '6px', aspectRatio: previewMode ? '21/9' : '16/8', position: 'relative', border: `1px solid ${theme.border}` }}
+              style={{ borderRadius: '6px', aspectRatio: '16/8', position: 'relative', border: `1px solid ${theme.border}` }}
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
@@ -472,6 +464,7 @@ export default function GalleryPageView({
               )}
               <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.5 }} />
             </motion.div>
+            </div>
           </section>
         </>
       )}
@@ -479,11 +472,16 @@ export default function GalleryPageView({
       {coverDesign === 'journal' && (
         <>
           <section
-            className="flex flex-col sm:flex-row"
-            style={{ height: previewMode ? '40%' : '100svh', backgroundColor: theme.bg }}
+            className="relative overflow-hidden"
+            style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100svh' }}
           >
+            <div style={{ ...bannerInner, backgroundColor: bannerBg ?? theme.bg, display: 'flex', flexDirection: narrowPhotoGrid ? 'column' as const : undefined }} className={!narrowPhotoGrid ? 'flex flex-col sm:flex-row' : ''}>
+            {BackLink}
             {/* Photo — top 50% on mobile, left 50% on desktop */}
-            <div className="relative h-1/2 w-full overflow-hidden sm:h-full sm:w-1/2">
+            <div
+              className="relative h-1/2 w-full overflow-hidden sm:h-full sm:w-1/2"
+              style={narrowPhotoGrid ? { height: '50%', width: '100%' } : {}}
+            >
               {bannerImage ? (
                 <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="(max-width: 640px) 100vw, 50vw" style={{ objectPosition }} />
               ) : (
@@ -495,9 +493,11 @@ export default function GalleryPageView({
             {/* Text — bottom 50% on mobile, right 50% on desktop */}
             <div
               className="flex h-1/2 w-full flex-col items-start justify-center sm:h-full sm:flex-1"
-              style={{ padding: narrowPhotoGrid ? '2rem' : 'clamp(1.5rem, 6%, 6rem)' }}
+              style={{
+                padding: narrowPhotoGrid ? '1.5rem' : 'clamp(1.5rem, 6%, 6rem)',
+                ...(narrowPhotoGrid ? { height: '50%', width: '100%', flex: 'none' } : {}),
+              }}
             >
-
               <motion.div
                 className="flex flex-col gap-4"
                 initial={{ opacity: 0, x: 24 }}
@@ -511,152 +511,13 @@ export default function GalleryPageView({
                 </div>
                 <div className="w-8 border-t" style={{ borderColor: accent }} />
                 <h1
-                  className="uppercase leading-[1.05]"
-                  style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', fontSize: narrowPhotoGrid ? '2.25rem' : 'clamp(2rem, 4.5vw, 3.75rem)' }}
+                  className="leading-[1.05]"
+                  style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '2.25rem' : 'clamp(2.25rem, 4.5vw, 3.75rem)') }}
                 >
                   {gallery.title}
                 </h1>
-                {galleryUrl && <div className="mt-2"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
-              </motion.div>
+                </motion.div>
             </div>
-          </section>
-        </>
-      )}
-
-      {coverDesign === 'vintage' && (
-        <>
-          <section
-            className="relative flex flex-col overflow-hidden"
-            style={{ height: previewMode ? '40%' : '100vh', backgroundColor: theme.bg }}
-          >
-            {/* Banner image — top 62% */}
-            <div className="relative overflow-hidden" style={{ flex: '0 0 62%' }}>
-              {bannerImage ? (
-                <Image
-                  src={bannerImage} alt={gallery.title} fill priority
-                  className="object-cover"
-                  sizes="100vw"
-                  style={{ objectPosition, filter: 'sepia(0.4) contrast(1.06) brightness(0.9)' }}
-                />
-              ) : (
-                <div className="absolute inset-0" style={{ backgroundColor: '#2a1f14' }} />
-              )}
-
-            </div>
-
-            {/* Title block — bottom 38% */}
-            <motion.div
-              className="mx-auto flex w-full flex-1 flex-col items-center justify-center text-center"
-              style={{ maxWidth: narrowPhotoGrid ? '100%' : '760px', padding: '0 2rem' }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-            >
-              {/* ornamental rule */}
-              <div className="flex items-center gap-3 mb-4" style={{ color: 'rgba(200,165,90,0.65)' }}>
-                <div style={{ width: 36, height: '0.5px', background: 'currentColor' }} />
-                <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor">
-                  <path d="M4 0 L4.8 3.2 L8 4 L4.8 4.8 L4 8 L3.2 4.8 L0 4 L3.2 3.2 Z" />
-                </svg>
-                <div style={{ width: 36, height: '0.5px', background: 'currentColor' }} />
-              </div>
-
-              <h1
-                style={{
-                  fontFamily: 'var(--font-display, serif)',
-                  fontWeight: 400,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.03em',
-                  lineHeight: 1.06,
-                  fontSize: narrowPhotoGrid ? '2.25rem' : 'clamp(2rem, 4vw, 4rem)',
-                  color: theme.text,
-                }}
-              >
-                {gallery.title}
-              </h1>
-
-              <p
-                className="mt-3 uppercase tracking-[0.28em] text-[11px]"
-                style={{ color: 'rgba(200,165,90,0.8)' }}
-              >
-                {formattedDate}
-              </p>
-
-              <p className="mt-1 text-xs tracking-[0.16em] uppercase" style={{ color: theme.textMuted }}>
-                {allImages.length} {allImages.length === 1 ? 'photograph' : 'photographs'}
-              </p>
-
-              {galleryUrl && <div className="mt-4"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
-            </motion.div>
-          </section>
-        </>
-      )}
-
-      {coverDesign === 'cinematic' && (
-        <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh', backgroundColor: '#050403' }}>
-            {/* Photo strip — middle 52% of viewport */}
-            <div
-              className="absolute left-0 right-0 overflow-hidden"
-              style={{ top: '22%', bottom: '18%' }}
-            >
-              {bannerImage ? (
-                <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
-              ) : (
-                <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
-              )}
-              <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.6 }} />
-            </div>
-
-            {/* Top letterbox bar */}
-            <div
-              className="absolute left-0 right-0 top-0 flex flex-col justify-end"
-              style={{ height: '22%', background: '#050403', paddingBottom: '1.5%', paddingLeft: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', paddingRight: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)' }}
-            >
-
-              <motion.div
-                initial={{ opacity: 0, y: -12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-              >
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-display, serif)',
-                    fontWeight: 400,
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: '-0.025em',
-                    lineHeight: 0.95,
-                    fontSize: narrowPhotoGrid ? '1.75rem' : 'clamp(1.75rem, 4vw, 3.75rem)',
-                    color: '#f0ede8',
-                  }}
-                >
-                  {gallery.title}
-                </h1>
-              </motion.div>
-            </div>
-
-            {/* Bottom letterbox bar */}
-            <div
-              className="absolute bottom-0 left-0 right-0 flex items-center"
-              style={{ height: '18%', background: '#050403', paddingLeft: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', paddingRight: narrowPhotoGrid ? '2rem' : 'clamp(2rem, 8vw, 8rem)', gap: '1.5rem' }}
-            >
-              <motion.div
-                className="flex items-center gap-3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
-              >
-                <span className="text-xs uppercase tracking-[0.24em]" style={{ color: accent }}>{formattedDate}</span>
-                <span style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
-                <span className="text-xs uppercase tracking-[0.18em]" style={{ color: theme.textMuted }}>
-                  {allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}
-                </span>
-                {galleryUrl && (
-                  <span style={{ marginLeft: '0.5rem' }}>
-                    <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />
-                  </span>
-                )}
-              </motion.div>
             </div>
           </section>
         </>
@@ -665,7 +526,8 @@ export default function GalleryPageView({
       {/* ── VIDEO CLASSIC ── */}
       {coverDesign === 'video-classic' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
             <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
               {videoId ? (
                 <iframe
@@ -684,6 +546,7 @@ export default function GalleryPageView({
                 <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
               )}
             </div>
+            <div className="absolute inset-x-0 bottom-0" style={{ height: '35%', background: `linear-gradient(to top, ${theme.bg}cc 0%, transparent 100%)` }} />
             <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
             {BackLink}
             <motion.div
@@ -694,20 +557,22 @@ export default function GalleryPageView({
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
             >
               <p className="mb-2 text-xs uppercase tracking-[0.2em]" style={{ color: accent }}>{formattedDate}</p>
-              <h1 className="max-w-2xl uppercase leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', textShadow: '0 2px 40px oklch(0 0 0 / 0.5)', fontSize: narrowPhotoGrid ? '3rem' : 'clamp(2.5rem, 5.6vw, 4.5rem)' }}>
+              <h1 className="max-w-2xl leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '3rem' : 'clamp(3rem, 5.6vw, 4.5rem)'), textShadow: '0 2px 40px oklch(0 0 0 / 0.5)' }}>
                 {gallery.title}
               </h1>
               <p className="mt-3 text-sm" style={{ color: theme.textMuted }}>{allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}</p>
-              {galleryUrl && <div className="mt-4"><SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" /></div>}
             </motion.div>
+            </div>
           </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
         </>
       )}
 
       {/* ── VIDEO CENTERED ── */}
       {coverDesign === 'video-centered' && (
         <>
-          <section className="relative overflow-hidden" style={{ height: previewMode ? '40%' : '100vh' }}>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
             <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
               {videoId ? (
                 <iframe
@@ -735,13 +600,68 @@ export default function GalleryPageView({
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
             >
               <div style={{ width: '32px', height: '1px', background: accent, opacity: 0.8 }} />
-              <h1 className="max-w-2xl uppercase text-center leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 400, letterSpacing: '-0.02em', textShadow: '0 2px 40px oklch(0 0 0 / 0.5)', fontSize: narrowPhotoGrid ? '3rem' : 'clamp(2.5rem, 5.6vw, 4.5rem)' }}>
+              <h1 className="max-w-2xl text-center leading-[1.05]" style={{ fontFamily: 'var(--font-display, serif)', fontWeight: titleFontWeight, color: titleColor, letterSpacing: titleLetterSpacing ?? '-0.02em', fontSize: sfs(narrowPhotoGrid ? '3rem' : 'clamp(3rem, 5.6vw, 4.5rem)'), textShadow: '0 2px 40px oklch(0 0 0 / 0.5)' }}>
                 {gallery.title}
               </h1>
               <div style={{ width: '32px', height: '1px', background: accent, opacity: 0.8 }} />
               <p className="text-sm" style={{ color: theme.textMuted }}>{formattedDate}</p>
-              {galleryUrl && <SharePopover url={galleryUrl} title={gallery.title} theme={theme} size="md" />}
             </motion.div>
+            </div>
+          </section>
+          <div aria-hidden style={{ marginTop: '-96px', height: '96px', position: 'relative', zIndex: 1, background: `linear-gradient(to bottom, transparent 0%, ${theme.bg} 100%)`, pointerEvents: 'none' }} />
+        </>
+      )}
+
+      {/* ── TICKER ── */}
+      {coverDesign === 'ticker' && (
+        <>
+          <section className="relative overflow-hidden" style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh', backgroundColor: bannerBg ?? theme.bgDim }}>
+            <div style={bannerInner}>
+            {bannerImage ? (
+              <Image src={bannerImage} alt={gallery.title} fill priority className="object-cover" sizes="100vw" style={{ objectPosition }} />
+            ) : (
+              <div className="absolute inset-0" style={{ backgroundColor: theme.bgDim }} />
+            )}
+            <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha }} />
+            {BackLink}
+            <div
+              className="absolute bottom-0 left-0 right-0 overflow-hidden"
+              style={{
+                height: narrowPhotoGrid ? '7rem' : 'clamp(6rem, 13vh, 11rem)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <motion.div
+                style={{ display: 'flex', whiteSpace: 'nowrap', willChange: 'transform' }}
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
+              >
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      fontFamily: 'var(--font-display, serif)',
+                      fontWeight: titleFontWeight,
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: titleLetterSpacing ?? '-0.02em',
+                      lineHeight: 1,
+                      fontSize: sfs(narrowPhotoGrid ? '4.5rem' : 'clamp(4.5rem, 10vw, 9rem)'),
+                      color: titleColor,
+                      paddingRight: narrowPhotoGrid ? '2rem' : '4rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: narrowPhotoGrid ? '1.5rem' : '2.5rem',
+                    }}
+                  >
+                    {gallery.title}
+                    <span style={{ color: accent, fontStyle: 'italic', fontSize: '0.65em' }}>/</span>
+                    <span style={{ color: 'oklch(0.75 0.06 80 / 0.7)', fontSize: '0.55em', letterSpacing: '0.08em' }}>{formattedDate}</span>
+                  </span>
+                ))}
+              </motion.div>
+            </div>
+            </div>
           </section>
         </>
       )}
@@ -750,41 +670,30 @@ export default function GalleryPageView({
       {coverDesign === 'magazine' && (
         <>
           <section
-            className="overflow-hidden"
-            style={{ height: previewMode ? '40%' : '100vh', display: 'flex', flexDirection: 'row' }}
+            className="relative overflow-hidden"
+            style={{ height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh' }}
           >
-            {/* LEFT — text column, 50% width, full height */}
             <div
+              className="flex flex-col sm:flex-row"
+              style={{ ...bannerInner, ...(narrowPhotoGrid ? { flexDirection: 'column' as const } : {}) }}
+            >
+            {/* TOP/LEFT — text column */}
+            <div
+              className="h-1/2 w-full flex-shrink-0 overflow-hidden sm:h-full sm:w-1/2"
               style={{
-                width: '50%',
-                flexShrink: 0,
-                minWidth: 0,
-                overflow: 'hidden',
-                background: '#f5f5f5',
-                padding: 'clamp(1.5rem, 4vw, 3.5rem)',
+                background: bannerBg ?? '#f5f5f5',
+                padding: narrowPhotoGrid ? '1rem 1.25rem' : 'clamp(1rem, 3vw, 2.5rem)',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
+                justifyContent: 'flex-end',
                 position: 'relative',
+                ...(narrowPhotoGrid ? { height: '50%', width: '100%' } : {}),
               }}
             >
-
-              {/* Top row */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
-                <span
-                  className="text-xs uppercase tracking-[0.18em]"
-                  style={{ color: '#888' }}
-                >
-                  Gallery by {username}
-                </span>
-                <span
-                  className="text-xs uppercase tracking-[0.18em]"
-                  style={{ color: '#888', flexShrink: 0 }}
-                >
-                  {formattedDate}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.5rem' }}>
+                <span className="text-xs uppercase tracking-[0.18em]" style={{ color: '#888' }}>Gallery by {username}</span>
+                <span className="text-xs uppercase tracking-[0.18em]" style={{ color: '#888', flexShrink: 0 }}>{formattedDate}</span>
               </div>
-              {/* Bottom — large title */}
               <motion.div
                 initial={{ opacity: 0, y: 32 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -794,10 +703,10 @@ export default function GalleryPageView({
                   className="uppercase leading-[0.9]"
                   style={{
                     fontFamily: 'var(--font-display, serif)',
-                    fontSize: 'clamp(2rem, 4.5vw, 5rem)',
-                    fontWeight: 900,
-                    letterSpacing: '-0.03em',
-                    color: '#111',
+                    fontSize: sfs(narrowPhotoGrid ? '2rem' : 'clamp(2rem, 4.5vw, 5rem)'),
+                    fontWeight: prefs.bannerTitleWeight === 'light' ? 300 : 900,
+                    letterSpacing: titleLetterSpacing ?? '-0.03em',
+                    color: prefs.bannerTitleColor ? titleColor : '#111',
                     overflowWrap: 'break-word',
                   }}
                 >
@@ -805,8 +714,7 @@ export default function GalleryPageView({
                 </h1>
               </motion.div>
             </div>
-
-            {/* RIGHT — full-bleed image, 50% width, full height */}
+            {/* BOTTOM/RIGHT — full-bleed image */}
             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
               {bannerImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -821,6 +729,155 @@ export default function GalleryPageView({
                 <div className="absolute inset-0" style={{ backgroundColor: '#ccc' }} />
               )}
               <div className="absolute inset-0" style={{ background: 'oklch(0 0 0 / 1)', opacity: overlayAlpha * 0.3 }} />
+            </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ── EDITORIAL ── */}
+      {coverDesign === 'editorial' && (
+        <>
+          <section
+            style={{
+              height: previewMode ? (narrowPhotoGrid ? '55vh' : '45vh') : '100vh',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            <div style={{ ...bannerInner, backgroundColor: bannerBg ?? '#F5F0EB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            {BackLink}
+
+            {/* Top label */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+              style={{
+                fontFamily: fontPair.display,
+                fontStyle: 'italic',
+                fontSize: narrowPhotoGrid ? '11px' : '14px',
+                color: '#3D2314',
+                letterSpacing: '0.06em',
+                marginBottom: narrowPhotoGrid ? '0.75rem' : '1.5rem',
+                paddingTop: narrowPhotoGrid ? '0.75rem' : '2.5rem',
+                flexShrink: 0,
+              }}
+            >
+              Gallery by {username}
+            </motion.p>
+
+            {/* Hero block — image with title always on top */}
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flex: 1,
+                width: '100%',
+              }}
+            >
+              {/* Image */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                style={{
+                  position: 'relative',
+                  height: '65%',
+                  aspectRatio: '4/3',
+                  width: 'auto',
+                  maxWidth: '88%',
+                  zIndex: 1,
+                  overflow: 'hidden',
+                }}
+              >
+                {bannerImage ? (
+                  <Image
+                    src={bannerImage}
+                    alt={gallery.title}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="(max-width: 640px) 85vw, 50vw"
+                    style={{ objectPosition }}
+                  />
+                ) : (
+                  <div className="absolute inset-0" style={{ backgroundColor: '#D4C5B5' }} />
+                )}
+
+                {/* Date on image */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '16%',
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
+                    zIndex: 3,
+                  }}
+                >
+                  <p style={{
+                    fontFamily: fontPair.display,
+                    fontStyle: 'italic',
+                    fontSize: narrowPhotoGrid ? '11px' : '18px',
+                    color: '#F5F0EB',
+                    margin: 0,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {formattedDate}
+                  </p>
+                </motion.div>
+              </motion.div>
+
+              {/* Title — always on top of image */}
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: narrowPhotoGrid ? '6%' : '8%',
+                  textAlign: 'center',
+                  zIndex: 10,
+                  fontFamily: fontPair.display,
+                  fontSize: sfs(narrowPhotoGrid
+                    ? `clamp(1rem, calc(18.5rem / ${Math.max(gallery.title.length, 3)}), 4rem)`
+                    : `clamp(2rem, calc(66rem / ${Math.max(gallery.title.length, 3)}), 7.5rem)`),
+                  fontWeight: titleFontWeight,
+                  letterSpacing: titleLetterSpacing ?? (narrowPhotoGrid ? '0.1em' : '0.2em'),
+                  textTransform: 'uppercase' as const,
+                  color: titleColor,
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap' as const,
+                  margin: 0,
+                  userSelect: 'none',
+                }}
+              >
+                {gallery.title}
+              </motion.h1>
+            </div>
+
+            {/* Bottom divider */}
+            <motion.div
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              style={{
+                width: '1px',
+                height: narrowPhotoGrid ? '24px' : '40px',
+                backgroundColor: '#3D2314',
+                marginTop: narrowPhotoGrid ? '0.75rem' : '1.5rem',
+                marginBottom: narrowPhotoGrid ? '0.75rem' : '2.5rem',
+                flexShrink: 0,
+              }}
+            />
             </div>
           </section>
         </>
@@ -852,8 +909,8 @@ export default function GalleryPageView({
         >
           <div
             ref={categoryBarRef}
-            className="flex gap-2 overflow-x-auto px-6 py-4 sm:px-10 lg:px-16"
-            style={{ scrollbarWidth: 'none' }}
+            className="flex gap-2 overflow-x-auto py-8"
+            style={{ scrollbarWidth: 'none', paddingLeft: spacing.padding, paddingRight: spacing.padding }}
           >
             <CategoryPill
               label="All"
@@ -864,7 +921,7 @@ export default function GalleryPageView({
               accent={accent}
               barStyle={prefs.categoryBarStyle}
             />
-            {gallery.GalleryCategory.map((cat) => (
+            {realCategories.map((cat) => (
               <CategoryPill
                 key={cat.id}
                 label={cat.name}
@@ -882,7 +939,7 @@ export default function GalleryPageView({
 
       {/* ── GROUPED COLLECTION VIEW ── */}
       {showGroupedHeaders && (
-        <div className="pb-24 pt-10" style={{ display: 'flex', flexDirection: 'column', gap: `calc(${spacing.gap} + 4rem)` }}>
+        <div className="pb-24" style={{ paddingTop: 'clamp(4rem, 10vw, 6rem)', display: 'flex', flexDirection: 'column', gap: 'clamp(4rem, 8vw, 8rem)' }}>
           {realCategories.map((cat) => {
             const catImages = cat.GalleryCategoryImage
             const coverUrl = prefs.categoryCovers?.[cat.id]
@@ -904,7 +961,8 @@ export default function GalleryPageView({
                 {/* Category images */}
                 {catImages.length > 0 && (
                   <div
-                    style={{ paddingLeft: spacing.padding, paddingRight: spacing.padding, paddingTop: `calc(${spacing.gap} + 1.5rem)`, paddingBottom: spacing.padding }}
+                    className="w-full"
+                    style={{ paddingLeft: spacing.padding, paddingRight: spacing.padding, paddingTop: 'clamp(2rem, 4vw, 2rem)', paddingBottom: spacing.padding }}
                   >
                     {prefs.photoLayout === 'grid' ? (
                       <div className={`grid ${gridColClass}`} style={{ gap: spacing.gap }}>
@@ -1354,125 +1412,138 @@ function CollectionHeader({
     return (
       <div
         className="w-full"
-        style={{ paddingLeft: paddingX, paddingRight: paddingX, paddingTop: 'clamp(36px,6vw,72px)', paddingBottom: 'clamp(36px,6vw,72px)', display: 'flex', alignItems: 'center', gap: 20 }}
+        style={{ paddingTop: 'clamp(36px,6vw,50px)', paddingBottom: 'clamp(36px,6vw,50px)' }}
       >
-        <div style={{ flex: 1, height: 1, background: theme.border }} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <span style={{ color: accent, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' as const, opacity: 0.8 }}>
-            ✦
-          </span>
-          <h2
-            style={{
-              fontFamily: fontPair.display,
-              fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)',
-              color: theme.text,
-              letterSpacing: '0.09em',
-              textTransform: 'uppercase' as const,
-              fontWeight: 500,
-              margin: 0,
-            }}
-          >
-            {title}
-          </h2>
+        <div
+          className="w-full"
+          style={{ paddingLeft: paddingX, paddingRight: paddingX, display: 'flex', alignItems: 'center', gap: 20 }}
+        >
+          <div style={{ flex: 1, height: 1, background: theme.border }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <span style={{ color: accent, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' as const, opacity: 0.8 }}>
+              ✦
+            </span>
+            <h2
+              style={{
+                fontFamily: fontPair.display,
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)',
+                color: theme.text,
+                letterSpacing: '0.09em',
+                textTransform: 'uppercase' as const,
+                fontWeight: 500,
+                margin: 0,
+              }}
+            >
+              {title}
+            </h2>
+          </div>
+          <div style={{ flex: 1, height: 1, background: theme.border }} />
         </div>
-        <div style={{ flex: 1, height: 1, background: theme.border }} />
       </div>
     )
   }
 
   if (style === 'text-left') {
     return (
-      <div
-        className="w-full overflow-hidden"
-        style={{ paddingLeft: paddingX, paddingRight: paddingX, height: 'clamp(180px, 22vw, 300px)', display: 'flex' }}
-      >
-        {/* Text side */}
+      <div className="w-full" style={{ paddingLeft: paddingX, paddingRight: paddingX }}>
         <div
-          style={{
-            flex: '0 0 50%',
-            display: 'flex',
-            flexDirection: 'column' as const,
-            justifyContent: 'center',
-            paddingRight: '5%',
-            gap: 10,
-          }}
+          className="w-full overflow-hidden"
+          style={{ height: 'clamp(180px, 22vw, 300px)', display: 'flex' }}
         >
-          <span style={{ color: accent, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase' as const }}>
-            — Collection
-          </span>
-          <h2
+          {/* Text side */}
+          <div
             style={{
-              fontFamily: fontPair.display,
-              fontSize: 'clamp(1.5rem, 3.5vw, 2.75rem)',
-              color: theme.text,
-              lineHeight: 1.08,
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              margin: 0,
+              flex: '0 0 50%',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              justifyContent: 'center',
+              paddingLeft: paddingX,
+              paddingRight: '5%',
+              paddingTop: 0,
+              paddingBottom: 0,
+              gap: 10,
             }}
           >
-            {title}
-          </h2>
-        </div>
-        {/* Image side */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverImageUrl}
-              alt={title}
-              className="size-full object-cover"
-              draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
-            />
-          ) : (
-            <div className="size-full" style={{ background: theme.bgDim }} />
-          )}
+            <span style={{ color: accent, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase' as const }}>
+              — Collection
+            </span>
+            <h2
+              style={{
+                fontFamily: fontPair.display,
+                fontSize: 'clamp(1.5rem, 3.5vw, 2.75rem)',
+                color: theme.text,
+                lineHeight: 1.08,
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              {title}
+            </h2>
+          </div>
+          {/* Image side */}
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            {coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverImageUrl}
+                alt={title}
+                className="size-full object-cover"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            ) : (
+              <div className="size-full" style={{ background: theme.bgDim }} />
+            )}
+          </div>
         </div>
       </div>
     )
   }
 
-  // image-center — outer div holds the horizontal spacing, inner div is the positioned root for absolute children
+  // image-center
   return (
-    <div className="w-full" style={{ paddingLeft: paddingX, paddingRight: paddingX }}>
-      <div
-        className="relative overflow-hidden"
-        style={{ height: 'clamp(220px, 28vw, 380px)' }}
-      >
-        {coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverImageUrl}
-            alt={title}
-            className="absolute inset-0 size-full object-cover"
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-          />
-        ) : (
-          <div className="absolute inset-0" style={{ background: theme.bgDim }} />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.58) 100%)' }}
+    <div
+      className="w-full"
+      style={{ paddingLeft: paddingX, paddingRight: paddingX }}
+    >
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ height: 'clamp(220px, 28vw, 380px)' }}
+    >
+      {coverImageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={coverImageUrl}
+          alt={title}
+          className="absolute inset-0 size-full object-cover"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h2
-            style={{
-              fontFamily: fontPair.display,
-              fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
-              color: 'oklch(0.97 0.006 80)',
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase' as const,
-              fontWeight: 500,
-              textShadow: '0 2px 24px rgba(0,0,0,0.45)',
-              margin: 0,
-            }}
-          >
-            {title}
-          </h2>
-        </div>
+      ) : (
+        <div className="absolute inset-0" style={{ background: theme.bgDim }} />
+      )}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.58) 100%)' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <h2
+          style={{
+            fontFamily: fontPair.display,
+            fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
+            color: 'oklch(0.97 0.006 80)',
+            letterSpacing: '0.07em',
+            textTransform: 'uppercase' as const,
+            fontWeight: 500,
+            textShadow: '0 2px 24px rgba(0,0,0,0.45)',
+            margin: 0,
+          }}
+        >
+          {title}
+        </h2>
       </div>
+    </div>
     </div>
   )
 }

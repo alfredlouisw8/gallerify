@@ -10,7 +10,6 @@ import {
   LayoutTemplateIcon,
   ListIcon,
   MessageSquareIcon,
-  PaletteIcon,
   Settings2Icon,
   SettingsIcon,
   ShieldIcon,
@@ -64,10 +63,9 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
 
   const NAV_POINTS: { id: DesignPanel; label: string; icon: React.ReactNode }[] = [
     { id: 'cover',             label: t('cover'),            icon: <FrameIcon className="size-3.5" /> },
-    { id: 'style',             label: t('style'),            icon: <SlidersHorizontalIcon className="size-3.5" /> },
-    { id: 'color',             label: t('color'),            icon: <PaletteIcon className="size-3.5" /> },
-    { id: 'layout',            label: t('layout'),           icon: <GridIcon className="size-3.5" /> },
     { id: 'collection-header', label: t('collectionHeader'), icon: <LayoutTemplateIcon className="size-3.5" /> },
+    { id: 'style',             label: t('style'),            icon: <SlidersHorizontalIcon className="size-3.5" /> },
+    { id: 'layout',            label: t('layout'),           icon: <GridIcon className="size-3.5" /> },
   ]
 
   const SETTINGS_ITEMS = [
@@ -320,8 +318,7 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
         <TabsContent value="image" className="mt-0 flex flex-col">
           {NAV_POINTS.map((point) => {
             const active = selectedPanel === point.id
-            const accentDotColor =
-              point.id === 'color' ? ACCENTS[prefs.accentColor] : undefined
+            const accentDotColor = undefined
 
             return (
               <button
@@ -345,7 +342,6 @@ export default function GallerySidebar({ galleryData, onClose, hideBanner, colla
                 <span className="font-medium">{point.label}</span>
                 <span className="ml-auto text-xs capitalize opacity-50">
                   {point.id === 'cover'  && prefs.coverDesign}
-                  {point.id === 'color'  && prefs.colorTheme}
                   {point.id === 'layout' && prefs.photoLayout}
                 </span>
               </button>

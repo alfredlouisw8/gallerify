@@ -61,6 +61,9 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
   const bannerFileRef = useRef<HTMLInputElement>(null)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const [fontOpen, setFontOpen] = useState(false)
+  const [designOpen, setDesignOpen] = useState(true)
+  const [textOpen, setTextOpen] = useState(false)
+  const [colorOpen, setColorOpen] = useState(false)
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -94,41 +97,44 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
   const titles: Record<string, string> = {
     cover:               t('panelCover'),
     style:               t('panelStyle'),
-    color:               t('panelColor'),
     layout:              t('panelLayout'),
     'collection-header': t('panelCollectionHeader'),
   }
 
   return (
-    <AnimatePresence>
+    <div
+      className="shrink-0 border-r"
+      style={{
+        width: selectedPanel ? (isMobile ? '100%' : 460) : 0,
+        height: 'calc(100dvh - 57px)',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        transition: 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+      }}
+    >
       {selectedPanel && (
-        <motion.div
-          key={selectedPanel}
-          className="shrink-0 overflow-hidden border-r"
-          initial={{ width: 0 }}
-          animate={{ width: isMobile ? '100%' : 420 }}
-          exit={{ width: 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="flex h-full flex-col overflow-hidden" style={{ width: isMobile ? '100%' : 420 }}>
-            {/* Mobile close bar */}
-            {isMobile && (
-              <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-                <p className="text-sm font-semibold">{titles[selectedPanel]}</p>
-                <button
-                  onClick={() => setSelectedPanel(null)}
-                  className="flex size-7 items-center justify-center rounded-full hover:bg-muted"
-                >
-                  <XIcon className="size-4" />
-                </button>
-              </div>
-            )}
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+        <div style={{ width: isMobile ? '100%' : 460 }}>
+          {/* Mobile close bar */}
+          {isMobile && (
+            <div
+              className="flex items-center justify-between border-b px-4 py-3"
+              style={{ position: 'sticky', top: 0, zIndex: 1, background: 'hsl(var(--background))' }}
+            >
+              <p className="text-sm font-semibold">{titles[selectedPanel]}</p>
+              <button
+                onClick={() => setSelectedPanel(null)}
+                className="flex size-7 items-center justify-center rounded-full hover:bg-muted"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+          )}
+          <div className="flex flex-col gap-4 p-4">
             {!isMobile && <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {titles[selectedPanel]}
             </p>}
 
-            {/* ── COVER: design layout + focal point ── */}
+            {/* ── COVER ── */}
             {selectedPanel === 'cover' && (<>
               <Section label={t('bannerImage')}>
                 <button
@@ -142,6 +148,18 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                 </button>
                 <input ref={bannerFileRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
               </Section>
+
+              {/* ── DESIGN accordion ── */}
+              <div className="overflow-hidden" style={{ borderColor: 'hsl(var(--border))' }}>
+                <button
+                  onClick={() => setDesignOpen(o => !o)}
+                  className="flex w-full items-center justify-between px-3 py-4 border-b mt-2"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('accordionDesign')}</span>
+                  <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: designOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                </button>
+                {designOpen && (
+                  <div className="flex flex-col gap-3 px-3 py-6">
 
               <div className="grid grid-cols-3 gap-2">
                 {(
@@ -173,26 +191,6 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                             <div style={{ width: '22px', height: '1.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.85)' }} />
                             <div style={{ width: '8px', height: '1px', background: 'oklch(0.78 0.09 80 / 0.85)' }} />
                             <div style={{ width: '14px', height: '1px', borderRadius: '1px', background: 'rgba(240,237,232,0.3)' }} />
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      value: 'minimal' as const,
-                      label: t('coverMinimalLabel'),
-                      desc: t('coverMinimalDesc'),
-                      preview: (
-                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#111' }}>
-                          <div style={{ height: '52%', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }} />
-                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-                          <div style={{ padding: '7% 11% 0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-                              <div style={{ width: '8px', height: '1px', background: 'oklch(0.78 0.09 80 / 0.7)' }} />
-                              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-                            </div>
-                            <div style={{ width: '24px', height: '2.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.7)' }} />
-                            <div style={{ width: '14px', height: '1.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.25)' }} />
                           </div>
                         </div>
                       ),
@@ -255,47 +253,23 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                       ),
                     },
                     {
-                      value: 'vintage' as const,
-                      label: t('coverVintageLabel'),
-                      desc: t('coverVintageDesc'),
+                      value: 'ticker' as const,
+                      label: t('coverTickerLabel'),
+                      desc: t('coverTickerDesc'),
                       preview: (
-                        <div className="w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#1a1510', display: 'flex', flexDirection: 'column' }}>
-                          {/* photo — 75% height */}
-                          <div className="relative" style={{ height: '75%', background: 'linear-gradient(160deg,#4a3f30 0%,#2a2018 100%)', flexShrink: 0 }}>
-                            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(8,5,2,0.5) 100%)' }} />
-                            <div style={{ position: 'absolute', inset: 0, bottom: 0, height: '40%', background: 'linear-gradient(to bottom, transparent, #1a1510)' }} />
-                          </div>
-                          {/* title block */}
-                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.5px', padding: '0 8%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '1px' }}>
-                              <div style={{ width: '8px', height: '0.5px', background: 'rgba(200,165,90,0.6)' }} />
-                              <div style={{ width: '2.5px', height: '2.5px', background: 'rgba(200,165,90,0.6)', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' }} />
-                              <div style={{ width: '8px', height: '0.5px', background: 'rgba(200,165,90,0.6)' }} />
+                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }}>
+                          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.38)' }} />
+                          {/* ticker bar at bottom — no background, matches live */}
+                          <div className="absolute bottom-0 left-0 right-0 overflow-hidden" style={{ height: '30%', display: 'flex', alignItems: 'center', paddingLeft: '4%' }}>
+                            <div style={{ display: 'flex', gap: '10px', whiteSpace: 'nowrap' }}>
+                              {[0,1,2,3].map(i => (
+                                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ width: '24px', height: '2px', borderRadius: '1px', background: 'rgba(240,237,232,0.85)', display: 'inline-block' }} />
+                                  <span style={{ width: '8px', height: '1.5px', background: 'oklch(0.78 0.09 80 / 0.8)', display: 'inline-block' }} />
+                                  <span style={{ width: '14px', height: '1.5px', borderRadius: '1px', background: 'rgba(240,237,232,0.4)', display: 'inline-block' }} />
+                                </span>
+                              ))}
                             </div>
-                            <div style={{ width: '26px', height: '1.5px', borderRadius: '0.5px', background: 'rgba(230,215,185,0.82)' }} />
-                            <div style={{ width: '12px', height: '1px', borderRadius: '0.5px', background: 'rgba(200,165,90,0.7)' }} />
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      value: 'cinematic' as const,
-                      label: t('coverCinematicLabel'),
-                      desc: t('coverCinematicDesc'),
-                      preview: (
-                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#0a0908' }}>
-                          {/* photo strip in the middle */}
-                          <div style={{ position: 'absolute', top: '28%', bottom: '22%', left: 0, right: 0, background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)' }} />
-                          {/* top bar */}
-                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '28%', background: '#0a0908', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 10%', gap: '2.5px' }}>
-                            <div style={{ width: '24px', height: '2px', borderRadius: '1px', background: 'rgba(240,237,232,0.85)' }} />
-                            <div style={{ width: '16px', height: '1px', borderRadius: '1px', background: 'rgba(240,237,232,0.35)' }} />
-                          </div>
-                          {/* bottom bar */}
-                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '22%', background: '#0a0908', display: 'flex', alignItems: 'center', padding: '0 10%', gap: '3px' }}>
-                            <div style={{ width: '8px', height: '1px', background: 'rgba(240,237,232,0.25)' }} />
-                            <div style={{ width: '1px', height: '3px', background: 'oklch(0.78 0.09 80 / 0.5)' }} />
-                            <div style={{ width: '8px', height: '1px', background: 'rgba(240,237,232,0.25)' }} />
                           </div>
                         </div>
                       ),
@@ -328,11 +302,11 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                       desc: t('coverMagazineDesc'),
                       preview: (
                         <div className="relative w-full overflow-hidden flex" style={{ aspectRatio: '16/9', background: '#f5f5f5' }}>
-                          {/* Left text column */}
-                          <div className="flex flex-col justify-between" style={{ width: '50%', padding: '8px', background: '#f5f5f5' }}>
-                            <div className="flex justify-between">
-                              <div style={{ width: '28px', height: '1.5px', background: '#aaa' }} />
-                              <div style={{ width: '18px', height: '1.5px', background: '#aaa' }} />
+                          {/* Left text column — bottom-aligned to match actual */}
+                          <div className="flex flex-col justify-end" style={{ width: '50%', padding: '8px', background: '#f5f5f5' }}>
+                            <div className="flex justify-between" style={{ marginBottom: '5px' }}>
+                              <div style={{ width: '22px', height: '1px', background: '#aaa' }} />
+                              <div style={{ width: '14px', height: '1px', background: '#aaa' }} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ width: '70%', height: '6px', borderRadius: '1px', background: '#222', opacity: 0.9 }} />
@@ -340,7 +314,27 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                             </div>
                           </div>
                           {/* Right image column */}
-                          <div style={{ width: '50%', background: '#888' }} />
+                          <div style={{ width: '50%', background: '#999' }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: 'editorial' as const,
+                      label: t('coverEditorialLabel'),
+                      desc: t('coverEditorialDesc'),
+                      preview: (
+                        <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', background: '#F5F0EB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0' }}>
+                          {/* Title behind */}
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                            <div style={{ width: '80%', height: '2.5px', borderRadius: '1px', background: 'rgba(61,35,20,0.55)', letterSpacing: '0.2em' }} />
+                          </div>
+                          {/* Image block */}
+                          <div style={{ width: '38%', aspectRatio: '3/4', background: 'linear-gradient(160deg,#3a322c 0%,#1e1a16 100%)', zIndex: 10, position: 'relative' }}>
+                            {/* Date on image */}
+                            <div style={{ position: 'absolute', bottom: '20%', left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+                              <div style={{ width: '18px', height: '1px', background: 'rgba(61,35,20,0.7)' }} />
+                            </div>
+                          </div>
                         </div>
                       ),
                     },
@@ -398,89 +392,416 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                 })}
               </div>
 
-              {(prefs.coverDesign === 'video-classic' || prefs.coverDesign === 'video-centered') && (
-                <Section label={t('youtubeUrl')}>
-                  <input
-                    type="url"
-                    placeholder={t('youtubePlaceholder')}
-                    value={prefs.bannerVideoUrl ?? ''}
-                    onChange={(e) => update('bannerVideoUrl', e.target.value)}
-                    className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[oklch(0.78_0.09_80)]"
-                    style={{ borderColor: 'hsl(var(--border))' }}
-                  />
-                  <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                    {t('youtubeHint')}
-                  </p>
-                </Section>
-              )}
+                    {(prefs.coverDesign === 'video-classic' || prefs.coverDesign === 'video-centered') && (
+                      <Section label={t('youtubeUrl')}>
+                        <input
+                          type="url"
+                          placeholder={t('youtubePlaceholder')}
+                          value={prefs.bannerVideoUrl ?? ''}
+                          onChange={(e) => update('bannerVideoUrl', e.target.value)}
+                          className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[oklch(0.78_0.09_80)]"
+                          style={{ borderColor: 'hsl(var(--border))' }}
+                        />
+                        <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {t('youtubeHint')}
+                        </p>
+                      </Section>
+                    )}
 
-              {bannerUrl && (
-                <Section label={t('focalPoint')}>
-                  <FocalPointPicker
-                    bannerUrl={bannerUrl}
-                    value={prefs.bannerFocalPoint ?? { x: 50, y: 50 }}
-                    onChange={(v) => update('bannerFocalPoint', v)}
-                  />
-                  <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                    {t('focalPointHint')}
-                  </p>
-                </Section>
-              )}
+                    {bannerUrl && (
+                      <Section label={t('focalPoint')}>
+                        <FocalPointPicker
+                          bannerUrl={bannerUrl}
+                          value={prefs.bannerFocalPoint ?? { x: 50, y: 50 }}
+                          onChange={(v) => update('bannerFocalPoint', v)}
+                        />
+                        <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {t('focalPointHint')}
+                        </p>
+                      </Section>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── COLOR accordion ── */}
+              <div className="overflow-hidden" style={{ borderColor: 'hsl(var(--border))' }}>
+                <button
+                  onClick={() => setColorOpen(o => !o)}
+                  className="flex w-full items-center justify-between px-3 py-4 border-b mt-2"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('accordionColor')}</span>
+                  <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: colorOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                </button>
+                {colorOpen && (
+                  <div className="flex flex-col gap-4 px-3 py-6">
+
+                    {/* Background */}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('bannerBg')}</span>
+                      <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('bannerBgHint')}</p>
+                      {(() => {
+                        const THEME_BG: Record<string, string> = { dark: '#1a1714', light: '#f5f0e8', rose: '#7a3232', sand: '#c8a06a', olive: '#5c6e2c' }
+                        const syncedColor = THEME_BG[prefs.colorTheme] ?? prefs.customColorTheme ?? '#f5f0e8'
+                        const displayColor = prefs.syncBannerWithTheme ? syncedColor : (prefs.bannerBgColor ?? '#f5f0e8')
+                        return (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={displayColor}
+                              disabled={!!prefs.syncBannerWithTheme}
+                              onChange={(e) => update('bannerBgColor', e.target.value)}
+                              className="size-8 cursor-pointer rounded border disabled:cursor-not-allowed disabled:opacity-40"
+                              style={{ borderColor: 'hsl(var(--border))', padding: '1px' }}
+                            />
+                            <span className="font-mono text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                              {displayColor}
+                            </span>
+                          </div>
+                        )
+                      })()}
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={!!prefs.syncBannerWithTheme}
+                          onChange={(e) => update('syncBannerWithTheme', e.target.checked ? true : undefined)}
+                          className="size-3.5 cursor-pointer rounded"
+                          style={{ accentColor: 'oklch(0.78 0.09 80)' }}
+                        />
+                        <span className="text-xs" style={{ color: 'hsl(var(--foreground))' }}>{t('syncWithTheme')}</span>
+                      </label>
+                    </div>
+
+                    {/* Title Color */}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('titleColor')}</span>
+                      <div className="flex gap-1.5">
+                        {([
+                          { value: 'white' as const, label: t('titleColorWhite'), color: '#f0ede8' },
+                          { value: 'black' as const, label: t('titleColorBlack'), color: '#111' },
+                        ]).map(opt => {
+                          const active = (prefs.bannerTitleColor ?? 'white') === opt.value
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => update('bannerTitleColor', opt.value)}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-medium transition-all"
+                              style={{
+                                borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                                background: active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                                color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                              }}
+                            >
+                              <span className="size-3 rounded-full border" style={{ background: opt.color, borderColor: 'hsl(var(--border))' }} />
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                        <button
+                          onClick={() => update('bannerTitleColor', 'custom')}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-medium transition-all"
+                          style={{
+                            borderColor: prefs.bannerTitleColor === 'custom' ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                            background: prefs.bannerTitleColor === 'custom' ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                            color: prefs.bannerTitleColor === 'custom' ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                          }}
+                        >
+                          <span className="size-3 rounded-full" style={{ background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)', border: '1px solid hsl(var(--border))' }} />
+                          {t('titleColorCustom')}
+                        </button>
+                      </div>
+                      {prefs.bannerTitleColor === 'custom' && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={prefs.bannerTitleCustomColor ?? '#ffffff'}
+                            onChange={(e) => setPrefs({ ...prefs, bannerTitleColor: 'custom', bannerTitleCustomColor: e.target.value })}
+                            className="size-8 cursor-pointer rounded border"
+                            style={{ borderColor: 'hsl(var(--border))', padding: '1px' }}
+                          />
+                          <span className="font-mono text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{prefs.bannerTitleCustomColor ?? '#ffffff'}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Theme */}
+                    {(() => {
+                      const THEME_SWATCHES = [
+                        { value: 'dark'  as const, label: t('themeDark'),  color: 'oklch(0.11 0.008 60)' },
+                        { value: 'light' as const, label: t('themeLight'), color: 'oklch(0.97 0.006 70)' },
+                        { value: 'rose'  as const, label: t('themeRose'),  color: 'oklch(0.58 0.18 10)'  },
+                        { value: 'sand'  as const, label: t('themeSand'),  color: 'oklch(0.72 0.10 75)'  },
+                        { value: 'olive' as const, label: t('themeOlive'), color: 'oklch(0.55 0.14 130)' },
+                      ]
+                      const isCustom = prefs.colorTheme === 'custom'
+                      const customColor = prefs.customColorTheme ?? '#1a1714'
+                      const activeLabel = isCustom ? t('themeCustom') : (THEME_SWATCHES.find(s => s.value === prefs.colorTheme)?.label ?? '')
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('theme')}</span>
+                          <div className="flex items-center gap-1.5">
+                            {THEME_SWATCHES.map((th) => {
+                              const active = prefs.colorTheme === th.value
+                              return (
+                                <button
+                                  key={th.value}
+                                  title={th.label}
+                                  onClick={() => update('colorTheme', th.value)}
+                                  className="size-7 shrink-0 rounded-full transition-all"
+                                  style={{
+                                    background: th.color,
+                                    outline: active ? '2px solid oklch(0.78 0.09 80)' : '2px solid transparent',
+                                    outlineOffset: '2px',
+                                    boxShadow: '0 0 0 1px hsl(var(--border))',
+                                  }}
+                                />
+                              )
+                            })}
+                            <label
+                              className="relative size-7 shrink-0 cursor-pointer overflow-hidden rounded-full transition-all"
+                              style={{
+                                outline: isCustom ? '2px solid oklch(0.78 0.09 80)' : '2px solid transparent',
+                                outlineOffset: '2px',
+                                boxShadow: '0 0 0 1px hsl(var(--border))',
+                              }}
+                            >
+                              <span className="block size-full" style={{ background: isCustom ? customColor : 'conic-gradient(#111, #3a322c, #f0ede8, #3a322c, #111)' }} />
+                              <input
+                                type="color"
+                                value={isCustom ? customColor : '#1a1714'}
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                onChange={(e) => setPrefs({ ...prefs, colorTheme: 'custom', customColorTheme: e.target.value })}
+                              />
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{activeLabel}</span>
+                            {isCustom && <span className="font-mono text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{customColor}</span>}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Accent */}
+                    {(() => {
+                      const ACCENT_SWATCHES = [
+                        { value: 'gold'  as const, label: t('accentGold'),  color: ACCENTS.gold  },
+                        { value: 'ivory' as const, label: t('accentIvory'), color: ACCENTS.ivory },
+                        { value: 'sage'  as const, label: t('accentSage'),  color: ACCENTS.sage  },
+                        { value: 'rose'  as const, label: t('accentRose'),  color: ACCENTS.rose  },
+                        { value: 'slate' as const, label: t('accentSlate'), color: ACCENTS.slate },
+                      ]
+                      const isCustom = prefs.accentColor === 'custom'
+                      const customColor = prefs.customAccentColor ?? '#c8a96e'
+                      const activeLabel = isCustom ? t('accentCustom') : (ACCENT_SWATCHES.find(s => s.value === prefs.accentColor)?.label ?? '')
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('accent')}</span>
+                          <div className="flex items-center gap-1.5">
+                            {ACCENT_SWATCHES.map((ac) => {
+                              const active = prefs.accentColor === ac.value
+                              return (
+                                <button
+                                  key={ac.value}
+                                  title={ac.label}
+                                  onClick={() => update('accentColor', ac.value)}
+                                  className="size-7 shrink-0 rounded-full transition-all"
+                                  style={{
+                                    background: ac.color,
+                                    outline: active ? `2px solid ${ac.color}` : '2px solid transparent',
+                                    outlineOffset: '2px',
+                                    boxShadow: '0 0 0 1px hsl(var(--border))',
+                                  }}
+                                />
+                              )
+                            })}
+                            <label
+                              className="relative size-7 shrink-0 cursor-pointer overflow-hidden rounded-full transition-all"
+                              style={{
+                                outline: isCustom ? `2px solid ${customColor}` : '2px solid transparent',
+                                outlineOffset: '2px',
+                                boxShadow: '0 0 0 1px hsl(var(--border))',
+                              }}
+                            >
+                              <span className="block size-full" style={{ background: isCustom ? customColor : 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} />
+                              <input
+                                type="color"
+                                value={isCustom ? customColor : '#c8a96e'}
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                onChange={(e) => setPrefs({ ...prefs, accentColor: 'custom', customAccentColor: e.target.value })}
+                              />
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{activeLabel}</span>
+                            {isCustom && <span className="font-mono text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{customColor}</span>}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                  </div>
+                )}
+              </div>
+
+              {/* ── TEXT accordion ── */}
+              <div className="overflow-hidden" style={{ borderColor: 'hsl(var(--border))' }}>
+                <button
+                  onClick={() => setTextOpen(o => !o)}
+                  className="flex w-full items-center justify-between px-3 py-4 border-b mt-2"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('accordionText')}</span>
+                  <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: textOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                </button>
+                {textOpen && (
+                  <div className="flex flex-col gap-4 px-3 py-6">
+
+                    {/* Font size */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('bannerTitleSize')}</span>
+                        <span className="font-mono text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {prefs.bannerTitleSize ?? 80}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => update('bannerTitleSize', Math.max(50, (prefs.bannerTitleSize ?? 80) - 5))}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors hover:bg-muted/40"
+                          style={{ borderColor: 'hsl(var(--border))' }}
+                        >−</button>
+                        <input
+                          type="range"
+                          min={50} max={200} step={5}
+                          value={prefs.bannerTitleSize ?? 80}
+                          onChange={(e) => update('bannerTitleSize', Number(e.target.value))}
+                          className="flex-1 cursor-pointer"
+                          style={{ accentColor: 'oklch(0.78 0.09 80)' }}
+                        />
+                        <button
+                          onClick={() => update('bannerTitleSize', Math.min(200, (prefs.bannerTitleSize ?? 80) + 5))}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors hover:bg-muted/40"
+                          style={{ borderColor: 'hsl(var(--border))' }}
+                        >+</button>
+                      </div>
+                    </div>
+
+                    {/* Font style */}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('fontPairing')}</span>
+                      <div>
+                        <button
+                          onClick={() => setFontOpen(o => !o)}
+                          className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted/30"
+                          style={{ borderColor: fontOpen ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))', background: 'hsl(var(--background))' }}
+                        >
+                          <span className="flex flex-col gap-0.5">
+                            <span className="text-sm leading-tight" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].display }}>
+                              {FONT_PAIRS[prefs.fontPairing].displayLabel}
+                            </span>
+                            <span className="text-[10px] tracking-wide" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].body, color: 'hsl(var(--muted-foreground))' }}>
+                              {FONT_PAIRS[prefs.fontPairing].bodyLabel}
+                            </span>
+                          </span>
+                          <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: fontOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                        </button>
+                        {fontOpen && (
+                          <div
+                            className="mt-1 rounded-lg border"
+                            style={{ background: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
+                          >
+                            {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
+                              const active = prefs.fontPairing === key
+                              return (
+                                <button
+                                  key={key}
+                                  onClick={() => update('fontPairing', key)}
+                                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                                  style={{ background: active ? 'oklch(0.78 0.09 80 / 0.08)' : undefined }}
+                                >
+                                  <span className="flex flex-1 flex-col gap-0.5">
+                                    <span className="text-sm leading-tight" style={{ fontFamily: pair.display, color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
+                                      {pair.displayLabel}
+                                    </span>
+                                    <span className="text-[10px] tracking-wide" style={{ fontFamily: pair.body, color: 'hsl(var(--muted-foreground))' }}>
+                                      {pair.bodyLabel}
+                                    </span>
+                                  </span>
+                                  {active && <CheckIcon className="size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Weight */}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('titleWeight')}</span>
+                      <div className="flex gap-1.5">
+                        {([
+                          { value: 'light' as const, label: t('titleWeightLight') },
+                          { value: 'bold' as const, label: t('titleWeightBold') },
+                        ]).map(opt => {
+                          const active = (prefs.bannerTitleWeight ?? 'light') === opt.value
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => update('bannerTitleWeight', opt.value)}
+                              className="flex flex-1 items-center justify-center rounded-lg border px-2 py-2 text-xs transition-all"
+                              style={{
+                                borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
+                                background: active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
+                                color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
+                                fontWeight: opt.value === 'bold' ? 700 : 300,
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Letter spacing */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{t('titleLetterSpacing')}</span>
+                        <span className="font-mono text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {((prefs.bannerTitleLetterSpacing ?? 0) * 100).toFixed(0)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => update('bannerTitleLetterSpacing', Math.max(-5, ((prefs.bannerTitleLetterSpacing ?? 0) * 100 - 1)) / 100)}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors hover:bg-muted/40"
+                          style={{ borderColor: 'hsl(var(--border))' }}
+                        >−</button>
+                        <input
+                          type="range"
+                          min={-5} max={30} step={1}
+                          value={Math.round((prefs.bannerTitleLetterSpacing ?? 0) * 100)}
+                          onChange={(e) => update('bannerTitleLetterSpacing', Number(e.target.value) / 100)}
+                          className="flex-1 cursor-pointer"
+                          style={{ accentColor: 'oklch(0.78 0.09 80)' }}
+                        />
+                        <button
+                          onClick={() => update('bannerTitleLetterSpacing', Math.min(30, ((prefs.bannerTitleLetterSpacing ?? 0) * 100 + 1)) / 100)}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-lg border text-sm font-medium transition-colors hover:bg-muted/40"
+                          style={{ borderColor: 'hsl(var(--border))' }}
+                        >+</button>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+              </div>
+
             </>)}
 
-            {/* ── STYLE: font + overlay ── */}
+            {/* ── STYLE: overlay ── */}
             {selectedPanel === 'style' && (<>
-
-              <Section label={t('fontPairing')}>
-                <div className="relative">
-                  {/* Trigger */}
-                  <button
-                    onClick={() => setFontOpen(o => !o)}
-                    className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted/30"
-                    style={{ borderColor: fontOpen ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))', background: 'hsl(var(--background))' }}
-                  >
-                    <span className="flex flex-col gap-0.5">
-                      <span className="text-sm leading-tight" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].display }}>
-                        {FONT_PAIRS[prefs.fontPairing].displayLabel}
-                      </span>
-                      <span className="text-[10px] tracking-wide" style={{ fontFamily: FONT_PAIRS[prefs.fontPairing].body, color: 'hsl(var(--muted-foreground))' }}>
-                        {FONT_PAIRS[prefs.fontPairing].bodyLabel}
-                      </span>
-                    </span>
-                    <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform" style={{ transform: fontOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                  </button>
-
-                  {/* Dropdown list */}
-                  {fontOpen && (
-                    <div
-                      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-lg border shadow-lg"
-                      style={{ background: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
-                    >
-                      {(Object.entries(FONT_PAIRS) as [keyof typeof FONT_PAIRS, typeof FONT_PAIRS[keyof typeof FONT_PAIRS]][]).map(([key, pair]) => {
-                        const active = prefs.fontPairing === key
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => { update('fontPairing', key); setFontOpen(false) }}
-                            className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
-                            style={{ background: active ? 'oklch(0.78 0.09 80 / 0.08)' : undefined }}
-                          >
-                            <span className="flex flex-1 flex-col gap-0.5">
-                              <span className="text-sm leading-tight" style={{ fontFamily: pair.display, color: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))' }}>
-                                {pair.displayLabel}
-                              </span>
-                              <span className="text-[10px] tracking-wide" style={{ fontFamily: pair.body, color: 'hsl(var(--muted-foreground))' }}>
-                                {pair.bodyLabel}
-                              </span>
-                            </span>
-                            {active && <CheckIcon className="size-3 shrink-0" style={{ color: 'oklch(0.78 0.09 80)' }} />}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </Section>
 
               <Section label={t('overlay')}>
                 <div className="flex flex-col gap-1.5">
@@ -543,133 +864,6 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
                       </button>
                     )
                   })}
-                </div>
-              </Section>
-            </>)}
-
-            {/* ── COLOR: theme + accent ── */}
-            {selectedPanel === 'color' && (<>
-              <Section label={t('theme')}>
-                <div className="flex flex-col gap-1.5">
-                  {(
-                    [
-                      { value: 'dark'  as const, label: t('themeDark'),  swatch: 'oklch(0.11 0.008 60)' },
-                      { value: 'light' as const, label: t('themeLight'), swatch: 'oklch(0.97 0.006 70)' },
-                      { value: 'rose'  as const, label: t('themeRose'),  swatch: 'oklch(0.58 0.18 10)'  },
-                      { value: 'sand'  as const, label: t('themeSand'),  swatch: 'oklch(0.72 0.10 75)'  },
-                      { value: 'olive' as const, label: t('themeOlive'), swatch: 'oklch(0.55 0.14 130)' },
-                    ]
-                  ).map((t) => {
-                    const active = prefs.colorTheme === t.value
-                    return (
-                      <button
-                        key={t.value}
-                        onClick={() => update('colorTheme', t.value)}
-                        className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                        style={{
-                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
-                        }}
-                      >
-                        <span className="size-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: t.swatch }} />
-                        {t.label}
-                        {active && <CheckIcon className="ml-auto size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
-                      </button>
-                    )
-                  })}
-
-                  {/* Custom theme color picker */}
-                  {(() => {
-                    const active = prefs.colorTheme === 'custom'
-                    const customColor = prefs.customColorTheme ?? '#1a1714'
-                    return (
-                      <label
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                        style={{
-                          borderColor: active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--border))',
-                          background:  active ? 'oklch(0.78 0.09 80 / 0.08)' : 'transparent',
-                          color:       active ? 'oklch(0.78 0.09 80)' : 'hsl(var(--foreground))',
-                        }}
-                      >
-                        <span className="relative size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
-                          <span className="block size-full" style={{ background: active ? customColor : 'conic-gradient(#111, #3a322c, #f0ede8, #3a322c, #111)' }} />
-                          <input
-                            type="color"
-                            value={active ? customColor : '#1a1714'}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            onChange={(e) => {
-                              setPrefs({ ...prefs, colorTheme: 'custom', customColorTheme: e.target.value })
-                            }}
-                          />
-                        </span>
-                        {t('themeCustom')}
-                        {active && <CheckIcon className="ml-auto size-3" style={{ color: 'oklch(0.78 0.09 80)' }} />}
-                      </label>
-                    )
-                  })()}
-                </div>
-              </Section>
-
-              <Section label={t('accent')}>
-                <div className="flex flex-col gap-1.5">
-                  {(
-                    [
-                      { value: 'gold'  as const, label: t('accentGold') },
-                      { value: 'ivory' as const, label: t('accentIvory') },
-                      { value: 'sage'  as const, label: t('accentSage') },
-                      { value: 'rose'  as const, label: t('accentRose') },
-                      { value: 'slate' as const, label: t('accentSlate') },
-                    ]
-                  ).map((ac) => {
-                    const active = prefs.accentColor === ac.value
-                    return (
-                      <button
-                        key={ac.value}
-                        onClick={() => update('accentColor', ac.value)}
-                        className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                        style={{
-                          borderColor: active ? ACCENTS[ac.value] : 'hsl(var(--border))',
-                          background:  active ? `${ACCENTS[ac.value]}1a` : 'transparent',
-                          color:       active ? ACCENTS[ac.value] : 'hsl(var(--foreground))',
-                        }}
-                      >
-                        <span className="size-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: ACCENTS[ac.value] }} />
-                        {ac.label}
-                        {active && <CheckIcon className="ml-auto size-3" />}
-                      </button>
-                    )
-                  })}
-
-                  {/* Custom color picker */}
-                  {(() => {
-                    const active = prefs.accentColor === 'custom'
-                    const customColor = prefs.customAccentColor ?? '#c8a96e'
-                    return (
-                      <label
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all"
-                        style={{
-                          borderColor: active ? customColor : 'hsl(var(--border))',
-                          background:  active ? `${customColor}1a` : 'transparent',
-                          color:       active ? customColor : 'hsl(var(--foreground))',
-                        }}
-                      >
-                        <span className="relative size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
-                          <span className="block size-full" style={{ background: active ? customColor : 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} />
-                          <input
-                            type="color"
-                            value={active ? customColor : '#c8a96e'}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            onChange={(e) => {
-                              setPrefs({ ...prefs, accentColor: 'custom', customAccentColor: e.target.value })
-                            }}
-                          />
-                        </span>
-                        {t('accentCustom')}
-                        {active && <CheckIcon className="ml-auto size-3" />}
-                      </label>
-                    )
-                  })()}
                 </div>
               </Section>
             </>)}
@@ -901,10 +1095,9 @@ function OptionsPanel({ gallery, bannerUrl }: { gallery: GalleryWithCategory; ba
               </Button>
             )}
           </div>
-          </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </div>
   )
 }
 
@@ -952,7 +1145,7 @@ function PreviewCard({
         profilePath={`/${username}`}
         preferences={prefs}
         previewMode
-        noScrollLock
+        narrowPhotoGrid={device === 'mobile'}
         watermark={null}
       />
     </div>
@@ -961,22 +1154,11 @@ function PreviewCard({
   if (device === 'mobile') {
     return (
       <div
-        className="flex flex-col overflow-hidden shadow-2xl"
-        style={{ height: '100%', aspectRatio: '9 / 30', borderRadius: 32, border: '6px solid #222', background: '#222', minHeight: 0 }}
+        ref={screenRef}
+        className="relative overflow-hidden"
+        style={{ height: '100%', aspectRatio: '9 / 30', minHeight: 0 }}
       >
-        <div className="flex shrink-0 items-center justify-center py-2" style={{ background: '#222' }}>
-          <div className="h-1.5 w-16 rounded-full" style={{ background: '#444' }} />
-        </div>
-        <div
-          ref={screenRef}
-          className="relative min-h-0 flex-1 overflow-hidden"
-          style={{ borderRadius: '0 0 26px 26px', background: '#111' }}
-        >
-          {livePreview}
-        </div>
-        <div className="flex shrink-0 items-center justify-center py-2.5" style={{ background: '#222' }}>
-          <div className="h-1 w-20 rounded-full" style={{ background: '#555' }} />
-        </div>
+        {livePreview}
       </div>
     )
   }
@@ -986,19 +1168,6 @@ function PreviewCard({
       className="flex w-full flex-col overflow-hidden shadow-2xl"
       style={{ maxWidth: DEVICE_CONFIG.desktop.maxCardWidth, height: '100%', borderRadius: 10, border: '1px solid #d0d0d0', background: '#fff' }}
     >
-      <div
-        className="flex shrink-0 items-center gap-2 px-4 py-2.5"
-        style={{ background: '#f3f3f3', borderBottom: '1px solid #e0e0e0' }}
-      >
-        <div className="flex gap-1.5">
-          <div className="size-2.5 rounded-full" style={{ background: '#ff5f57' }} />
-          <div className="size-2.5 rounded-full" style={{ background: '#febc2e' }} />
-          <div className="size-2.5 rounded-full" style={{ background: '#28c840' }} />
-        </div>
-        <div className="flex-1 rounded px-3 py-0.5 text-[10px] font-mono" style={{ background: '#e5e5e5', color: '#888' }}>
-          /{username}/{gallery.slug}
-        </div>
-      </div>
       <div ref={screenRef} className="relative min-h-0 flex-1 overflow-hidden">
         {livePreview}
       </div>
@@ -1259,7 +1428,7 @@ export default function GalleryDesignPreview({ gallery, username }: Props) {
   const bannerUrl = gallery.bannerImage?.[0] ? getStorageUrl(gallery.bannerImage[0]) : null
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex overflow-hidden" style={{ height: 'calc(100dvh - 57px)' }}>
       <OptionsPanel gallery={gallery} bannerUrl={bannerUrl} />
 
       {/* Mobile floating save — outside motion.div so fixed positioning isn't broken by transforms */}
